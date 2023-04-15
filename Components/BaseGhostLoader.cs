@@ -112,6 +112,6 @@ public abstract class BaseGhostLoader : MonoBehaviour
         Destroy(networkedZeepkistGhost);
 
         AddGhost(recordModel, ghostPlayer.gameObject);
-        PlayerManager.Instance.currentMaster.flyingCamera.FlyingCamera.SetCurrentZeepkist();
+        // PlayerManager.Instance.currentMaster.flyingCamera.FlyingCamera.SetCurrentZeepkist();
     }
 }
