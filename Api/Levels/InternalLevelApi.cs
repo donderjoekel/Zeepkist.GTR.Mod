@@ -87,7 +87,7 @@ public static class InternalLevelApi
         };
 
         Result<CreateLevelResponseModel> result =
-            await ApiClient.Instance.Post<CreateLevelResponseModel>("levels/create", createLevelRequestModel);
+            await ApiClient.Instance.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
 
         if (result.IsFailed)
             return result.ToResult();
@@ -114,7 +114,7 @@ public static class InternalLevelApi
 
                         if (bytes.Length > 500000)
                         {
-                            Texture2D texture = new Texture2D(1,1);
+                            Texture2D texture = new Texture2D(1, 1);
                             texture.LoadImage(bytes);
                             bytes = texture.EncodeToJPG(50);
                         }
