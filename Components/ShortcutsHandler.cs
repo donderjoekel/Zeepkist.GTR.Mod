@@ -81,5 +81,15 @@ public class ShortcutsHandler : MonoBehaviour
                     : "Hiding Ghost Names",
                 2.5f);
         }
+
+        if (Input.GetKeyDown(Plugin.ConfigToggleShowRecordSetMessage.Value))
+        {
+            Plugin.ConfigShowRecordSetMessage.Value = !Plugin.ConfigShowRecordSetMessage.Value;
+            
+            PlayerManager.Instance.messenger.Log(Plugin.ConfigShowRecordSetMessage.Value
+                    ? "Showing Record Set Message"
+                    : "Hiding Record Set Message",
+                2.5f);
+        }
     }
 }

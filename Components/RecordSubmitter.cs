@@ -100,7 +100,7 @@ public class RecordSubmitter : MonoBehaviour
             PlayerManager.Instance.messenger.LogError("[GTR] Unable to submit record", 2.5f);
             Plugin.Log.LogError(result.ToString());
         }
-        else
+        else if (Plugin.ConfigShowRecordSetMessage.Value)
         {
             PlayerManager.Instance.messenger.Log("[GTR] Record submitted", 2.5f);
         }

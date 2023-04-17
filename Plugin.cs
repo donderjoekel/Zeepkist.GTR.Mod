@@ -32,11 +32,13 @@ namespace TNRD.Zeepkist.GTR.Mod
 
         public static ConfigEntry<bool> ConfigShowGhosts;
         public static ConfigEntry<bool> ConfigShowGhostNames;
+        public static ConfigEntry<bool> ConfigShowRecordSetMessage;
 
         public static ConfigEntry<KeyCode> ConfigToggleEnableGhosts;
         public static ConfigEntry<KeyCode> ConfigToggleEnableRecords;
         public static ConfigEntry<KeyCode> ConfigToggleShowGhosts;
         public static ConfigEntry<KeyCode> ConfigToggleShowGhostNames;
+        public static ConfigEntry<KeyCode> ConfigToggleShowRecordSetMessage;
 
         public static ManualLogSource CreateLogger(string sourceName)
         {
@@ -119,15 +121,6 @@ namespace TNRD.Zeepkist.GTR.Mod
             MainMenuUi_Awake.Awake -= MainMenuUiOnAwake;
         }
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                var canvasPrefab = AssetBundle.LoadAsset<GameObject>("TournamentCanvas");
-                Instantiate(canvasPrefab);
-            }
-        }
-
         private void SetupConfig()
         {
             ConfigEnableRecords = Config.Bind("General", "Enable Records", true, "Should records be tracked");
@@ -136,25 +129,34 @@ namespace TNRD.Zeepkist.GTR.Mod
 
             ConfigShowGhosts = Config.Bind("Visibility", "Show Ghosts", true, "Should ghosts be shown");
             ConfigShowGhostNames = Config.Bind("Visibility", "Show Ghost Names", true, "Should ghost names be shown");
+            ConfigShowRecordSetMessage = Config.Bind("Visibilty",
+                "Show Record Set Message",
+                true,
+                "Should the record set message be shown");
 
             ConfigToggleEnableRecords = Config.Bind("Keys",
                 "Toggle Enable Records",
-                KeyCode.H,
+                KeyCode.None,
                 "Toggles if records should be enabled");
 
             ConfigToggleEnableGhosts = Config.Bind("Keys",
                 "Toggle Enable Ghosts",
-                KeyCode.J,
+                KeyCode.None,
                 "Toggles if ghosts should be enabled");
 
             ConfigToggleShowGhosts = Config.Bind("Keys",
                 "Toggle Ghost Model Visibility",
-                KeyCode.K,
+                KeyCode.None,
                 "Toggles the ghost visibility");
             ConfigToggleShowGhostNames = Config.Bind("Keys",
                 "Toggle Ghost Name Visibility",
-                KeyCode.L,
+                KeyCode.None,
                 "Toggles the ghost name visibility");
+
+            ConfigToggleShowRecordSetMessage = Config.Bind("Keys",
+                "Toggle Record Set Message Visibility",
+                KeyCode.None,
+                "Toggles the record set message visibility");
         }
 
         private void MainMenuUiOnAwake()
