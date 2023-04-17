@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>TNRD.Zeepkist.GTR.Mod</AssemblyName>
-        <Version>0.17.0</Version>
+        <Version>0.17.4</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -39,8 +39,4 @@
         <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj" />
         <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\ZeepkistGTR.UnitySDK.csproj" />
     </ItemGroup>
-
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="xcopy &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\GTR&quot; /Y" />
-    </Target>
 </Project>
