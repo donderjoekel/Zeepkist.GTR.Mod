@@ -129,7 +129,7 @@ namespace TNRD.Zeepkist.GTR.Mod
 
             ConfigShowGhosts = Config.Bind("Visibility", "Show Ghosts", true, "Should ghosts be shown");
             ConfigShowGhostNames = Config.Bind("Visibility", "Show Ghost Names", true, "Should ghost names be shown");
-            ConfigShowRecordSetMessage = Config.Bind("Visibilty",
+            ConfigShowRecordSetMessage = Config.Bind("Visibility",
                 "Show Record Set Message",
                 true,
                 "Should the record set message be shown");
