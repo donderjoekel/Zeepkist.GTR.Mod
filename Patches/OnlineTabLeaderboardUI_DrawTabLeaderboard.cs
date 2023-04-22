@@ -6,6 +6,7 @@ using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
+using TNRD.Zeepkist.GTR.Mod.Api.Levels;
 using TNRD.Zeepkist.GTR.SDK;
 using ZeepkistClient;
 
@@ -47,10 +48,22 @@ public class OnlineTabLeaderboardUI_DrawTabLeaderboard
 
             PlayerManager.Instance.messenger.Log("[GTR] Loading records", 2f);
 
+            for (int i = 0; i < 1000; i++)
+            {
+                if (InternalLevelApi.CurrentLevelId != -1)
+                    break;
+
+                await UniTask.Yield();
+            }
+
+            if (InternalLevelApi.CurrentLevelId == -1)
+                return;
+
             Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder =>
             {
                 builder
-                    .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
+                    .WithLevelId(InternalLevelApi.CurrentLevelId)
+                    .WithLimit(16)
                     .WithBestOnly(true);
             });
 

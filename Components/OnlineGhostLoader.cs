@@ -3,6 +3,7 @@ using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
+using TNRD.Zeepkist.GTR.Mod.Api.Levels;
 using TNRD.Zeepkist.GTR.SDK;
 using TNRD.Zeepkist.GTR.SDK.Models;
 using TNRD.Zeepkist.GTR.SDK.Models.Response;
@@ -45,9 +46,19 @@ public class OnlineGhostLoader : BaseGhostLoader
         if (!ZeepkistNetwork.IsConnected)
             return;
 
-        string globalLevelUid = PlayerManager.Instance.currentMaster.GlobalLevel.UID;
+        for (int i = 0; i < 1000; i++)
+        {
+            if (InternalLevelApi.CurrentLevelId != -1)
+                break;
+
+            await UniTask.Yield();
+        }
+
+        if (InternalLevelApi.CurrentLevelId == -1)
+            return;
+
         Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder => builder
-            .WithLevelUid(globalLevelUid)
+            .WithLevelId(InternalLevelApi.CurrentLevelId)
             .WithBestOnly(true)
             .WithUserId(UsersApi.UserId));
 
