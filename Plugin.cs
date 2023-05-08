@@ -73,6 +73,7 @@ namespace TNRD.Zeepkist.GTR.Mod
             gameObject.AddComponent<OfflineGhostLoader>();
             gameObject.AddComponent<ShortcutsHandler>();
             gameObject.AddComponent<RatingPopupHandler>();
+            gameObject.AddComponent<WorldRecordHolderUi>();
 
             // Plugin startup logic
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");

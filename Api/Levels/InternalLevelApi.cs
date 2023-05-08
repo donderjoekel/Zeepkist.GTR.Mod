@@ -20,6 +20,9 @@ public static class InternalLevelApi
 
     public static int CurrentLevelId { get; private set; }
 
+    public static event Action LevelCreating;
+    public static event Action LevelCreated;
+
     private static DirectoryOrLevel FindWorkshopLevel(DirectoryOrLevel directoryOrLevel, string uid)
     {
         if (directoryOrLevel.isLevel)
@@ -45,6 +48,7 @@ public static class InternalLevelApi
 
     public static async UniTask<Result> Create()
     {
+        LevelCreating?.Invoke();
         CurrentLevelId = -1;
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
 
@@ -54,6 +58,7 @@ public static class InternalLevelApi
             if (getLevelResult.Value.Levels.Count == 1)
             {
                 CurrentLevelId = getLevelResult.Value.Levels.First().Id;
+                LevelCreated?.Invoke();
                 return Result.Ok();
             }
         }
@@ -96,6 +101,7 @@ public static class InternalLevelApi
             return result.ToResult();
 
         CurrentLevelId = result.Value.Id;
+        LevelCreated?.Invoke();
         return Result.Ok();
     }
 
