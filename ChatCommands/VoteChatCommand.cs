@@ -1,4 +1,5 @@
 ﻿using System;
+using BepInEx.Logging;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
@@ -8,6 +9,13 @@ namespace TNRD.Zeepkist.GTR.Mod.ChatCommands;
 
 public class VoteChatCommand : IChatCommand
 {
+    private static ManualLogSource logger;
+    
+    public VoteChatCommand()
+    {
+        logger = Plugin.CreateLogger(nameof(VoteChatCommand));
+    }
+    
     /// <inheritdoc />
     public bool CanHandle(string input)
     {
@@ -91,7 +99,7 @@ public class VoteChatCommand : IChatCommand
         }
         else
         {
-            Plugin.Log.LogError(result.ToString());
+            logger.LogError(result.ToString());
             PlayerManager.Instance.messenger.LogError("[GTR] Failed to submit vote", 2.5f);
         }
     }

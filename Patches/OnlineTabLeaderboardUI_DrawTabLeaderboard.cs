@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using BepInEx.Logging;
 using HarmonyLib;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
@@ -15,6 +16,10 @@ namespace TNRD.Zeepkist.GTR.Mod.Patches;
 [HarmonyPatch(typeof(OnlineTabLeaderboardUI), nameof(OnlineTabLeaderboardUI.DrawTabLeaderboard))]
 public class OnlineTabLeaderboardUI_DrawTabLeaderboard
 {
+    private static ManualLogSource logger = Plugin.CreateLogger(nameof(OnlineTabLeaderboardUI_DrawTabLeaderboard));
+    private static bool isRefreshing;
+    private static RecordsGetResponseDTO responseDTO;
+
     private static bool Prefix(OnlineTabLeaderboardUI __instance)
     {
         if (OnlineTabLeaderboardUI_Update.IndexToDraw != 2)
@@ -23,9 +28,6 @@ public class OnlineTabLeaderboardUI_DrawTabLeaderboard
         DrawCustom(__instance, true);
         return false;
     }
-
-    private static bool isRefreshing;
-    private static RecordsGetResponseDTO responseDTO;
 
     public static void Clear()
     {
@@ -76,7 +78,7 @@ public class OnlineTabLeaderboardUI_DrawTabLeaderboard
             else
             {
                 PlayerManager.Instance.messenger.LogError("[GTR] Loading records failed", 2f);
-                Plugin.Log.LogError(result.ToString());
+                logger.LogError(result.ToString());
             }
 
             if (OnlineTabLeaderboardUI_Update.IndexToDraw == 2)
@@ -88,7 +90,7 @@ public class OnlineTabLeaderboardUI_DrawTabLeaderboard
         }
         catch (Exception e)
         {
-            Plugin.Log.LogError(e);
+            logger.LogError(e);
             throw;
         }
     }

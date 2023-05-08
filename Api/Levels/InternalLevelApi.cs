@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using BepInEx.Logging;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.FluentResults;
@@ -15,6 +16,8 @@ namespace TNRD.Zeepkist.GTR.Mod.Api.Levels;
 
 public static class InternalLevelApi
 {
+    private static ManualLogSource logger = Plugin.CreateLogger(nameof(InternalLevelApi));
+
     public static int CurrentLevelId { get; private set; }
 
     private static DirectoryOrLevel FindWorkshopLevel(DirectoryOrLevel directoryOrLevel, string uid)
@@ -55,10 +58,10 @@ public static class InternalLevelApi
             }
         }
 
-        Plugin.Log.LogInfo($"Creating level metadata for: {level.UID}");
+        logger.LogInfo($"Creating level metadata for: {level.UID}");
         if (string.IsNullOrEmpty(level.UID))
         {
-            Plugin.Log.LogError("Level UID is empty");
+            logger.LogError("Level UID is empty");
             return Result.Fail("Level UID is empty");
         }
 
@@ -126,7 +129,7 @@ public static class InternalLevelApi
         }
         catch (Exception e)
         {
-            Plugin.Log.LogError(e);
+            logger.LogError(e);
         }
 
         return thumbnailB64;

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
-using TNRD.Zeepkist.GTR.Mod.Components.Ghosting.Readers;
-using TNRD.Zeepkist.GTR.Mod.Patches;
-using TNRD.Zeepkist.GTR.SDK.Models;
-using UnityEngine;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
+using TNRD.Zeepkist.GTR.Mod.Components.Ghosting.Readers;
+using TNRD.Zeepkist.GTR.Mod.Patches;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
-public class GhostPlayer : MonoBehaviour
+public class GhostPlayer : MonoBehaviourWithLogging
 {
     private IGhostReader ghostReader;
 
@@ -29,8 +29,9 @@ public class GhostPlayer : MonoBehaviour
     private FadeGhostModel ghostFader;
     private DisplayPlayerName nameDisplay;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
 
         Plugin.ConfigShowGhosts.SettingChanged += OnShowGhostsChanged;
@@ -121,7 +122,7 @@ public class GhostPlayer : MonoBehaviour
                 }
                 else
                 {
-                    Plugin.Log.LogError($"Unable to download ghost: {response.StatusCode}");
+                    Logger.LogError($"Unable to download ghost: {response.StatusCode}");
                     return;
                 }
             }
@@ -132,7 +133,7 @@ public class GhostPlayer : MonoBehaviour
 
     private void ProcessGhost(byte[] buffer)
     {
-        Plugin.Log.LogInfo("Processing ghost");
+        Logger.LogInfo("Processing ghost");
         ghostReader = ReaderRepository.GetReader(buffer);
         ghostReader.Read(buffer);
 

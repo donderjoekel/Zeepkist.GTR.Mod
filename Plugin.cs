@@ -23,9 +23,6 @@ namespace TNRD.Zeepkist.GTR.Mod
 
         private Harmony harmony;
 
-        [Obsolete("Use Plugin.CreateLogger instead")]
-        public static ManualLogSource Log;
-
         public static ConfigEntry<bool> ConfigEnableRecords;
         public static ConfigEntry<bool> ConfigEnableGhosts;
         public static ConfigEntry<bool> ConfigEnableVoting;
@@ -50,7 +47,6 @@ namespace TNRD.Zeepkist.GTR.Mod
         private void Awake()
         {
             instance = this;
-            Log = Logger;
 
             if (!LoadUIAssembly())
             {

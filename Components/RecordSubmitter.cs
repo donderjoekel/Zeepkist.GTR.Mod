@@ -12,7 +12,7 @@ using ZeepkistClient;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
-public class RecordSubmitter : MonoBehaviour
+public class RecordSubmitter : MonoBehaviourWithLogging
 {
     private bool HasScreenshot => screenshotBuffer != null;
     private bool HasGhost => !string.IsNullOrEmpty(ghostJson);
@@ -24,8 +24,9 @@ public class RecordSubmitter : MonoBehaviour
     private float time;
     private List<float> splits;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         ResultScreenshotter.ScreenshotTaken += OnScreenshotTaken;
         GhostRecorder.GhostRecorded += OnGhostRecorded;
         GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
@@ -43,11 +44,11 @@ public class RecordSubmitter : MonoBehaviour
     {
         setupCar = PlayerManager.Instance.currentMaster.carSetups.FirstOrDefault();
         if (setupCar == null)
-            Plugin.Log.LogError("We're trying to log a ghost but there's no car available!");
+            Logger.LogError("We're trying to log a ghost but there's no car available!");
 
         readyToReset = PlayerManager.Instance.currentMaster.PlayersReady.FirstOrDefault();
         if (readyToReset == null)
-            Plugin.Log.LogError("We're trying to log a ghost but there's no car available!");
+            Logger.LogError("We're trying to log a ghost but there's no car available!");
 
         ghostJson = string.Empty;
         screenshotBuffer = null;
@@ -98,7 +99,7 @@ public class RecordSubmitter : MonoBehaviour
         if (result.IsFailed)
         {
             PlayerManager.Instance.messenger.LogError("[GTR] Unable to submit record", 2.5f);
-            Plugin.Log.LogError(result.ToString());
+            Logger.LogError(result.ToString());
         }
         else if (Plugin.ConfigShowRecordSetMessage.Value)
         {

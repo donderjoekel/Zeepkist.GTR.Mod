@@ -1,20 +1,19 @@
 ﻿using System.Linq;
-using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
-using TNRD.Zeepkist.GTR.Mod.Patches;
-using TNRD.Zeepkist.GTR.SDK.Models;
-using TNRD.Zeepkist.GTR.SDK.Models.Response;
-using UnityEngine;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
+using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
+using TNRD.Zeepkist.GTR.Mod.Patches;
+using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
-public abstract class BaseGhostLoader : MonoBehaviour
+public abstract class BaseGhostLoader : MonoBehaviourWithLogging
 {
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         GameMaster_SpawnPlayers.SpawnPlayers += OnSpawnPlayers;
     }
 
@@ -42,8 +41,8 @@ public abstract class BaseGhostLoader : MonoBehaviour
         }
         else
         {
-            Plugin.Log.LogInfo("Loading world record failed");
-            Plugin.Log.LogInfo(wrGhost.ToString());
+            Logger.LogInfo("Loading world record failed");
+            Logger.LogInfo(wrGhost.ToString());
         }
 
         return wr;
@@ -59,8 +58,8 @@ public abstract class BaseGhostLoader : MonoBehaviour
         }
         else
         {
-            Plugin.Log.LogInfo("Loading personal best failed");
-            Plugin.Log.LogInfo(pbGhost.ToString());
+            Logger.LogInfo("Loading personal best failed");
+            Logger.LogInfo(pbGhost.ToString());
         }
 
         return pb;

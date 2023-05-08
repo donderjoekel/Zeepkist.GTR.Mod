@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
-public class GhostRecorder : MonoBehaviour
+public class GhostRecorder : MonoBehaviourWithLogging
 {
     public static event Action<string> GhostRecorded;
 
@@ -38,8 +38,9 @@ public class GhostRecorder : MonoBehaviour
 
     private readonly List<Frame> frames = new List<Frame>();
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
         GameMaster_CrossedFinishOnline.CrossedFinishOnline += OnCrossedFinishOnline;
     }
@@ -51,11 +52,11 @@ public class GhostRecorder : MonoBehaviour
 
         setupCar = PlayerManager.Instance.currentMaster.carSetups.FirstOrDefault();
         if (setupCar == null)
-            Plugin.Log.LogError("We're trying to log a ghost but there's no car available!");
+            Logger.LogError("We're trying to log a ghost but there's no car available!");
 
         readyToReset = PlayerManager.Instance.currentMaster.PlayersReady.FirstOrDefault();
         if (readyToReset == null)
-            Plugin.Log.LogError("We're trying to log a ghost but there's no car available!");
+            Logger.LogError("We're trying to log a ghost but there's no car available!");
     }
 
     private void OnCrossedFinishOnline()

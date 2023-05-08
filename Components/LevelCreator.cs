@@ -8,10 +8,11 @@ using TNRD.Zeepkist.GTR.FluentResults;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
-public class LevelCreator : MonoBehaviour
+public class LevelCreator : MonoBehaviourWithLogging
 {
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         GameMaster_StartLevelFirstTime.StartLevelFirstTime += OnStartLevelFirstTime;
     }
 
@@ -29,7 +30,7 @@ public class LevelCreator : MonoBehaviour
         if (result.IsSuccess)
             return;
 
-        Plugin.Log.LogError(result.ToString());
+        Logger.LogError(result.ToString());
         PlayerManager.Instance.messenger.LogError(
             "[GTR] Failed to load level metadata, trying again in 5 seconds",
             2.5f);
@@ -42,7 +43,7 @@ public class LevelCreator : MonoBehaviour
             return;
         }
 
-        Plugin.Log.LogError(result.ToString());
+        Logger.LogError(result.ToString());
         PlayerManager.Instance.messenger.LogError(
             "[GTR] Failed to load level metadata, trying again in 10 seconds",
             2.5f);
@@ -51,7 +52,7 @@ public class LevelCreator : MonoBehaviour
         result = await InternalLevelApi.Create();
         if (result.IsFailed)
         {
-            Plugin.Log.LogError(result.ToString());
+            Logger.LogError(result.ToString());
             PlayerManager.Instance.messenger.LogError(
                 "[GTR] Failed to load level metadata, records disabled for this level",
                 2.5f);

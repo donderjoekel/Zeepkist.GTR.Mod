@@ -99,7 +99,7 @@ public class OfflineGhostLoader : BaseGhostLoader
 
         if (result.IsFailed)
         {
-            Plugin.Log.LogError($"Unable to load medal ghosts ({time}): {result.ToString()}");
+            Logger.LogError($"Unable to load medal ghosts ({time}): {result.ToString()}");
             return;
         }
 
@@ -135,7 +135,7 @@ public class OfflineGhostLoader : BaseGhostLoader
 
         if (result.IsFailed)
         {
-            Plugin.Log.LogError($"Unable to load random ghosts: {result.ToString()}");
+            Logger.LogError($"Unable to load random ghosts: {result.ToString()}");
             return;
         }
 
@@ -197,7 +197,7 @@ public class OfflineGhostLoader : BaseGhostLoader
 
             if (result.IsFailed)
             {
-                Plugin.Log.LogError($"Unable to load random ghost ({index}): {result.ToString()}");
+                Logger.LogError($"Unable to load random ghost ({index}): {result.ToString()}");
                 return;
             }
 
