@@ -13,7 +13,7 @@ public static class LoggerUtils
 
         if (!loggers.TryGetValue(name, out ManualLogSource logger))
         {
-            logger = Plugin.CreateLogger(name);
+            logger = EntryPoint.CreateLogger(name);
             loggers.Add(name, logger);
         }
 

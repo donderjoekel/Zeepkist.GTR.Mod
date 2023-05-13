@@ -31,22 +31,13 @@ public class LevelCreator : MonoBehaviourWithLogging
             return;
 
         Logger.LogError(result.ToString());
-        PlayerManager.Instance.messenger.LogError(
-            "[GTR] Failed to load level metadata, trying again in 5 seconds",
-            2.5f);
 
         await UniTask.Delay(TimeSpan.FromSeconds(5));
         result = await InternalLevelApi.Create();
         if (result.IsSuccess)
-        {
-            PlayerManager.Instance.messenger.Log("[GTR] Successfully loaded level metadata after failure", 2.5f);
             return;
-        }
 
         Logger.LogError(result.ToString());
-        PlayerManager.Instance.messenger.LogError(
-            "[GTR] Failed to load level metadata, trying again in 10 seconds",
-            2.5f);
 
         await UniTask.Delay(TimeSpan.FromSeconds(10));
         result = await InternalLevelApi.Create();
@@ -56,10 +47,6 @@ public class LevelCreator : MonoBehaviourWithLogging
             PlayerManager.Instance.messenger.LogError(
                 "[GTR] Failed to load level metadata, records disabled for this level",
                 2.5f);
-        }
-        else
-        {
-            PlayerManager.Instance.messenger.Log("[GTR] Successfully loaded level metadata after failure", 2.5f);
         }
     }
 }

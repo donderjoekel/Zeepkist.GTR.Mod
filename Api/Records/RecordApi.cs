@@ -32,7 +32,7 @@ public static class InternalRecordsApi
         };
 
         Result<SubmitRecordResponseModel> result =
-            await ApiClient.Instance.Post<SubmitRecordResponseModel>("records/submit", submitRecordRequestModel);
+            await Sdk.Instance.ApiClient.Post<SubmitRecordResponseModel>("records/submit", submitRecordRequestModel);
 
         if (result.IsFailed)
             return result.ToResult();

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>TNRD.Zeepkist.GTR.Mod</AssemblyName>
-        <Version>0.17.10</Version>
+        <Version>0.18.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -23,9 +23,9 @@
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
         <PackageReference Include="BepInEx.Core" Version="5.*" />
         <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
-        <PackageReference Include="Obfuscar" Version="2.2.37">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="Costura.Fody" Version="5.7.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="UnityEngine.Modules" Version="2021.3.10" IncludeAssets="compile" />
         <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.14.4.276" />
@@ -38,5 +38,11 @@
     <ItemGroup>
         <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj" />
         <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\ZeepkistGTR.UnitySDK.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="discord_game_sdk.dll">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 </Project>

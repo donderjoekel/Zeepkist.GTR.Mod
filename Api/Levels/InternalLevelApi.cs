@@ -16,7 +16,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Api.Levels;
 
 public static class InternalLevelApi
 {
-    private static ManualLogSource logger = Plugin.CreateLogger(nameof(InternalLevelApi));
+    private static ManualLogSource logger = EntryPoint.CreateLogger(nameof(InternalLevelApi));
 
     public static int CurrentLevelId { get; private set; }
 
@@ -52,7 +52,7 @@ public static class InternalLevelApi
         CurrentLevelId = -1;
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
 
-        Result<LevelsGetResponseDTO> getLevelResult = await LevelsApi.Get(builder => builder.WithUid(level.UID));
+        Result<LevelsGetResponseDTO> getLevelResult = await Sdk.Instance.LevelsApi.Get(builder => builder.WithUid(level.UID));
         if (getLevelResult.IsSuccess)
         {
             if (getLevelResult.Value.Levels.Count == 1)
@@ -95,7 +95,7 @@ public static class InternalLevelApi
         };
 
         Result<CreateLevelResponseModel> result =
-            await ApiClient.Instance.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
+            await Sdk.Instance.ApiClient.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
 
         if (result.IsFailed)
             return result.ToResult();

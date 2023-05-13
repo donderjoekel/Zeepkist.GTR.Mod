@@ -16,7 +16,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Patches;
 [HarmonyPatch(typeof(OnlineTabLeaderboardUI), nameof(OnlineTabLeaderboardUI.DrawTabLeaderboard))]
 public class OnlineTabLeaderboardUI_DrawTabLeaderboard
 {
-    private static ManualLogSource logger = Plugin.CreateLogger(nameof(OnlineTabLeaderboardUI_DrawTabLeaderboard));
+    private static ManualLogSource logger = EntryPoint.CreateLogger(nameof(OnlineTabLeaderboardUI_DrawTabLeaderboard));
     private static bool isRefreshing;
     private static RecordsGetResponseDTO responseDTO;
 
@@ -61,7 +61,7 @@ public class OnlineTabLeaderboardUI_DrawTabLeaderboard
             if (InternalLevelApi.CurrentLevelId == -1)
                 return;
 
-            Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder =>
+            Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
             {
                 builder
                     .WithLevelId(InternalLevelApi.CurrentLevelId)

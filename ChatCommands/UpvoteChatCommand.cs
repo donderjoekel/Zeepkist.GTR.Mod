@@ -26,7 +26,7 @@ public class UpvoteChatCommand : IChatCommand
 
     private static async UniTaskVoid Submit(int level)
     {
-        Result<GenericIdResponseDTO> result = await UpvotesApi.Add(builder => builder.WithLevelId(level));
+        Result<GenericIdResponseDTO> result = await Sdk.Instance.UpvotesApi.Add(builder => builder.WithLevelId(level));
         if (result.IsSuccess)
         {
             PlayerManager.Instance.messenger.Log("[GTR] Upvote success", 2.5f);

@@ -26,7 +26,7 @@ internal class WorldRecordHolderUi : MonoBehaviour
 
     private void Awake()
     {
-        logger = Plugin.CreateLogger(nameof(WorldRecordHolderUi));
+        logger = EntryPoint.CreateLogger(nameof(WorldRecordHolderUi));
 
         GameMaster_SpawnPlayers.SpawnPlayers += OnSpawnPlayers;
         InternalLevelApi.LevelCreating += InternalLevelApiOnLevelCreating;
@@ -58,7 +58,7 @@ internal class WorldRecordHolderUi : MonoBehaviour
         if (!hasLoadedLevel)
             return;
 
-        Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder =>
+        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
             builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithWorldRecordOnly(true));
 
         if (result.IsFailed)

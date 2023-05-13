@@ -13,7 +13,7 @@ public class VoteChatCommand : IChatCommand
     
     public VoteChatCommand()
     {
-        logger = Plugin.CreateLogger(nameof(VoteChatCommand));
+        logger = EntryPoint.CreateLogger(nameof(VoteChatCommand));
     }
     
     /// <inheritdoc />
@@ -91,7 +91,7 @@ public class VoteChatCommand : IChatCommand
 
     private static async UniTaskVoid CastVote(int category, int score)
     {
-        Result result = await VotesApi.Submit(builder =>
+        Result result = await Sdk.Instance.VotesApi.Submit(builder =>
             builder.WithLevel(InternalLevelApi.CurrentLevelId).WithCategory(category).WithScore(score));
         if (result.IsSuccess)
         {

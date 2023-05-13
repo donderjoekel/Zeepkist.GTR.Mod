@@ -17,7 +17,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Components;
 
 public class RatingPopupHandler : MonoBehaviour
 {
-    private readonly ManualLogSource logger = Plugin.CreateLogger(nameof(RatingPopupHandler));
+    private readonly ManualLogSource logger = EntryPoint.CreateLogger(nameof(RatingPopupHandler));
 
     private GameObject ratingCanvasPrefab;
     private int lastScore;
@@ -57,10 +57,10 @@ public class RatingPopupHandler : MonoBehaviour
         starButtons.AllDeactivated += OnAllDeactivated;
         favoriteButton.Clicked += OnFavoriteButtonClicked;
 
-        Result<FavoritesGetAllResponseDTO> getFavoriteResult = await FavoritesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(UsersApi.UserId));
-        Result<VotesGetResponseDTO> getVotesResult = await VotesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(UsersApi.UserId));
+        Result<FavoritesGetAllResponseDTO> getFavoriteResult = await Sdk.Instance.FavoritesApi.Get(builder =>
+            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(Sdk.Instance.UsersApi.UserId));
+        Result<VotesGetResponseDTO> getVotesResult = await Sdk.Instance.VotesApi.Get(builder =>
+            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(Sdk.Instance.UsersApi.UserId));
 
         if (getFavoriteResult.IsFailed)
         {
@@ -122,7 +122,7 @@ public class RatingPopupHandler : MonoBehaviour
     {
         int score = index + 1;
 
-        Result submitResult = await VotesApi.Submit(builder =>
+        Result submitResult = await Sdk.Instance.VotesApi.Submit(builder =>
             builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score).WithCategory(0));
 
         if (submitResult.IsFailed)
@@ -138,12 +138,30 @@ public class RatingPopupHandler : MonoBehaviour
         if (score > 3)
         {
             Result<GenericIdResponseDTO> result =
-                await UpvotesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await Sdk.Instance.UpvotesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
             upvoteResult = result.ToResult();
         }
         else if (score < 3)
         {
-            upvoteResult = await UpvotesApi.Remove(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+            Result<UpvotesGetResponseDTO> getUpvoteResult = await Sdk.Instance.UpvotesApi.Get(builder =>
+            {
+                builder
+                    .WithLevelId(InternalLevelApi.CurrentLevelId)
+                    .WithUserId(Sdk.Instance.UsersApi.UserId);
+            });
+
+            if (getUpvoteResult.IsFailed)
+            {
+                upvoteResult = getUpvoteResult.ToResult();
+            }
+            else if (getUpvoteResult.Value != null && getUpvoteResult.Value.Upvotes.Count > 0)
+            {
+                upvoteResult = await Sdk.Instance.UpvotesApi.Remove(getUpvoteResult.Value.Upvotes.First().Id);
+            }
+            else
+            {
+                upvoteResult = Result.Ok();
+            }
         }
 
         if (upvoteResult != null && upvoteResult.IsFailed)
@@ -162,12 +180,30 @@ public class RatingPopupHandler : MonoBehaviour
         if (favoriteButton.IsActive)
         {
             Result<GenericIdResponseDTO> addResult =
-                await FavoritesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await Sdk.Instance.FavoritesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
             result = addResult.ToResult();
         }
         else
         {
-            result = await FavoritesApi.Remove(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+            Result<FavoritesGetAllResponseDTO> getFavoriteResult = await Sdk.Instance.FavoritesApi.Get(builder =>
+            {
+                builder
+                    .WithLevelId(InternalLevelApi.CurrentLevelId)
+                    .WithUserId(Sdk.Instance.UsersApi.UserId);
+            });
+
+            if (getFavoriteResult.IsFailed)
+            {
+                result = getFavoriteResult.ToResult();
+            }
+            else if (getFavoriteResult.Value != null && getFavoriteResult.Value.Favorites.Count > 0)
+            {
+                result = await Sdk.Instance.FavoritesApi.Remove(getFavoriteResult.Value.Favorites.First().Id);
+            }
+            else
+            {
+                result = Result.Ok();
+            }
         }
 
         if (result.IsFailed)

@@ -9,6 +9,6 @@ public abstract class MonoBehaviourWithLogging : MonoBehaviour
     
     protected virtual void Awake()
     {
-        Logger = Plugin.CreateLogger(GetType().Name);
+        Logger = EntryPoint.CreateLogger(GetType().Name);
     }
 }

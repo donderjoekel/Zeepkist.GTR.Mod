@@ -50,10 +50,10 @@ public class OfflineGhostLoader : BaseGhostLoader
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
         string globalLevelUid = level.UID;
         Result<RecordsGetResponseDTO> wrGhost =
-            await RecordsApi.Get(builder => builder.WithLevelUid(globalLevelUid).WithWorldRecordOnly(true));
+            await Sdk.Instance.RecordsApi.Get(builder => builder.WithLevelUid(globalLevelUid).WithWorldRecordOnly(true));
         Result<RecordsGetResponseDTO> pbGhost =
-            await RecordsApi.Get(builder =>
-                builder.WithLevelUid(globalLevelUid).WithBestOnly(true).WithUserId(UsersApi.UserId));
+            await Sdk.Instance.RecordsApi.Get(builder =>
+                builder.WithLevelUid(globalLevelUid).WithBestOnly(true).WithUserId(Sdk.Instance.UsersApi.UserId));
 
         RecordResponseModel wr = GetWorldRecordRecordModel(wrGhost);
         RecordResponseModel pb = GetPersonalBestRecordModel(pbGhost);
@@ -90,7 +90,7 @@ public class OfflineGhostLoader : BaseGhostLoader
     {
         const float timeTolerance = 1.5f;
 
-        Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder => builder
+        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
             .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
             .WithMinimumTime(time - timeTolerance)
             .WithMaximumTime(time + timeTolerance)
@@ -128,7 +128,7 @@ public class OfflineGhostLoader : BaseGhostLoader
 
     private async UniTask LoadRandomGhosts(int amount)
     {
-        Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder => builder
+        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
             .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
             .WithWorldRecordOnly(false)
             .WithValidOnly(true));
@@ -188,7 +188,7 @@ public class OfflineGhostLoader : BaseGhostLoader
         else
         {
             this.Logger().LogInfo($"Downloading model: {key}");
-            Result<RecordsGetResponseDTO> result = await RecordsApi.Get(builder => builder
+            Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
                 .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
                 .WithWorldRecordOnly(false)
                 .WithValidOnly(true)
