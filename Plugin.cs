@@ -66,6 +66,7 @@ internal class Plugin : MonoBehaviour
         gameObject.AddComponent<ShortcutsHandler>();
         gameObject.AddComponent<RatingPopupHandler>();
         gameObject.AddComponent<WorldRecordHolderUi>();
+        gameObject.AddComponent<LeaderboardHandler>();
 
         // Plugin startup logic
         Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
