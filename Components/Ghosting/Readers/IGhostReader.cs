@@ -38,5 +38,5 @@ public interface IGhostReader
     /// </summary>
     /// <param name="time"></param>
     /// <returns></returns>
-    FrameData GetFrameData(float time);
+    void GetFrameData(float time, ref FrameData frameData);
 }

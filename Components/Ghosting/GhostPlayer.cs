@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using TMPro;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting.Readers;
@@ -20,9 +22,12 @@ public class GhostPlayer : MonoBehaviourWithLogging
 
     private bool hasSetMaterials;
 
-    private bool hasStarted;
     private bool downloadedGhost;
-    private float ticker;
+    private FrameData frameData;
+    private Transform tr;
+
+    private static float Ticker =>
+        PlayerManager.Instance.currentMaster.PlayersReady.FirstOrDefault()?.ticker.what_ticker ?? 0;
 
     private SetupModelCar ghostModel;
     private SetupModelCar cameraManModel;
@@ -32,7 +37,8 @@ public class GhostPlayer : MonoBehaviourWithLogging
     protected override void Awake()
     {
         base.Awake();
-        GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
+        tr = transform;
+        frameData = new FrameData();
 
         Plugin.ConfigShowGhosts.SettingChanged += OnShowGhostsChanged;
         Plugin.ConfigShowGhostNames.SettingChanged += OnShowNamesChanged;
@@ -42,11 +48,6 @@ public class GhostPlayer : MonoBehaviourWithLogging
     {
         Plugin.ConfigShowGhosts.SettingChanged -= OnShowGhostsChanged;
         Plugin.ConfigShowGhostNames.SettingChanged -= OnShowNamesChanged;
-    }
-
-    private void OnReleaseTheZeepkists()
-    {
-        hasStarted = true;
     }
 
     private void OnShowGhostsChanged(object sender, EventArgs e)
@@ -139,6 +140,7 @@ public class GhostPlayer : MonoBehaviourWithLogging
 
         // nzg.UpdateGhostModel();
         CosmeticWardrobe wardrobe = PlayerManager.Instance.objectsList.wardrobe;
+
         // nzg.zeepkistID
         ghostModel.DoCarSetup(wardrobe.GetZeepkist(SoapboxId),
             wardrobe.GetHat(HatId),
@@ -150,24 +152,42 @@ public class GhostPlayer : MonoBehaviourWithLogging
         ghostModel.gameObject.SetActive(Plugin.ConfigShowGhosts.Value);
         nameDisplay.gameObject.SetActive(Plugin.ConfigShowGhostNames.Value);
 
+        // CleanGameObject(gameObject);
+
         downloadedGhost = true;
+    }
+
+    private static void CleanGameObject(GameObject obj)
+    {
+        Component[] objectComponents = obj.GetComponents(typeof(Component));
+        Component[] childComponents = obj.GetComponentsInChildren(typeof(Component));
+        objectComponents = objectComponents.Concat(childComponents).ToArray();
+        
+        foreach (Component c in objectComponents)
+        {
+            if (c == null)
+                continue;
+        
+            bool keep = c is Transform or MeshFilter or MeshRenderer or GhostPlayer or FadeGhostModel;
+        
+            if (!keep)
+            {
+                Destroy(c);
+            }
+        }
     }
 
     private void Update()
     {
-        if (!hasStarted)
-            return;
         if (!downloadedGhost)
             return;
 
-        FrameData frameData = ghostReader.GetFrameData(ticker);
+        ghostReader.GetFrameData(Ticker, ref frameData);
         if (frameData != null)
         {
-            transform.position = frameData.Position;
-            transform.rotation = frameData.Rotation;
+            tr.position = frameData.Position;
+            tr.rotation = frameData.Rotation;
         }
-
-        ticker += Time.deltaTime;
 
         try
         {

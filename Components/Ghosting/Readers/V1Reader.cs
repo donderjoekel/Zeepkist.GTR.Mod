@@ -30,6 +30,8 @@ public class V1Reader : IGhostReader
 
     private readonly List<Frame> frames = new List<Frame>();
 
+    private int lastFrameIndex = 0;
+
     /// <inheritdoc />
     public int Version => 1;
 
@@ -63,61 +65,55 @@ public class V1Reader : IGhostReader
     }
 
     /// <inheritdoc />
-    public FrameData GetFrameData(float time)
+    public void GetFrameData(float time, ref FrameData frameData)
     {
+        frameData ??= new FrameData();
+
         Frame startFrame = null;
         Frame endFrame = null;
 
-        foreach (Frame frame in frames)
+        int i = lastFrameIndex;
+
+        while (i < frames.Count)
         {
-            if (frame.Time < time)
-                startFrame = frame;
+            Frame frame = frames[i];
+
+            if (frame.Time > time && startFrame == null && i > 0)
+            {
+                i--;
+                continue;
+            }
 
             if (frame.Time > time)
             {
                 endFrame = frame;
+                lastFrameIndex = i;
                 break;
             }
+
+            startFrame = frame;
+            i++;
         }
 
         if (startFrame != null && endFrame != null)
         {
             float t = Mathf.InverseLerp(startFrame.Time, endFrame.Time, time);
-
-            return new FrameData()
-            {
-                Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, t),
-                Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, t),
-                Steering = 0,
-                ArmsUp = false,
-                IsBraking = false
-            };
+            frameData.Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, t);
+            frameData.Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, t);
         }
-
-        if (endFrame != null)
+        else if (endFrame != null)
         {
-            return new FrameData()
-            {
-                ArmsUp = false,
-                IsBraking = false,
-                Steering = 0,
-                Position = endFrame.Position,
-                Rotation = endFrame.Rotation
-            };
+            frameData.Position = endFrame.Position;
+            frameData.Rotation = endFrame.Rotation;
         }
-
-        if (startFrame != null)
+        else if (startFrame != null)
         {
-            return new FrameData()
-            {
-                ArmsUp = false,
-                IsBraking = false,
-                Steering = 0,
-                Position = startFrame.Position,
-                Rotation = startFrame.Rotation
-            };
+            frameData.Position = startFrame.Position;
+            frameData.Rotation = startFrame.Rotation;
         }
 
-        return null;
+        frameData.Steering = 0;
+        frameData.ArmsUp = false;
+        frameData.IsBraking = false;
     }
 }

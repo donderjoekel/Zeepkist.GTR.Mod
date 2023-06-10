@@ -80,6 +80,12 @@ public abstract class BaseGhostLoader : MonoBehaviourWithLogging
         if (record == null)
             return;
 
+        if (string.IsNullOrEmpty(record.GhostUrl))
+        {
+            Logger.LogInfo("Skipping ghost because there's no ghost url yet");
+            return;
+        }
+
         SpawnGhost(record, $"PB\n{record.Time.Value.GetFormattedTime()}", new Color(0, 0.7f, 0));
     }
 

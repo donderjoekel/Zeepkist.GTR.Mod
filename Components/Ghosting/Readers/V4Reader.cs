@@ -82,6 +82,8 @@ public class V4Reader : IGhostReader
     private readonly List<FrameDataWithTime> frames = new List<FrameDataWithTime>();
     private byte precision;
 
+    private int lastFrameIndex = 0;
+
     /// <inheritdoc />
     public int Version => 4;
 
@@ -209,44 +211,54 @@ public class V4Reader : IGhostReader
     }
 
     /// <inheritdoc />
-    public FrameData GetFrameData(float time)
+    public void GetFrameData(float time, ref FrameData frameData)
     {
+        frameData ??= new FrameData();
+
         FrameDataWithTime startFrame = null;
         FrameDataWithTime endFrame = null;
 
-        foreach (FrameDataWithTime f in frames)
+        int i = lastFrameIndex;
+
+        while (i < frames.Count)
         {
-            if (f.Time < time)
+            FrameDataWithTime frame = frames[i];
+
+            if (frame.Time > time && startFrame == null && i > 0)
             {
-                startFrame = f;
+                i--;
+                continue;
             }
-            else
+
+            if (frame.Time > time)
             {
-                endFrame = f;
+                endFrame = frame;
+                lastFrameIndex = i;
                 break;
             }
+
+            startFrame = frame;
+            i++;
         }
 
-        if (startFrame == null && endFrame != null)
+        if (startFrame != null && endFrame != null)
         {
-            return endFrame;
+            float t = Mathf.InverseLerp(startFrame.Time, endFrame.Time, time);
+
+            frameData.Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, t);
+            frameData.Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, t);
+            frameData.Steering = Mathf.LerpUnclamped(startFrame.Steering, endFrame.Steering, t);
+            frameData.IsBraking = endFrame.IsBraking;
+            frameData.ArmsUp = endFrame.ArmsUp;
         }
-
-        if (startFrame != null && endFrame == null)
+        else if (endFrame != null)
         {
-            return startFrame;
+            frameData.CopyFrom(endFrame);
         }
-
-        float inverseLerpedTime = Mathf.InverseLerp(startFrame.Time, endFrame.Time, time);
-
-        return new FrameData()
+        else if (startFrame != null)
         {
-            Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, inverseLerpedTime),
-            Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, inverseLerpedTime),
-            Steering = Mathf.LerpUnclamped(startFrame.Steering, endFrame.Steering, inverseLerpedTime),
-            IsBraking = endFrame.IsBraking,
-            ArmsUp = endFrame.ArmsUp
-        };
+            frameData.CopyFrom(startFrame);
+        }
     }
 
     private static float ShortToFloat(short value, float scale = 10000f)

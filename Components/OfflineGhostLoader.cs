@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
+using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.SDK;
 using UnityEngine;
 using ZeepkistClient;
@@ -48,42 +50,110 @@ public class OfflineGhostLoader : BaseGhostLoader
             return;
 
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
-        string globalLevelUid = level.UID;
-        Result<RecordsGetResponseDTO> wrGhost =
-            await Sdk.Instance.RecordsApi.Get(builder => builder.WithLevelUid(globalLevelUid).WithWorldRecordOnly(true));
-        Result<RecordsGetResponseDTO> pbGhost =
-            await Sdk.Instance.RecordsApi.Get(builder =>
-                builder.WithLevelUid(globalLevelUid).WithBestOnly(true).WithUserId(Sdk.Instance.UsersApi.UserId));
-
-        RecordResponseModel wr = GetWorldRecordRecordModel(wrGhost);
-        RecordResponseModel pb = GetPersonalBestRecordModel(pbGhost);
-
-        if (wr != null && pb != null)
-        {
-            if (wr.Id == pb.Id)
-            {
-                SpawnWorldRecord(wr);
-            }
-            else
-            {
-                SpawnWorldRecord(wr);
-                SpawnPersonalBest(pb);
-            }
-        }
-        else
-        {
-            SpawnWorldRecord(wr);
-            SpawnPersonalBest(pb);
-        }
-
-        const int amountOfGhosts = 1;
 
         await UniTask.WhenAll(
-            LoadMedalGhosts(level.TimeBronze, amountOfGhosts),
-            LoadMedalGhosts(level.TimeSilver, amountOfGhosts),
-            LoadMedalGhosts(level.TimeGold, amountOfGhosts),
-            LoadMedalGhosts(level.TimeAuthor, amountOfGhosts),
-            LoadRandomGhosts(10));
+            SpawnWorldRecordGhost(level.UID),
+            SpawnPersonalBestGhost(level.UID),
+            SpawnAuthorMedalGhost(level),
+            SpawnGoldMedalGhost(level),
+            SpawnSilverMedalGhost(level),
+            SpawnBronzeMedalGhost(level),
+            SpawnGhostModeGhosts(level));
+    }
+
+    private async UniTask SpawnGhostModeGhosts(LevelScriptableObject level)
+    {
+        if (Plugin.ConfigOfflineGhostCount.Value == 0)
+        {
+            Logger.LogInfo("Skipping ghost mode ghosts because count is 0");
+            return;
+        }
+
+        if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.OFF)
+        {
+            Logger.LogInfo("Skipping ghost mode ghosts because ghost mode is off");
+            return;
+        }
+
+        if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.RANDOM)
+        {
+            await LoadRandomGhosts(Plugin.ConfigOfflineGhostCount.Value);
+        }
+        else if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.TOP)
+        {
+            Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
+                builder.WithSort("time")
+                    .WithLevelUid(level.UID)
+                    .WithBestOnly(true)
+                    .WithOffset(1)
+                    .WithLimit(Plugin.ConfigOfflineGhostCount.Value));
+
+            if (result.IsFailed)
+            {
+                Logger.LogError("Unable to get top records: " + result.ToString());
+                return;
+            }
+
+            foreach (RecordResponseModel recordResponseModel in result.Value.Records)
+            {
+                SpawnGhostWithDefaultName(recordResponseModel);
+            }
+        }
+    }
+
+    private async UniTask SpawnWorldRecordGhost(string globalLevelUid)
+    {
+        if (Plugin.ConfigShowOfflineWorldRecord.Value)
+        {
+            Result<RecordsGetResponseDTO> wrGhost = await Sdk.Instance.RecordsApi.Get(builder => builder
+                .WithLevelUid(globalLevelUid)
+                .WithWorldRecordOnly(true));
+            SpawnWorldRecord(GetWorldRecordRecordModel(wrGhost));
+        }
+    }
+
+    private async UniTask SpawnPersonalBestGhost(string globalLevelUid)
+    {
+        if (Plugin.ConfigShowOfflinePersonalBest.Value)
+        {
+            Result<RecordsGetResponseDTO> pbGhost = await Sdk.Instance.RecordsApi.Get(builder => builder
+                .WithLevelUid(globalLevelUid)
+                .WithBestOnly(true)
+                .WithUserId(Sdk.Instance.UsersApi.UserId));
+            SpawnPersonalBest(GetPersonalBestRecordModel(pbGhost));
+        }
+    }
+
+    private async UniTask SpawnAuthorMedalGhost(LevelScriptableObject level)
+    {
+        if (Plugin.ConfigShowOfflineAuthorMedal.Value)
+        {
+            await LoadMedalGhosts(level.TimeAuthor, 1);
+        }
+    }
+
+    private async UniTask SpawnGoldMedalGhost(LevelScriptableObject level)
+    {
+        if (Plugin.ConfigShowOfflineGoldMedal.Value)
+        {
+            await LoadMedalGhosts(level.TimeGold, 1);
+        }
+    }
+
+    private async UniTask SpawnSilverMedalGhost(LevelScriptableObject level)
+    {
+        if (Plugin.ConfigShowOfflineSilverMedal.Value)
+        {
+            await LoadMedalGhosts(level.TimeSilver, 1);
+        }
+    }
+
+    private async UniTask SpawnBronzeMedalGhost(LevelScriptableObject level)
+    {
+        if (Plugin.ConfigShowOfflineBronzeMedal.Value)
+        {
+            await LoadMedalGhosts(level.TimeBronze, 1);
+        }
     }
 
     private async UniTask LoadMedalGhosts(float time, int amount)

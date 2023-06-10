@@ -32,6 +32,14 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<KeyCode> ConfigToggleShowGhosts;
     public static ConfigEntry<KeyCode> ConfigToggleShowGhostNames;
     public static ConfigEntry<KeyCode> ConfigToggleShowRecordSetMessage;
+    public static ConfigEntry<bool> ConfigShowOfflineWorldRecord;
+    public static ConfigEntry<bool> ConfigShowOfflinePersonalBest;
+    public static ConfigEntry<bool> ConfigShowOfflineAuthorMedal;
+    public static ConfigEntry<bool> ConfigShowOfflineGoldMedal;
+    public static ConfigEntry<bool> ConfigShowOfflineSilverMedal;
+    public static ConfigEntry<bool> ConfigShowOfflineBronzeMedal;
+    public static ConfigEntry<string> ConfigOfflineGhostMode;
+    public static ConfigEntry<int> ConfigOfflineGhostCount;
 
     public static AssetBundle AssetBundle { get; private set; }
 
@@ -147,6 +155,48 @@ internal class Plugin : MonoBehaviour
             "Toggle Record Set Message Visibility",
             KeyCode.None,
             "Toggles the record set message visibility");
+    private void SetupGhostsConfig()
+    {
+        ConfigShowOfflineWorldRecord = Config.Bind("Ghosts (Offline)",
+            "Show World Record",
+            true,
+            "Should the world record ghost be shown");
+
+        ConfigShowOfflinePersonalBest = Config.Bind("Ghosts (Offline)",
+            "Show Personal Best",
+            true,
+            "Should the personal best ghost be shown");
+
+        ConfigShowOfflineAuthorMedal = Config.Bind("Ghosts (Offline)",
+            "Show Author Medal",
+            true,
+            "Should the author medal ghost be shown");
+
+        ConfigShowOfflineGoldMedal = Config.Bind("Ghosts (Offline)",
+            "Show Gold Medal",
+            true,
+            "Should the gold medal ghost be shown");
+
+        ConfigShowOfflineSilverMedal = Config.Bind("Ghosts (Offline)",
+            "Show Silver Medal",
+            true,
+            "Should the silver medal ghost be shown");
+
+        ConfigShowOfflineBronzeMedal = Config.Bind("Ghosts (Offline)",
+            "Show Bronze Medal",
+            true,
+            "Should the bronze medal ghost be shown");
+
+        ConfigOfflineGhostMode = Config.Bind("Ghosts (Offline)",
+            "Ghost Mode",
+            GhostMode.OFF,
+            new ConfigDescription("The ghost mode to use",
+                new AcceptableValueList<string>(GhostMode.OFF, GhostMode.RANDOM, GhostMode.TOP)));
+
+        ConfigOfflineGhostCount = Config.Bind("Ghosts (Offline)",
+            "Ghost Count",
+            10,
+            "The amount of ghosts to show based on the ghost mode");
     }
 
     private void MainMenuUiOnAwake()

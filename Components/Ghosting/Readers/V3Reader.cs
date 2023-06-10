@@ -36,6 +36,8 @@ public class V3Reader : IGhostReader
 
     private readonly List<Frame> frames = new List<Frame>();
 
+    private int lastFrameIndex = 0;
+
     /// <inheritdoc />
     public int Version { get; private set; }
 
@@ -73,61 +75,61 @@ public class V3Reader : IGhostReader
     }
 
     /// <inheritdoc />
-    public FrameData GetFrameData(float time)
+    public void GetFrameData(float time, ref FrameData frameData)
     {
+        frameData ??= new FrameData();
+
         Frame startFrame = null;
         Frame endFrame = null;
 
-        foreach (Frame frame in frames)
+        int i = lastFrameIndex;
+
+        while (i < frames.Count)
         {
-            if (frame.Time < time)
-                startFrame = frame;
+            Frame frame = frames[i];
+
+            if (frame.Time > time && startFrame == null && i > 0)
+            {
+                i--;
+                continue;
+            }
 
             if (frame.Time > time)
             {
                 endFrame = frame;
+                lastFrameIndex = i;
                 break;
             }
+
+            startFrame = frame;
+            i++;
         }
 
         if (startFrame != null && endFrame != null)
         {
             float t = Mathf.InverseLerp(startFrame.Time, endFrame.Time, time);
 
-            return new FrameData()
-            {
-                Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, t),
-                Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, t),
-                Steering = Mathf.LerpUnclamped(startFrame.Steering, endFrame.Steering, t),
-                ArmsUp = startFrame.ArmsUp || endFrame.ArmsUp,
-                IsBraking = startFrame.IsBraking || endFrame.IsBraking
-            };
+            frameData.Position = Vector3.LerpUnclamped(startFrame.Position, endFrame.Position, t);
+            frameData.Rotation = Quaternion.LerpUnclamped(startFrame.Rotation, endFrame.Rotation, t);
+            frameData.Steering = Mathf.LerpUnclamped(startFrame.Steering, endFrame.Steering, t);
+            frameData.ArmsUp = startFrame.ArmsUp || endFrame.ArmsUp;
+            frameData.IsBraking = startFrame.IsBraking || endFrame.IsBraking;
         }
-
-        if (endFrame != null)
+        else if (endFrame != null)
         {
-            return new FrameData()
-            {
-                Position = endFrame.Position,
-                Rotation = endFrame.Rotation,
-                IsBraking = endFrame.IsBraking,
-                Steering = endFrame.Steering,
-                ArmsUp = endFrame.ArmsUp
-            };
+            frameData.Position = endFrame.Position;
+            frameData.Rotation = endFrame.Rotation;
+            frameData.IsBraking = endFrame.IsBraking;
+            frameData.Steering = endFrame.Steering;
+            frameData.ArmsUp = endFrame.ArmsUp;
         }
-
-        if (startFrame != null)
+        else if (startFrame != null)
         {
-            return new FrameData()
-            {
-                Position = startFrame.Position,
-                Rotation = startFrame.Rotation,
-                IsBraking = startFrame.IsBraking,
-                Steering = startFrame.Steering,
-                ArmsUp = startFrame.ArmsUp
-            };
+            frameData.Position = startFrame.Position;
+            frameData.Rotation = startFrame.Rotation;
+            frameData.IsBraking = startFrame.IsBraking;
+            frameData.Steering = startFrame.Steering;
+            frameData.ArmsUp = startFrame.ArmsUp;
         }
-
-        return null;
     }
 }
