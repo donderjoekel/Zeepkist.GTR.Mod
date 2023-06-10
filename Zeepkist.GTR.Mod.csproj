@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>TNRD.Zeepkist.GTR.Mod</AssemblyName>
-        <Version>0.18.0</Version>
+        <Version>0.19.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -28,7 +28,7 @@
           <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="UnityEngine.Modules" Version="2021.3.10" IncludeAssets="compile" />
-        <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.14.4.276" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.15.24.335" />
     </ItemGroup>
 
     <ItemGroup>
@@ -37,7 +37,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj" />
-        <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\ZeepkistGTR.UnitySDK.csproj" />
+        <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\Zeepkist.GTR.UnitySDK.csproj" />
     </ItemGroup>
 
     <ItemGroup>

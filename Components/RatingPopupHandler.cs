@@ -123,7 +123,7 @@ public class RatingPopupHandler : MonoBehaviour
         int score = index + 1;
 
         Result submitResult = await Sdk.Instance.VotesApi.Submit(builder =>
-            builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score).WithCategory(0));
+            builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score));
 
         if (submitResult.IsFailed)
         {

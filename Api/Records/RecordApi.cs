@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Mod.Api.Records.Models;
 using TNRD.Zeepkist.GTR.SDK.Client;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
+using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
 
 namespace TNRD.Zeepkist.GTR.Mod.Api.Records;
@@ -31,12 +32,6 @@ public static class InternalRecordsApi
             IsValid = isValid
         };
 
-        Result<SubmitRecordResponseModel> result =
-            await Sdk.Instance.ApiClient.Post<SubmitRecordResponseModel>("records/submit", submitRecordRequestModel);
-
-        if (result.IsFailed)
-            return result.ToResult();
-
-        return Result.Ok();
+        return await Sdk.Instance.ApiClient.Post("records/submit", submitRecordRequestModel);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -9,6 +10,7 @@ using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Mod.Api.Users;
 using TNRD.Zeepkist.GTR.Mod.Components;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
+using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
 using Result = TNRD.Zeepkist.GTR.FluentResults.Result;
@@ -26,12 +28,15 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<bool> ConfigShowGhosts;
     public static ConfigEntry<bool> ConfigShowGhostNames;
     public static ConfigEntry<bool> ConfigShowRecordSetMessage;
+    public static ConfigEntry<bool> ConfigShowWorldRecordHolder;
 
     public static ConfigEntry<KeyCode> ConfigToggleEnableGhosts;
     public static ConfigEntry<KeyCode> ConfigToggleEnableRecords;
     public static ConfigEntry<KeyCode> ConfigToggleShowGhosts;
     public static ConfigEntry<KeyCode> ConfigToggleShowGhostNames;
     public static ConfigEntry<KeyCode> ConfigToggleShowRecordSetMessage;
+    public static ConfigEntry<KeyCode> ConfigToggleShowWorldRecordHolder;
+
     public static ConfigEntry<bool> ConfigShowOfflineWorldRecord;
     public static ConfigEntry<bool> ConfigShowOfflinePersonalBest;
     public static ConfigEntry<bool> ConfigShowOfflineAuthorMedal;
@@ -40,6 +45,9 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<bool> ConfigShowOfflineBronzeMedal;
     public static ConfigEntry<string> ConfigOfflineGhostMode;
     public static ConfigEntry<int> ConfigOfflineGhostCount;
+
+    public static ConfigEntry<string> ConfigAuthUrl;
+    public static ConfigEntry<string> ConfigApiUrl;
 
     public static AssetBundle AssetBundle { get; private set; }
 
@@ -131,6 +139,10 @@ internal class Plugin : MonoBehaviour
             "Show Record Set Message",
             true,
             "Should the record set message be shown");
+        ConfigShowWorldRecordHolder = Config.Bind("Visibility",
+            "Show World Record Holder",
+            true,
+            "Should the world record holder be shown");
 
         ConfigToggleEnableRecords = Config.Bind("Keys",
             "Toggle Enable Records",
@@ -155,6 +167,25 @@ internal class Plugin : MonoBehaviour
             "Toggle Record Set Message Visibility",
             KeyCode.None,
             "Toggles the record set message visibility");
+
+        ConfigToggleShowWorldRecordHolder = Config.Bind("Keys",
+            "Toggle World Record Holder Visibility",
+            KeyCode.None,
+            "Toggles the world record holder visibility");
+
+        ConfigApiUrl = Config.Bind("URLs",
+            "The API address",
+            SDK.Sdk.DEFAULT_API_ADDRESS,
+            "Allows you to set a custom API address");
+
+        ConfigAuthUrl = Config.Bind("URLs",
+            "The Auth address",
+            SDK.Sdk.DEFAULT_AUTH_ADDRESS,
+            "Allows you to set a custom Auth address");
+
+        SetupGhostsConfig();
+    }
+
     private void SetupGhostsConfig()
     {
         ConfigShowOfflineWorldRecord = Config.Bind("Ghosts (Offline)",
@@ -222,7 +253,6 @@ internal class Plugin : MonoBehaviour
         if (result.IsSuccess)
         {
             PlayerManager.Instance.messenger.Log("[GTR] Logged in", 2.5f);
-            Result updateName = await CustomUsersApi.UpdateName();
             Result updateDiscordId = await CustomUsersApi.UpdateDiscordId();
         }
         else

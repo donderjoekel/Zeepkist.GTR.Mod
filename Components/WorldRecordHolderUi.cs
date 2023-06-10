@@ -18,11 +18,20 @@ namespace TNRD.Zeepkist.GTR.Mod.Components;
 
 internal class WorldRecordHolderUi : MonoBehaviour
 {
+    private const float SWITCH_DURATION = 15;
+
     private ManualLogSource logger;
     private RectTransform uiHolder;
+    private Image worldRecordImage;
+    private TextMeshProUGUI headerText;
     private TextMeshProUGUI playerNameText;
     private TextMeshProUGUI timeText;
     private bool hasLoadedLevel;
+
+    private RecordResponseModel worldRecord;
+    private RecordResponseModel personalBest;
+    private float switchCountdown;
+    private bool isShowingWorldRecord;
 
     private void Awake()
     {
@@ -31,6 +40,8 @@ internal class WorldRecordHolderUi : MonoBehaviour
         GameMaster_SpawnPlayers.SpawnPlayers += OnSpawnPlayers;
         InternalLevelApi.LevelCreating += InternalLevelApiOnLevelCreating;
         InternalLevelApi.LevelCreated += InternalLevelApiOnLevelCreated;
+
+        Plugin.ConfigShowWorldRecordHolder.SettingChanged += OnShowSettingChanged;
     }
 
     private void OnDestroy()
@@ -38,10 +49,20 @@ internal class WorldRecordHolderUi : MonoBehaviour
         GameMaster_SpawnPlayers.SpawnPlayers -= OnSpawnPlayers;
         InternalLevelApi.LevelCreating -= InternalLevelApiOnLevelCreating;
         InternalLevelApi.LevelCreated -= InternalLevelApiOnLevelCreated;
+
+        Plugin.ConfigShowWorldRecordHolder.SettingChanged -= OnShowSettingChanged;
+    }
+
+    private void OnShowSettingChanged(object sender, EventArgs e)
+    {
+        if (uiHolder != null)
+            uiHolder.gameObject.SetActive(Plugin.ConfigShowWorldRecordHolder.Value);
     }
 
     private void InternalLevelApiOnLevelCreating()
     {
+        worldRecord = null;
+        personalBest = null;
         hasLoadedLevel = false;
         if (uiHolder != null)
             uiHolder.gameObject.SetActive(false);
@@ -58,27 +79,50 @@ internal class WorldRecordHolderUi : MonoBehaviour
         if (!hasLoadedLevel)
             return;
 
-        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
+        Result<RecordsGetResponseDTO> getWorldRecordResult = await Sdk.Instance.RecordsApi.Get(builder =>
             builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithWorldRecordOnly(true));
 
-        if (result.IsFailed)
+        Result<RecordsGetResponseDTO> getPersonalBestResult = await Sdk.Instance.RecordsApi.Get(builder =>
+            builder.WithLevelId(InternalLevelApi.CurrentLevelId)
+                .WithBestOnly(true)
+                .WithUserId(Sdk.Instance.UsersApi.UserId));
+
+        if (getWorldRecordResult.IsSuccess)
         {
-            logger.LogError($"Unable to load world record: {result}");
-            uiHolder.gameObject.SetActive(true);
-            return;
+            worldRecord = getWorldRecordResult.Value.Records.FirstOrDefault();
+        }
+        else
+        {
+            logger.LogError($"Unable to get world record: {getWorldRecordResult}");
         }
 
-        if (result.Value.Records.Count == 0)
+        if (getPersonalBestResult.IsSuccess)
         {
-            logger.LogInfo("No world record found");
+            personalBest = getPersonalBestResult.Value.Records.FirstOrDefault();
+        }
+        else
+        {
+            logger.LogError($"Unable to get personal best: {getPersonalBestResult}");
+        }
+
+        if (worldRecord == null && personalBest == null)
+        {
             uiHolder.gameObject.SetActive(false);
             return;
         }
 
-        RecordResponseModel record = result.Value.Records.First();
-        playerNameText.text = record.User.SteamName;
-        timeText.text = record.Time.Value.GetFormattedTime();
-        uiHolder.gameObject.SetActive(true);
+        switchCountdown = SWITCH_DURATION;
+        isShowingWorldRecord = worldRecord != null;
+        UpdateUi(worldRecord ?? personalBest);
+    }
+
+    private void UpdateUi(RecordResponseModel record)
+    {
+        headerText.text = isShowingWorldRecord ? "World Record" : "Personal Best";
+        worldRecordImage.enabled = isShowingWorldRecord;
+        playerNameText.text = record.User!.SteamName;
+        timeText.text = record.Time!.Value.GetFormattedTime();
+        uiHolder.gameObject.SetActive(Plugin.ConfigShowWorldRecordHolder.Value);
     }
 
     private void OnSpawnPlayers()
@@ -90,7 +134,6 @@ internal class WorldRecordHolderUi : MonoBehaviour
         }
 
         CreateUI();
-        logger.LogInfo("Loading world record");
         LoadWorldRecord().Forget();
     }
 
@@ -118,6 +161,7 @@ internal class WorldRecordHolderUi : MonoBehaviour
         }
 
         uiHolder = Instantiate(template, template.parent);
+        
         GUI_OnlineLeaderboardPosition guiOnlineLeaderboardPosition =
             uiHolder.GetComponentInChildren<GUI_OnlineLeaderboardPosition>();
         Destroy(guiOnlineLeaderboardPosition);
@@ -137,6 +181,8 @@ internal class WorldRecordHolderUi : MonoBehaviour
 
         StartCoroutine(ReplacePositionWithStar(position));
 
+        headerText =
+            texts.FirstOrDefault(x => string.Equals(x.name, "Your Time Title", StringComparison.OrdinalIgnoreCase));
         playerNameText = texts.FirstOrDefault(x =>
             string.Equals(x.name, "Player", StringComparison.OrdinalIgnoreCase));
         timeText = texts.FirstOrDefault(x =>
@@ -148,8 +194,36 @@ internal class WorldRecordHolderUi : MonoBehaviour
         GameObject positionGameObject = position.gameObject;
         Destroy(position);
         yield return null;
-        Image image = positionGameObject.AddComponent<Image>();
-        image.preserveAspect = true;
-        image.sprite = PlayerManager.Instance.youTriedMedal;
+        worldRecordImage = positionGameObject.AddComponent<Image>();
+        worldRecordImage.preserveAspect = true;
+        worldRecordImage.sprite = PlayerManager.Instance.youTriedMedal;
+    }
+
+    private void Update()
+    {
+        if (!ZeepkistNetwork.IsConnected || ZeepkistNetwork.CurrentLobby == null)
+            return;
+        
+        if (worldRecord != null && personalBest != null)
+        {
+            if (switchCountdown <= 0)
+            {
+                switchCountdown = SWITCH_DURATION;
+                isShowingWorldRecord = !isShowingWorldRecord;
+                UpdateUi(isShowingWorldRecord ? worldRecord : personalBest);
+            }
+
+            switchCountdown -= Time.deltaTime;
+        }
+
+        if (Input.GetKeyDown(Plugin.ConfigToggleShowWorldRecordHolder.Value))
+        {
+            Plugin.ConfigShowWorldRecordHolder.Value = !Plugin.ConfigShowWorldRecordHolder.Value;
+
+            PlayerManager.Instance.messenger.Log(Plugin.ConfigShowWorldRecordHolder.Value
+                    ? "Showing World Record Holder"
+                    : "Hiding World Record Holder",
+                2.5f);
+        }
     }
 }

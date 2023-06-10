@@ -26,73 +26,31 @@ public class VoteChatCommand : IChatCommand
     public void Handle(OnlineChatUI instance, string input)
     {
         string[] splits = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (splits.Length != 3)
+        if (splits.Length != 2)
         {
             WriteFormatMessage(instance);
             return;
         }
 
-        if (!TryGetCategory(splits[1], out int category))
+        if (!int.TryParse(splits[1], out int score))
         {
             WriteFormatMessage(instance);
             return;
         }
 
-        if (!int.TryParse(splits[2], out int score))
-        {
-            WriteFormatMessage(instance);
-            return;
-        }
-
-        CastVote(category, score).Forget();
+        CastVote(score).Forget();
     }
 
     private static void WriteFormatMessage(OnlineChatUI instance)
     {
-        string msg = "[GTR] The format for voting is: /vote category score";
+        string msg = "[GTR] The format for voting is: /vote score";
         instance.UpdateChatFields(msg, 0);
     }
 
-    private static bool TryGetCategory(string input, out int category)
-    {
-        if (int.TryParse(input, out category))
-            return true;
-
-        if (string.Equals(input, "g", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(input, "general", StringComparison.InvariantCultureIgnoreCase))
-        {
-            category = 0;
-            return true;
-        }
-
-        if (string.Equals(input, "f", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(input, "flow", StringComparison.InvariantCultureIgnoreCase))
-        {
-            category = 1;
-            return true;
-        }
-
-        if (string.Equals(input, "d", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(input, "difficulty", StringComparison.InvariantCultureIgnoreCase))
-        {
-            category = 2;
-            return true;
-        }
-
-        if (string.Equals(input, "s", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(input, "scenery", StringComparison.InvariantCultureIgnoreCase))
-        {
-            category = 3;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static async UniTaskVoid CastVote(int category, int score)
+    private static async UniTaskVoid CastVote(int score)
     {
         Result result = await Sdk.Instance.VotesApi.Submit(builder =>
-            builder.WithLevel(InternalLevelApi.CurrentLevelId).WithCategory(category).WithScore(score));
+            builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score));
         if (result.IsSuccess)
         {
             PlayerManager.Instance.messenger.Log("[GTR] Vote submitted", 2.5f);
