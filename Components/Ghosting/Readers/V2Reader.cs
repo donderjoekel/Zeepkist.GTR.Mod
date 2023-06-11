@@ -29,6 +29,7 @@ public partial class V2Reader : IGhostReader
         using MemoryStream ms = new MemoryStream(buffer);
         using BinaryReader reader = new BinaryReader(ms);
 
+        int version = reader.ReadInt32();
         SteamId = reader.ReadUInt64();
         SoapboxId = reader.ReadInt32();
         HatId = reader.ReadInt32();

@@ -29,6 +29,7 @@ public partial class V1Reader : IGhostReader
         using MemoryStream ms = new MemoryStream(buffer);
         using BinaryReader reader = new BinaryReader(ms);
 
+        int version = reader.ReadInt32();
         int frameCount = reader.ReadInt32();
         for (int i = 0; i < frameCount; i++)
         {

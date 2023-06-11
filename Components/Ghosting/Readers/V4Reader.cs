@@ -48,6 +48,7 @@ public partial class V4Reader : IGhostReader
 
         try
         {
+            int version = reader.ReadInt32();
             SteamId = reader.ReadUInt64();
             SoapboxId = reader.ReadInt32();
             HatId = reader.ReadInt32();
