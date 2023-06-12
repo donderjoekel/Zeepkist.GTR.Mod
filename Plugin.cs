@@ -8,11 +8,13 @@ using HarmonyLib;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Mod.Api.Users;
+using TNRD.Zeepkist.GTR.Mod.ChatCommands;
 using TNRD.Zeepkist.GTR.Mod.Components;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using ZeepSDK.ChatCommands;
 using ZeepSDK.Leaderboard;
 using Result = TNRD.Zeepkist.GTR.FluentResults.Result;
 
@@ -85,6 +87,9 @@ internal class Plugin : MonoBehaviour
         gameObject.AddComponent<WorldRecordHolderUi>();
 
         LeaderboardApi.AddTab<GtrLeaderboardTab>();
+
+        ChatCommandApi.RegisterLocalChatCommand<FavoriteLocalChatCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<UpvoteLocalChatCommand>();
 
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");

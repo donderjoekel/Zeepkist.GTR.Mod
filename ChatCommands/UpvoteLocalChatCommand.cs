@@ -1,24 +1,18 @@
-﻿using System;
-using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
+﻿using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
-using TNRD.Zeepkist.GTR.SDK;
+using ZeepSDK.ChatCommands;
 
 namespace TNRD.Zeepkist.GTR.Mod.ChatCommands;
 
-public class UpvoteChatCommand : IChatCommand
+public class UpvoteLocalChatCommand : ILocalChatCommand
 {
-    /// <inheritdoc />
-    public bool CanHandle(string input)
-    {
-        return input.StartsWith("/upvote", StringComparison.InvariantCultureIgnoreCase) ||
-               input.StartsWith("/up", StringComparison.InvariantCultureIgnoreCase) ||
-               input.StartsWith("/uv", StringComparison.InvariantCultureIgnoreCase);
-    }
+    public string Prefix => "/";
+    public string Command => "upvote";
+    public string Description => "Upvotes the current level on GTR";
 
-    /// <inheritdoc />
-    public void Handle(OnlineChatUI instance, string input)
+    public void Handle(string arguments)
     {
         int currentLevelId = InternalLevelApi.CurrentLevelId;
         Submit(currentLevelId).Forget();
