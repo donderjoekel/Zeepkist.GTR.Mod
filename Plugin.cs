@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -10,9 +10,10 @@ using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Mod.Api.Users;
 using TNRD.Zeepkist.GTR.Mod.Components;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
-using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard;
+using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using ZeepSDK.Leaderboard;
 using Result = TNRD.Zeepkist.GTR.FluentResults.Result;
 
 namespace TNRD.Zeepkist.GTR.Mod;
@@ -53,7 +54,7 @@ internal class Plugin : MonoBehaviour
 
     public ConfigFile Config { get; set; }
     public ManualLogSource Logger { get; set; }
-    public BepInEx.PluginInfo Info { get; set; }
+    public PluginInfo Info { get; set; }
 
     private void Start()
     {
@@ -70,7 +71,7 @@ internal class Plugin : MonoBehaviour
 
         SetupConfig();
 
-        harmony = new Harmony(PluginInfo.PLUGIN_GUID);
+        harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
 
         gameObject.AddComponent<GhostRecorder>();
@@ -82,10 +83,11 @@ internal class Plugin : MonoBehaviour
         gameObject.AddComponent<ShortcutsHandler>();
         gameObject.AddComponent<RatingPopupHandler>();
         gameObject.AddComponent<WorldRecordHolderUi>();
-        gameObject.AddComponent<LeaderboardHandler>();
+
+        LeaderboardApi.AddTab<GtrLeaderboardTab>();
 
         // Plugin startup logic
-        Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+        Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 
         MainMenuUi_Awake.Awake += MainMenuUiOnAwake;
     }
@@ -124,6 +126,9 @@ internal class Plugin : MonoBehaviour
 
     private void OnDestroy()
     {
+        harmony?.UnpatchSelf();
+        harmony = null;
+
         MainMenuUi_Awake.Awake -= MainMenuUiOnAwake;
     }
 
@@ -266,18 +271,18 @@ internal class Plugin : MonoBehaviour
     private async UniTask<Result> AttemptLogin()
     {
         Logger.LogInfo("Logging in to GTR");
-        Result result = await Sdk.Instance.UsersApi.Login(PluginInfo.PLUGIN_VERSION);
+        Result result = await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
         if (result.IsSuccess)
             return result;
 
         Logger.LogWarning("Failed so waiting 5 seconds for another attempt");
         await UniTask.Delay(TimeSpan.FromSeconds(5));
-        result = await Sdk.Instance.UsersApi.Login(PluginInfo.PLUGIN_VERSION);
+        result = await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
         if (result.IsSuccess)
             return result;
 
         Logger.LogWarning("Failed so waiting 10 seconds for another attempt");
         await UniTask.Delay(TimeSpan.FromSeconds(10));
-        return await Sdk.Instance.UsersApi.Login(PluginInfo.PLUGIN_VERSION);
+        return await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
     }
 }

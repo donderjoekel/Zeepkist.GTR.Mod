@@ -9,6 +9,7 @@ using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
 using UnityEngine;
+using ZeepSDK.Leaderboard.Pages;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
 
