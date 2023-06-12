@@ -13,6 +13,7 @@ using TNRD.Zeepkist.GTR.SDK;
 using UnityEngine;
 using UnityEngine.UI;
 using ZeepkistClient;
+using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
@@ -37,7 +38,7 @@ internal class WorldRecordHolderUi : MonoBehaviour
     {
         logger = EntryPoint.CreateLogger(nameof(WorldRecordHolderUi));
 
-        GameMaster_SpawnPlayers.SpawnPlayers += OnSpawnPlayers;
+        RacingApi.PlayerSpawned += OnSpawnPlayers;
         InternalLevelApi.LevelCreating += InternalLevelApiOnLevelCreating;
         InternalLevelApi.LevelCreated += InternalLevelApiOnLevelCreated;
 
@@ -46,7 +47,7 @@ internal class WorldRecordHolderUi : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameMaster_SpawnPlayers.SpawnPlayers -= OnSpawnPlayers;
+        RacingApi.PlayerSpawned -= OnSpawnPlayers;
         InternalLevelApi.LevelCreating -= InternalLevelApiOnLevelCreating;
         InternalLevelApi.LevelCreated -= InternalLevelApiOnLevelCreated;
 

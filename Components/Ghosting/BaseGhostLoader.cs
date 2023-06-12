@@ -6,6 +6,7 @@ using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
@@ -14,7 +15,12 @@ public abstract class BaseGhostLoader : MonoBehaviourWithLogging
     protected override void Awake()
     {
         base.Awake();
-        GameMaster_SpawnPlayers.SpawnPlayers += OnSpawnPlayers;
+        RacingApi.PlayerSpawned += OnSpawnPlayers;
+    }
+
+    protected virtual void OnDestroy()
+    {
+        RacingApi.PlayerSpawned -= OnSpawnPlayers;
     }
 
     private void OnSpawnPlayers()

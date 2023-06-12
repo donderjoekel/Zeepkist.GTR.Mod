@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.FluentResults;
@@ -9,6 +10,7 @@ using TNRD.Zeepkist.GTR.Mod.Patches;
 using TNRD.Zeepkist.GTR.SDK;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
@@ -29,8 +31,13 @@ public class RecordSubmitter : MonoBehaviourWithLogging
         base.Awake();
         ResultScreenshotter.ScreenshotTaken += OnScreenshotTaken;
         GhostRecorder.GhostRecorded += OnGhostRecorded;
-        GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
+        RacingApi.RoundStarted += OnRoundStarted;
         GameMaster_CrossedFinishOnline.CrossedFinishOnline += OnCrossedFinishOnline;
+    }
+
+    private void OnDestroy()
+    {
+        RacingApi.RoundStarted -= OnRoundStarted;
     }
 
     private void OnCrossedFinishOnline()
@@ -40,7 +47,7 @@ public class RecordSubmitter : MonoBehaviourWithLogging
         splits = result.split_times;
     }
 
-    private void OnReleaseTheZeepkists()
+    private void OnRoundStarted()
     {
         setupCar = PlayerManager.Instance.currentMaster.carSetups.FirstOrDefault();
         if (setupCar == null)

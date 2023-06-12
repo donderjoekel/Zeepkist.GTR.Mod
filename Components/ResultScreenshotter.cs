@@ -2,6 +2,7 @@
 using System.Collections;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
@@ -13,9 +14,16 @@ public class ResultScreenshotter : MonoBehaviour
 
     private void Awake()
     {
-        GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
+        RacingApi.RoundStarted += OnRoundStarted;
         GameMaster_CrossedFinishOnline.CrossedFinishOnline += OnCrossedFinishOnline;
         GameMaster_OpenResultScreen.OpenResultScreen += OnOpenResultScreen;
+    }
+    
+    private void OnDestroy()
+    {
+        RacingApi.RoundStarted -= OnRoundStarted;
+        GameMaster_CrossedFinishOnline.CrossedFinishOnline -= OnCrossedFinishOnline;
+        GameMaster_OpenResultScreen.OpenResultScreen -= OnOpenResultScreen;
     }
 
     private void OnOpenResultScreen()
@@ -33,7 +41,7 @@ public class ResultScreenshotter : MonoBehaviour
         ScreenshotTaken?.Invoke(screenshot.EncodeToJPG(25));
     }
 
-    private void OnReleaseTheZeepkists()
+    private void OnRoundStarted()
     {
         hasFinished = false;
     }

@@ -6,6 +6,7 @@ using System.Linq;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
@@ -41,11 +42,17 @@ public class GhostRecorder : MonoBehaviourWithLogging
     protected override void Awake()
     {
         base.Awake();
-        GameMaster_ReleaseTheZeepkists.ReleaseTheZeepkists += OnReleaseTheZeepkists;
+        RacingApi.RoundStarted += OnRoundStarted;
         GameMaster_CrossedFinishOnline.CrossedFinishOnline += OnCrossedFinishOnline;
     }
 
-    private void OnReleaseTheZeepkists()
+    private void OnDestroy()
+    {
+        RacingApi.RoundStarted -= OnRoundStarted;
+        GameMaster_CrossedFinishOnline.CrossedFinishOnline -= OnCrossedFinishOnline;
+    }
+
+    private void OnRoundStarted()
     {
         frames.Clear();
         hasStarted = true;
