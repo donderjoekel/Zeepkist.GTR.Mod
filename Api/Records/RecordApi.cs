@@ -32,6 +32,6 @@ public static class InternalRecordsApi
             IsValid = isValid
         };
 
-        return await Sdk.Instance.ApiClient.Post("records/submit", submitRecordRequestModel);
+        return await SdkWrapper.Instance.ApiClient.Post("records/submit", submitRecordRequestModel);
     }
 }

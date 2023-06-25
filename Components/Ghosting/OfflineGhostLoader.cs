@@ -81,7 +81,7 @@ public class OfflineGhostLoader : BaseGhostLoader
         }
         else if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.TOP)
         {
-            Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
+            Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder =>
                 builder.WithSort("time")
                     .WithLevelUid(level.UID)
                     .WithBestOnly(true)
@@ -105,7 +105,7 @@ public class OfflineGhostLoader : BaseGhostLoader
     {
         if (Plugin.ConfigShowOfflineWorldRecord.Value)
         {
-            Result<RecordsGetResponseDTO> wrGhost = await Sdk.Instance.RecordsApi.Get(builder => builder
+            Result<RecordsGetResponseDTO> wrGhost = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
                 .WithLevelUid(globalLevelUid)
                 .WithWorldRecordOnly(true));
             SpawnWorldRecord(GetWorldRecordRecordModel(wrGhost));
@@ -116,10 +116,10 @@ public class OfflineGhostLoader : BaseGhostLoader
     {
         if (Plugin.ConfigShowOfflinePersonalBest.Value)
         {
-            Result<RecordsGetResponseDTO> pbGhost = await Sdk.Instance.RecordsApi.Get(builder => builder
+            Result<RecordsGetResponseDTO> pbGhost = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
                 .WithLevelUid(globalLevelUid)
                 .WithBestOnly(true)
-                .WithUserId(Sdk.Instance.UsersApi.UserId));
+                .WithUserId(SdkWrapper.Instance.UsersApi.UserId));
             SpawnPersonalBest(GetPersonalBestRecordModel(pbGhost));
         }
     }
@@ -160,7 +160,7 @@ public class OfflineGhostLoader : BaseGhostLoader
     {
         const float timeTolerance = 1.5f;
 
-        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
+        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
             .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
             .WithMinimumTime(time - timeTolerance)
             .WithMaximumTime(time + timeTolerance)
@@ -198,7 +198,7 @@ public class OfflineGhostLoader : BaseGhostLoader
 
     private async UniTask LoadRandomGhosts(int amount)
     {
-        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
+        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
             .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
             .WithWorldRecordOnly(false)
             .WithValidOnly(true));
@@ -258,7 +258,7 @@ public class OfflineGhostLoader : BaseGhostLoader
         else
         {
             this.Logger().LogInfo($"Downloading model: {key}");
-            Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
+            Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
                 .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
                 .WithWorldRecordOnly(false)
                 .WithValidOnly(true)

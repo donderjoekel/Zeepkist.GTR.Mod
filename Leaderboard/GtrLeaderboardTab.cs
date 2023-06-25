@@ -33,7 +33,7 @@ internal class GtrLeaderboardTab : BaseLeaderboardTab
     {
         PlayerManager.Instance.messenger.Log("[GTR] Loading records", 2f);
 
-        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder =>
+        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder =>
         {
             builder
                 .WithLimit(128)

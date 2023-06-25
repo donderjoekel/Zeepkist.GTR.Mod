@@ -57,10 +57,10 @@ public class RatingPopupHandler : MonoBehaviour
         starButtons.AllDeactivated += OnAllDeactivated;
         favoriteButton.Clicked += OnFavoriteButtonClicked;
 
-        Result<FavoritesGetAllResponseDTO> getFavoriteResult = await Sdk.Instance.FavoritesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(Sdk.Instance.UsersApi.UserId));
-        Result<VotesGetResponseDTO> getVotesResult = await Sdk.Instance.VotesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(Sdk.Instance.UsersApi.UserId));
+        Result<FavoritesGetAllResponseDTO> getFavoriteResult = await SdkWrapper.Instance.FavoritesApi.Get(builder =>
+            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
+        Result<VotesGetResponseDTO> getVotesResult = await SdkWrapper.Instance.VotesApi.Get(builder =>
+            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
 
         if (getFavoriteResult.IsFailed)
         {
@@ -122,7 +122,7 @@ public class RatingPopupHandler : MonoBehaviour
     {
         int score = index + 1;
 
-        Result submitResult = await Sdk.Instance.VotesApi.Submit(builder =>
+        Result submitResult = await SdkWrapper.Instance.VotesApi.Submit(builder =>
             builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score));
 
         if (submitResult.IsFailed)
@@ -138,16 +138,16 @@ public class RatingPopupHandler : MonoBehaviour
         if (score > 3)
         {
             Result<GenericIdResponseDTO> result =
-                await Sdk.Instance.UpvotesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await SdkWrapper.Instance.UpvotesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
             upvoteResult = result.ToResult();
         }
         else if (score < 3)
         {
-            Result<UpvotesGetResponseDTO> getUpvoteResult = await Sdk.Instance.UpvotesApi.Get(builder =>
+            Result<UpvotesGetResponseDTO> getUpvoteResult = await SdkWrapper.Instance.UpvotesApi.Get(builder =>
             {
                 builder
                     .WithLevelId(InternalLevelApi.CurrentLevelId)
-                    .WithUserId(Sdk.Instance.UsersApi.UserId);
+                    .WithUserId(SdkWrapper.Instance.UsersApi.UserId);
             });
 
             if (getUpvoteResult.IsFailed)
@@ -156,7 +156,7 @@ public class RatingPopupHandler : MonoBehaviour
             }
             else if (getUpvoteResult.Value != null && getUpvoteResult.Value.Upvotes.Count > 0)
             {
-                upvoteResult = await Sdk.Instance.UpvotesApi.Remove(getUpvoteResult.Value.Upvotes.First().Id);
+                upvoteResult = await SdkWrapper.Instance.UpvotesApi.Remove(getUpvoteResult.Value.Upvotes.First().Id);
             }
             else
             {
@@ -180,16 +180,16 @@ public class RatingPopupHandler : MonoBehaviour
         if (favoriteButton.IsActive)
         {
             Result<GenericIdResponseDTO> addResult =
-                await Sdk.Instance.FavoritesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await SdkWrapper.Instance.FavoritesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
             result = addResult.ToResult();
         }
         else
         {
-            Result<FavoritesGetAllResponseDTO> getFavoriteResult = await Sdk.Instance.FavoritesApi.Get(builder =>
+            Result<FavoritesGetAllResponseDTO> getFavoriteResult = await SdkWrapper.Instance.FavoritesApi.Get(builder =>
             {
                 builder
                     .WithLevelId(InternalLevelApi.CurrentLevelId)
-                    .WithUserId(Sdk.Instance.UsersApi.UserId);
+                    .WithUserId(SdkWrapper.Instance.UsersApi.UserId);
             });
 
             if (getFavoriteResult.IsFailed)
@@ -198,7 +198,7 @@ public class RatingPopupHandler : MonoBehaviour
             }
             else if (getFavoriteResult.Value != null && getFavoriteResult.Value.Favorites.Count > 0)
             {
-                result = await Sdk.Instance.FavoritesApi.Remove(getFavoriteResult.Value.Favorites.First().Id);
+                result = await SdkWrapper.Instance.FavoritesApi.Remove(getFavoriteResult.Value.Favorites.First().Id);
             }
             else
             {

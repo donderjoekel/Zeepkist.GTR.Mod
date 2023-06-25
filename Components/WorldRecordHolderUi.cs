@@ -80,13 +80,13 @@ internal class WorldRecordHolderUi : MonoBehaviour
         if (!hasLoadedLevel)
             return;
 
-        Result<RecordsGetResponseDTO> getWorldRecordResult = await Sdk.Instance.RecordsApi.Get(builder =>
+        Result<RecordsGetResponseDTO> getWorldRecordResult = await SdkWrapper.Instance.RecordsApi.Get(builder =>
             builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithWorldRecordOnly(true));
 
-        Result<RecordsGetResponseDTO> getPersonalBestResult = await Sdk.Instance.RecordsApi.Get(builder =>
+        Result<RecordsGetResponseDTO> getPersonalBestResult = await SdkWrapper.Instance.RecordsApi.Get(builder =>
             builder.WithLevelId(InternalLevelApi.CurrentLevelId)
                 .WithBestOnly(true)
-                .WithUserId(Sdk.Instance.UsersApi.UserId));
+                .WithUserId(SdkWrapper.Instance.UsersApi.UserId));
 
         if (getWorldRecordResult.IsSuccess)
         {

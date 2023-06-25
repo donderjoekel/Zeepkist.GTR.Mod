@@ -276,18 +276,18 @@ internal class Plugin : MonoBehaviour
     private async UniTask<Result> AttemptLogin()
     {
         Logger.LogInfo("Logging in to GTR");
-        Result result = await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
+        Result result = await SdkWrapper.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
         if (result.IsSuccess)
             return result;
 
         Logger.LogWarning("Failed so waiting 5 seconds for another attempt");
         await UniTask.Delay(TimeSpan.FromSeconds(5));
-        result = await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
+        result = await SdkWrapper.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
         if (result.IsSuccess)
             return result;
 
         Logger.LogWarning("Failed so waiting 10 seconds for another attempt");
         await UniTask.Delay(TimeSpan.FromSeconds(10));
-        return await Sdk.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
+        return await SdkWrapper.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION);
     }
 }

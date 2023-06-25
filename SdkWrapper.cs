@@ -1,6 +1,6 @@
 ﻿namespace TNRD.Zeepkist.GTR.Mod;
 
-internal class Sdk
+internal class SdkWrapper
 {
     private static SDK.Sdk instance;
 

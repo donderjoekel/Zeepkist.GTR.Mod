@@ -52,7 +52,7 @@ public static class InternalLevelApi
         CurrentLevelId = -1;
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
 
-        Result<LevelsGetResponseDTO> getLevelResult = await Sdk.Instance.LevelsApi.Get(builder => builder.WithUid(level.UID));
+        Result<LevelsGetResponseDTO> getLevelResult = await SdkWrapper.Instance.LevelsApi.Get(builder => builder.WithUid(level.UID));
         if (getLevelResult.IsSuccess)
         {
             if (getLevelResult.Value.Levels.Count == 1)
@@ -95,7 +95,7 @@ public static class InternalLevelApi
         };
 
         Result<CreateLevelResponseModel> result =
-            await Sdk.Instance.ApiClient.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
+            await SdkWrapper.Instance.ApiClient.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
 
         if (result.IsFailed)
             return result.ToResult();

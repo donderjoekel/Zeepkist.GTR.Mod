@@ -27,15 +27,15 @@ internal class CustomUsersApi
             .WithSteamName(SteamClient.Name)
             .Build();
 
-        return await Sdk.Instance.ApiClient.Post("users/name", requestDTO);
+        return await SdkWrapper.Instance.ApiClient.Post("users/name", requestDTO);
     }
 
     internal static async UniTask<Result> UpdateDiscordId()
     {
-        if (!Sdk.Instance.DiscordApplicationId.HasValue)
+        if (!SdkWrapper.Instance.DiscordApplicationId.HasValue)
             return Result.Ok();
 
-        Discord client = new(Sdk.Instance.DiscordApplicationId.Value, (ulong)CreateFlags.NoRequireDiscord);
+        Discord client = new(SdkWrapper.Instance.DiscordApplicationId.Value, (ulong)CreateFlags.NoRequireDiscord);
 
         CancellationTokenSource cts = new();
 
@@ -70,7 +70,7 @@ internal class CustomUsersApi
             .WithDiscordId(currentUser.Value.Id.ToString())
             .Build();
 
-        return await Sdk.Instance.ApiClient.Post("users/discord", requestDTO);
+        return await SdkWrapper.Instance.ApiClient.Post("users/discord", requestDTO);
     }
 
     private static async UniTaskVoid RunDiscordCallbacks(Discord client, CancellationToken ct)

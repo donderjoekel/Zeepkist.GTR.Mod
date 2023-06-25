@@ -20,7 +20,7 @@ public class UpvoteLocalChatCommand : ILocalChatCommand
 
     private static async UniTaskVoid Submit(int level)
     {
-        Result<GenericIdResponseDTO> result = await Sdk.Instance.UpvotesApi.Add(builder => builder.WithLevelId(level));
+        Result<GenericIdResponseDTO> result = await SdkWrapper.Instance.UpvotesApi.Add(builder => builder.WithLevelId(level));
         if (result.IsSuccess)
         {
             PlayerManager.Instance.messenger.Log("[GTR] Upvote success", 2.5f);

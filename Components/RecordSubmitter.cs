@@ -90,7 +90,7 @@ public class RecordSubmitter : MonoBehaviourWithLogging
             return;
 
         int level = InternalLevelApi.CurrentLevelId;
-        int user = Sdk.Instance.UsersApi.UserId;
+        int user = SdkWrapper.Instance.UsersApi.UserId;
 
         if (level == -1)
             return;

@@ -57,10 +57,10 @@ public class OnlineGhostLoader : BaseGhostLoader
         if (InternalLevelApi.CurrentLevelId == -1)
             return;
 
-        Result<RecordsGetResponseDTO> result = await Sdk.Instance.RecordsApi.Get(builder => builder
+        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
             .WithLevelId(InternalLevelApi.CurrentLevelId)
             .WithBestOnly(true)
-            .WithUserId(Sdk.Instance.UsersApi.UserId));
+            .WithUserId(SdkWrapper.Instance.UsersApi.UserId));
 
         RecordResponseModel pb = GetPersonalBestRecordModel(result);
 
