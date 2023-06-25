@@ -154,6 +154,22 @@ internal class Plugin : MonoBehaviour
             true,
             "Should the world record holder be shown");
 
+        ConfigApiUrl = Config.Bind("URLs",
+            "The API address",
+            SDK.Sdk.DEFAULT_API_ADDRESS,
+            "Allows you to set a custom API address");
+
+        ConfigAuthUrl = Config.Bind("URLs",
+            "The Auth address",
+            SDK.Sdk.DEFAULT_AUTH_ADDRESS,
+            "Allows you to set a custom Auth address");
+
+        SetupShortcutKeys();
+        SetupGhostsConfig();
+    }
+
+    private void SetupShortcutKeys()
+    {
         ConfigToggleEnableRecords = Config.Bind("Keys",
             "Toggle Enable Records",
             KeyCode.None,
@@ -182,18 +198,6 @@ internal class Plugin : MonoBehaviour
             "Toggle World Record Holder Visibility",
             KeyCode.None,
             "Toggles the world record holder visibility");
-
-        ConfigApiUrl = Config.Bind("URLs",
-            "The API address",
-            SDK.Sdk.DEFAULT_API_ADDRESS,
-            "Allows you to set a custom API address");
-
-        ConfigAuthUrl = Config.Bind("URLs",
-            "The Auth address",
-            SDK.Sdk.DEFAULT_AUTH_ADDRESS,
-            "Allows you to set a custom Auth address");
-
-        SetupGhostsConfig();
     }
 
     private void SetupGhostsConfig()
