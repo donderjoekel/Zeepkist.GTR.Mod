@@ -4,7 +4,7 @@ using BepInEx.Logging;
 namespace TNRD.Zeepkist.GTR.Mod
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-    [BepInDependency("ZeepSDK")]
+    [BepInDependency("ZeepSDK", "1.11.1")]
     public class EntryPoint : BaseUnityPlugin
     {
         static EntryPoint()
