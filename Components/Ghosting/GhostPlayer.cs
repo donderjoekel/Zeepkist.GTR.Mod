@@ -9,6 +9,8 @@ using TNRD.Zeepkist.GTR.Mod.Components.Ghosting.Readers;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
 using UnityEngine.Rendering;
+using ZeepkistNetworking;
+using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
@@ -142,11 +144,15 @@ public class GhostPlayer : MonoBehaviourWithLogging
         CosmeticWardrobe wardrobe = PlayerManager.Instance.objectsList.wardrobe;
 
         // nzg.zeepkistID
-        ghostModel.DoCarSetup(wardrobe.GetZeepkist(SoapboxId),
-            wardrobe.GetHat(HatId),
-            wardrobe.GetColor(ColorId),
+        ghostModel.DoCarSetup(
+            CosmeticsApi.GetSoapbox(SoapboxId,false),
+            CosmeticsApi.GetHat(HatId,false),
+            CosmeticsApi.GetColor(ColorId,false),
             true);
-        cameraManModel.DoCarSetup(null, wardrobe.GetHat(HatId), wardrobe.GetColor(ColorId), false);
+        cameraManModel.DoCarSetup(null,
+            CosmeticsApi.GetHat(HatId,false),
+            CosmeticsApi.GetColor(ColorId,false),
+            false);
         ghostFader.DoSetup();
 
         ghostModel.gameObject.SetActive(Plugin.ConfigShowGhosts.Value);
@@ -162,14 +168,14 @@ public class GhostPlayer : MonoBehaviourWithLogging
         Component[] objectComponents = obj.GetComponents(typeof(Component));
         Component[] childComponents = obj.GetComponentsInChildren(typeof(Component));
         objectComponents = objectComponents.Concat(childComponents).ToArray();
-        
+
         foreach (Component c in objectComponents)
         {
             if (c == null)
                 continue;
-        
+
             bool keep = c is Transform or MeshFilter or MeshRenderer or GhostPlayer or FadeGhostModel;
-        
+
             if (!keep)
             {
                 Destroy(c);
