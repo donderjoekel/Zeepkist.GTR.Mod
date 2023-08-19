@@ -55,6 +55,11 @@ internal class TrackerRepository : MonoBehaviour
         Register(new WithWheelsDistanceTracker());
         Register(new WithWheelsTimeTracker());
 
+        Register(new CheckpointsCrossedTracker());
+        Register(new TimesFinishedTracker());
+        Register(new TimesStartedTracker());
+        Register(new WheelsBrokenTracker());
+
         ResetTrackers();
     }
 
