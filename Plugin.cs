@@ -1,21 +1,28 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
+using TNRD.Zeepkist.GTR.DTOs.RequestDTOs;
+using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Users;
 using TNRD.Zeepkist.GTR.Mod.ChatCommands;
 using TNRD.Zeepkist.GTR.Mod.Components;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
 using TNRD.Zeepkist.GTR.Mod.Patches;
+using TNRD.Zeepkist.GTR.Mod.Stats;
+using TNRD.Zeepkist.GTR.SDK;
 using UnityEngine;
 using ZeepSDK.ChatCommands;
 using ZeepSDK.Leaderboard;
+using ZeepSDK.Messaging;
+using ZeepSDK.Multiplayer;
 using Result = TNRD.Zeepkist.GTR.FluentResults.Result;
 
 namespace TNRD.Zeepkist.GTR.Mod;
@@ -23,6 +30,8 @@ namespace TNRD.Zeepkist.GTR.Mod;
 internal class Plugin : MonoBehaviour
 {
     private Harmony harmony;
+    private TrackerRepository trackerRepository;
+    private CancellationTokenSource cts;
 
     public static ConfigEntry<bool> ConfigEnableRecords;
     public static ConfigEntry<bool> ConfigEnableGhosts;
@@ -85,6 +94,7 @@ internal class Plugin : MonoBehaviour
         gameObject.AddComponent<ShortcutsHandler>();
         gameObject.AddComponent<RatingPopupHandler>();
         gameObject.AddComponent<WorldRecordHolderUi>();
+        trackerRepository = gameObject.AddComponent<TrackerRepository>();
 
         LeaderboardApi.AddTab<GtrLeaderboardTab>();
 
@@ -156,12 +166,12 @@ internal class Plugin : MonoBehaviour
 
         ConfigApiUrl = Config.Bind("URLs",
             "The API address",
-            SDK.Sdk.DEFAULT_API_ADDRESS,
+            Sdk.DEFAULT_API_ADDRESS,
             "Allows you to set a custom API address");
 
         ConfigAuthUrl = Config.Bind("URLs",
             "The Auth address",
-            SDK.Sdk.DEFAULT_AUTH_ADDRESS,
+            Sdk.DEFAULT_AUTH_ADDRESS,
             "Allows you to set a custom Auth address");
 
         SetupShortcutKeys();
@@ -246,10 +256,69 @@ internal class Plugin : MonoBehaviour
 
     private void MainMenuUiOnAwake()
     {
-        Login().Forget();
+        ProcessMainMenu().Forget();
     }
 
-    private async UniTaskVoid Login()
+    private async UniTaskVoid ProcessMainMenu()
+    {
+        if (!await CheckForUpdate())
+            return;
+
+        if (!await Login())
+            return;
+
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        UpdateStatsLoop(cts.Token).Forget();
+    }
+
+    private async UniTask<bool> CheckForUpdate()
+    {
+        Result<VersionInfo> versionInfo = await SdkWrapper.Instance.VersionApi.GetVersionInfo();
+        if (versionInfo.IsFailed)
+        {
+            Logger.LogError("Unable to get version info");
+            MessengerApi.LogError("[GTR] Unable to get version!");
+            return false;
+        }
+
+        if (!Version.TryParse(MyPluginInfo.PLUGIN_VERSION, out Version pluginVersion))
+        {
+            Logger.LogError("Unable to parse plugin version");
+            MessengerApi.LogWarning("[GTR] Error parsing version, please contact the developer");
+            return false;
+        }
+
+        if (!Version.TryParse(versionInfo.Value.MinimumVersion, out Version minimumVersion))
+        {
+            Logger.LogError("Unable to parse minimum version");
+            MessengerApi.LogWarning("[GTR] Error parsing version, please contact the developer");
+            return false;
+        }
+
+        if (pluginVersion < minimumVersion)
+        {
+            MessengerApi.LogError("[GTR] Update required!");
+            return false;
+        }
+
+        if (!Version.TryParse(versionInfo.Value.LatestVersion, out Version latestVersion))
+        {
+            Logger.LogError("Unable to parse latest version");
+            MessengerApi.LogWarning("[GTR] Error parsing version, please contact the developer");
+            return false;
+        }
+
+        if (pluginVersion < latestVersion)
+        {
+            MessengerApi.LogCustomColors("[GTR] Update available!", Color.white, new Color32(0, 166, 217, 255));
+            await UniTask.Delay(2500);
+        }
+
+        return true;
+    }
+
+    private async UniTask<bool> Login()
     {
         Logger.LogInfo("Waiting for SteamClient to become valid");
         while (!SteamClient.IsValid)
@@ -266,15 +335,15 @@ internal class Plugin : MonoBehaviour
         Result result = await AttemptLogin();
         if (result.IsSuccess)
         {
-            PlayerManager.Instance.messenger.Log("[GTR] Logged in", 2.5f);
+            MessengerApi.LogSuccess("[GTR] Logged in");
             Result updateDiscordId = await CustomUsersApi.UpdateDiscordId();
+            return true;
         }
-        else
-        {
-            await UniTask.Delay(TimeSpan.FromSeconds(1));
-            PlayerManager.Instance.messenger.LogError("[GTR] Failed to log in", 2.5f);
-            Logger.LogError($"Failed to log in: {result}");
-        }
+
+        await UniTask.Delay(TimeSpan.FromSeconds(1));
+        MessengerApi.LogError("[GTR] Failed to log in");
+        Logger.LogError($"Failed to log in: {result}");
+        return false;
     }
 
     private async UniTask<Result> AttemptLogin()
@@ -293,5 +362,41 @@ internal class Plugin : MonoBehaviour
         Logger.LogWarning("Failed so waiting 10 seconds for another attempt");
         await UniTask.Delay(TimeSpan.FromSeconds(10));
         return await SdkWrapper.Instance.UsersApi.Login(MyPluginInfo.PLUGIN_VERSION, false);
+    }
+
+    private async UniTaskVoid UpdateStatsLoop(CancellationToken ct)
+    {
+        MultiplayerApi.DisconnectedFromGame += HandleMultiplayerDisconnect;
+
+        while (!ct.IsCancellationRequested)
+        {
+            await UniTask.Delay(TimeSpan.FromMinutes(5), cancellationToken: ct);
+
+            if (ct.IsCancellationRequested)
+                break;
+
+            await UpdateStats(ct);
+        }
+
+        MultiplayerApi.DisconnectedFromGame -= HandleMultiplayerDisconnect;
+    }
+
+    private async void HandleMultiplayerDisconnect()
+    {
+        await UpdateStats(CancellationToken.None);
+    }
+
+    private async UniTask<Result> UpdateStats(CancellationToken ct)
+    {
+        UsersUpdateStatsRequestDTO dto = trackerRepository.CalculateStats();
+        Result result = await SdkWrapper.Instance.UsersApi.UpdateStats(dto);
+
+        if (result.IsFailed)
+        {
+            Logger.LogError("Unable to update stats: " + result.ToString());
+            MessengerApi.LogError("[GTR] Unable to update stats");
+        }
+
+        return result;
     }
 }
