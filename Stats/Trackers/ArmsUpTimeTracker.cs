@@ -11,6 +11,6 @@ internal class ArmsUpTimeTracker : RacingTimeTrackerBase
 
     protected override bool ShouldTrackTime()
     {
-        return SetupCar.cc.BrakeAction.buttonHeld;
+        return SetupCar.cc.ArmsUpAction.buttonHeld;
     }
 }

@@ -1,17 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using TNRD.Zeepkist.GTR.DTOs.RequestDTOs;
-using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Mod.Stats.Trackers;
 
-internal class OnWheelsTimeTracker : RacingTrackerBase
+internal class OnWheelsTimeTracker : RacingTimeTrackerBase
 {
     private readonly Dictionary<int, float> wheelsToTime = new();
 
     public override void ApplyStats(UsersUpdateStatsRequestDTO stats)
     {
-        stats.TimeOnNoWheels = GetTimeOnWheels(0);
         stats.TimeOnOneWheel = GetTimeOnWheels(1);
         stats.TimeOnTwoWheels = GetTimeOnWheels(2);
         stats.TimeOnThreeWheels = GetTimeOnWheels(3);
@@ -25,15 +22,20 @@ internal class OnWheelsTimeTracker : RacingTrackerBase
         return 0;
     }
 
-    public override void Reset()
+    protected override void OnReset()
     {
         wheelsToTime.Clear();
     }
 
-    protected override void OnTick()
+    protected override bool ShouldTrackTime()
     {
-        int amountGrounded = SetupCar.cc.GetWheels().Count(x => x.isGrounded);
-        wheelsToTime.TryAdd(amountGrounded, 0);
-        wheelsToTime[amountGrounded] += Time.deltaTime;
+        return SetupCar.IsAnyWheelAlive() && SetupCar.IsAnyWheelGrounded();
+    }
+
+    protected override void OnTimeChanged(float delta, float total)
+    {
+        int amountOfWheelsGrounded = SetupCar.AmountOfWheelsGrounded();
+        wheelsToTime.TryAdd(amountOfWheelsGrounded, 0);
+        wheelsToTime[amountOfWheelsGrounded] += delta;
     }
 }

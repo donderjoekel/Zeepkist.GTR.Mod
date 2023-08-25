@@ -1,20 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using TNRD.Zeepkist.GTR.DTOs.RequestDTOs;
-using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Mod.Stats.Trackers;
 
-internal class OnWheelsDistanceTracker : RacingTrackerBase
+internal class OnWheelsDistanceTracker : RacingDistanceTrackerBase
 {
     private readonly Dictionary<int, float> wheelsToDistance = new();
-    private readonly Dictionary<int, bool> previousGrounded = new();
-
-    private Vector3? previousPosition;
 
     public override void ApplyStats(UsersUpdateStatsRequestDTO stats)
     {
-        stats.DistanceOnNoWheels = GetDistanceOnWheels(0);
         stats.DistanceOnOneWheel = GetDistanceOnWheels(1);
         stats.DistanceOnTwoWheels = GetDistanceOnWheels(2);
         stats.DistanceOnThreeWheels = GetDistanceOnWheels(3);
@@ -28,36 +22,20 @@ internal class OnWheelsDistanceTracker : RacingTrackerBase
         return 0;
     }
 
-    public override void Reset()
+    protected override void OnReset()
     {
         wheelsToDistance.Clear();
-        previousGrounded.Clear();
     }
 
-    protected override void OnTick()
+    protected override bool ShouldTrackDistance()
     {
-        Vector3? previous = previousPosition;
-        Vector3 current = SetupCar.transform.position;
-        previousPosition = current;
+        return SetupCar.IsAnyWheelAlive() && SetupCar.IsAnyWheelGrounded();
+    }
 
-        if (SetupCar.cc.AreAllWheelsInAir())
-            return;
-
-        if (SetupCar.cc.GetLocalVelocity().magnitude < 0.1f) // Arbitrary value
-            return;
-
-        if (!previous.HasValue)
-            return;
-
-        int amountGrounded = SetupCar.cc.GetWheels().Count(x => x.isGrounded);
-
-        wheelsToDistance.TryAdd(amountGrounded, 0);
-
-        if (previousGrounded.TryGetValue(amountGrounded, out bool wasGrounded) && wasGrounded)
-        {
-            wheelsToDistance[amountGrounded] += Vector3.Distance(previous.Value, current);
-        }
-
-        previousGrounded[amountGrounded] = true;
+    protected override void OnDistanceChanged(float delta, float total)
+    {
+        int amountOfWheelsGrounded = SetupCar.AmountOfWheelsGrounded();
+        wheelsToDistance.TryAdd(amountOfWheelsGrounded, 0);
+        wheelsToDistance[amountOfWheelsGrounded] += delta;
     }
 }

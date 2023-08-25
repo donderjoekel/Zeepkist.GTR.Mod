@@ -73,4 +73,20 @@ internal static class SetupCarExtensions
 
         return false;
     }
+
+    public static int AmountOfWheelsGrounded(this SetupCar setupCar)
+    {
+        int count = 0;
+
+        foreach (DamageWheel damageWheel in setupCar.GetDamageWheels())
+        {
+            if (damageWheel.isdead)
+                continue;
+
+            if (damageWheel.theActualWheel.IsGrounded())
+                count++;
+        }
+        
+        return count;
+    }
 }
