@@ -336,7 +336,16 @@ internal class Plugin : MonoBehaviour
         if (result.IsSuccess)
         {
             MessengerApi.LogSuccess("[GTR] Logged in");
-            Result updateDiscordId = await CustomUsersApi.UpdateDiscordId();
+
+            try
+            {
+                await CustomUsersApi.UpdateDiscordId();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Failed to update discord id: " + e.Message);
+            }
+
             return true;
         }
 
