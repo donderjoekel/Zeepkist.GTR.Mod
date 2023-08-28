@@ -388,15 +388,23 @@ internal class Plugin : MonoBehaviour
 
     private async UniTask<Result> UpdateStats(CancellationToken ct)
     {
-        UsersUpdateStatsRequestDTO dto = trackerRepository.CalculateStats();
-        Result result = await SdkWrapper.Instance.UsersApi.UpdateStats(dto);
-
-        if (result.IsFailed)
+        try
         {
-            Logger.LogError("Unable to update stats: " + result.ToString());
-            MessengerApi.LogError("[GTR] Unable to update stats");
-        }
+            UsersUpdateStatsRequestDTO dto = trackerRepository.CalculateStats();
+            Result result = await SdkWrapper.Instance.UsersApi.UpdateStats(dto);
 
-        return result;
+            if (result.IsFailed)
+            {
+                Logger.LogError("Unable to update stats: " + result.ToString());
+                MessengerApi.LogError("[GTR] Unable to update stats");
+            }
+
+            return result;
+        }
+        catch (Exception e)
+        {
+            Logger.LogError("Exception while updating stats: " + e.Message);
+            return Result.Fail(new ExceptionalError(e));
+        }
     }
 }

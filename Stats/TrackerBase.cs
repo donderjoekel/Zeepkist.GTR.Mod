@@ -5,7 +5,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Stats;
 
 internal abstract class TrackerBase : ITracker
 {
-    protected static ManualLogSource Logger { get; private set; }
+    protected ManualLogSource Logger { get; private set; }
 
     protected TrackerBase()
     {
