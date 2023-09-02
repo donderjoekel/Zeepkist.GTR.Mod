@@ -80,7 +80,7 @@ internal class TrackerRepository : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         foreach (ITickable tickable in tickables)
         {
