@@ -89,13 +89,16 @@ public class RecordSubmitter : MonoBehaviourWithLogging
         if (!ZeepkistNetwork.IsConnected)
             return;
 
+        string levelHash = InternalLevelApi.CurrentLevelHash;
         int level = InternalLevelApi.CurrentLevelId;
         int user = SdkWrapper.Instance.UsersApi.UserId;
 
         if (level == -1)
             return;
 
-        Result result = await InternalRecordsApi.Submit(level,
+        Result result = await InternalRecordsApi.Submit(
+            levelHash,
+            level,
             user,
             time,
             splits,

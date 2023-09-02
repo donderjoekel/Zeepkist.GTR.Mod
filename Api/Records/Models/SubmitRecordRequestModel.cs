@@ -4,6 +4,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Api.Records.Models;
 
 public class SubmitRecordRequestModel
 {
+    public string LevelHash { get; set; }
     public int Level { get; set; }
     public int User { get; set; }
     public float Time { get; set; }

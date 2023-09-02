@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using BepInEx.Logging;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
@@ -19,6 +21,7 @@ public static class InternalLevelApi
     private static ManualLogSource logger = EntryPoint.CreateLogger(nameof(InternalLevelApi));
 
     public static int CurrentLevelId { get; private set; }
+    public static string CurrentLevelHash { get; private set; }
 
     public static event Action LevelCreating;
     public static event Action LevelCreated;
@@ -50,7 +53,11 @@ public static class InternalLevelApi
     {
         LevelCreating?.Invoke();
         CurrentLevelId = -1;
+        CurrentLevelHash = null;
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
+
+        string textToHash = GetTextToHash(level.LevelData);
+        CurrentLevelHash = Hash(textToHash);
 
         Result<LevelsGetResponseDTO> getLevelResult = await SdkWrapper.Instance.LevelsApi.Get(builder => builder.WithUid(level.UID));
         if (getLevelResult.IsSuccess)
@@ -139,5 +146,33 @@ public static class InternalLevelApi
         }
 
         return thumbnailB64;
+    }
+    
+    private static string GetTextToHash(string[] lines)
+    {
+        string[] splits = lines[2].Split(',');
+
+        string skyboxAndBasePlate = splits.Length != 6
+            ? "unknown,unknown"
+            : splits[^2] + "," + splits[^1];
+
+        return string.Join("\n", lines.Skip(3).Prepend(skyboxAndBasePlate));
+    }
+
+    private static string Hash(string input)
+    {
+        using (SHA1 sha1 = SHA1.Create())
+        {
+            byte[] hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(input));
+            StringBuilder sb = new(hash.Length * 2);
+
+            foreach (byte b in hash)
+            {
+                // can be "x2" if you want lowercase
+                sb.Append(b.ToString("X2"));
+            }
+
+            return sb.ToString();
+        }
     }
 }

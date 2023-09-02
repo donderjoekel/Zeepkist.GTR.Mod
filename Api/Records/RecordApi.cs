@@ -11,6 +11,7 @@ namespace TNRD.Zeepkist.GTR.Mod.Api.Records;
 public static class InternalRecordsApi
 {
     public static async UniTask<Result> Submit(
+        string levelHash,
         int level,
         int user,
         float time,
@@ -20,8 +21,9 @@ public static class InternalRecordsApi
         bool isValid
     )
     {
-        SubmitRecordRequestModel submitRecordRequestModel = new SubmitRecordRequestModel()
+        SubmitRecordRequestModel submitRecordRequestModel = new()
         {
+            LevelHash = levelHash,
             Level = level,
             User = user,
             Time = time,
