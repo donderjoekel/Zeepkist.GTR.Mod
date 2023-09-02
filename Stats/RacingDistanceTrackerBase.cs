@@ -43,6 +43,13 @@ internal abstract class RacingDistanceTrackerBase : RacingTrackerBase
             return;
 
         float delta = Vector3.Distance(previous.Value, current);
+
+        if (delta > 2.5f)
+        {
+            Logger.LogWarning("Delta is too high! (" + delta + ")");
+            return;
+        }
+
         Distance += delta;
         OnDistanceChanged(delta, Distance);
     }
