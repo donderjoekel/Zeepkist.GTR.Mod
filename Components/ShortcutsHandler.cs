@@ -1,18 +1,26 @@
 ﻿using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using ZeepkistClient;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
 public class ShortcutsHandler : MonoBehaviour
 {
+    private bool isRacingOffline;
     private OnlineChatUI currentChatUI;
     private PauseHandler currentPauseHandler;
 
     private void Awake()
     {
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
         OnlineChatUI_Awake.Awake += OnChatUIAwake;
         PauseHandler_Awake.Awake += OnPauseHandlerAwake;
+    }
+
+    private void OnActiveSceneChanged(Scene from, Scene to)
+    {
+        isRacingOffline = to.name == "GameScene";
     }
 
     private void OnDestroy()
@@ -33,15 +41,24 @@ public class ShortcutsHandler : MonoBehaviour
 
     private void Update()
     {
-        if (!ZeepkistNetwork.IsConnected || !ZeepkistNetwork.IsConnectedToGame)
-            return;
+        if (ZeepkistNetwork.IsConnected && ZeepkistNetwork.IsConnectedToGame)
+        {
+            if (currentChatUI == null || currentChatUI.GetChatLocked())
+                return;
 
-        if (currentChatUI == null || currentChatUI.GetChatLocked())
-            return;
+            if (currentPauseHandler == null || currentPauseHandler.IsPaused)
+                return;
 
-        if (currentPauseHandler == null || currentPauseHandler.IsPaused)
-            return;
+            HandleShortcuts();
+        }
+        else if (isRacingOffline)
+        {
+            HandleShortcuts();
+        }
+    }
 
+    private void HandleShortcuts()
+    {
         if (Input.GetKeyDown(Plugin.ConfigToggleEnableRecords.Value))
         {
             Plugin.ConfigEnableRecords.Value = !Plugin.ConfigEnableRecords.Value;
@@ -85,10 +102,20 @@ public class ShortcutsHandler : MonoBehaviour
         if (Input.GetKeyDown(Plugin.ConfigToggleShowRecordSetMessage.Value))
         {
             Plugin.ConfigShowRecordSetMessage.Value = !Plugin.ConfigShowRecordSetMessage.Value;
-            
+
             PlayerManager.Instance.messenger.Log(Plugin.ConfigShowRecordSetMessage.Value
                     ? "Showing Record Set Message"
                     : "Hiding Record Set Message",
+                2.5f);
+        }
+
+        if (Input.GetKeyDown(Plugin.ConfigToggleShowGhostTransparent.Value))
+        {
+            Plugin.ConfigShowGhostTransparent.Value = !Plugin.ConfigShowGhostTransparent.Value;
+
+            PlayerManager.Instance.messenger.Log(Plugin.ConfigShowGhostTransparent.Value
+                    ? "Transparent ghosts!"
+                    : "Opaque ghosts!",
                 2.5f);
         }
     }

@@ -4,11 +4,8 @@ using System.Linq;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
-using TNRD.Zeepkist.GTR.Mod.Api.Records;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.Mod.Patches;
-using TNRD.Zeepkist.GTR.SDK;
-using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.Racing;
 
@@ -89,22 +86,24 @@ public class RecordSubmitter : MonoBehaviourWithLogging
         if (!ZeepkistNetwork.IsConnected)
             return;
 
-        string levelHash = InternalLevelApi.CurrentLevelHash;
-        int level = InternalLevelApi.CurrentLevelId;
         int user = SdkWrapper.Instance.UsersApi.UserId;
 
-        if (level == -1)
+        if (string.IsNullOrEmpty(InternalLevelApi.CurrentLevelHash))
             return;
 
-        Result result = await InternalRecordsApi.Submit(
-            levelHash,
-            level,
-            user,
-            time,
-            splits,
-            ghostJson,
-            screenshotBuffer,
-            splits.Count == PlayerManager.Instance.currentMaster.racePoints);
+        Result result = await SdkWrapper.Instance.RecordsApi.Submit(builder =>
+        {
+            builder
+                .WithLevel(InternalLevelApi.CurrentLevelHash)
+                .WithUser(user)
+                .WithTime(time)
+                .WithSplits(splits.ToArray)
+                .WithGhostData(ghostJson)
+                .WithScreenshotData(Convert.ToBase64String(screenshotBuffer))
+                .WithIsValid(splits.Count == PlayerManager.Instance.currentMaster.racePoints)
+                .WithGameVersion($"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}")
+                .WithModVersion(MyPluginInfo.PLUGIN_VERSION);
+        });
 
         if (result.IsFailed)
         {

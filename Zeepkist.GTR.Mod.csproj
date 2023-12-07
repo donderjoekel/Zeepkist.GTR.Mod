@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>TNRD.Zeepkist.GTR.Mod</AssemblyName>
-        <Version>0.22.3</Version>
+        <Version>0.30.5</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -21,29 +21,29 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
-        <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+        <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all"/>
+        <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
+        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0"/>
         <PackageReference Include="Costura.Fody" Version="5.7.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.15.33.366" />
-        <PackageReference Include="ZeepSDK" Version="1.17.0" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.15.50.546"/>
+        <PackageReference Include="ZeepSDK" Version="1.22.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="netstandard, Version=2.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
+        <Reference Include="netstandard, Version=2.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj" />
-        <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\Zeepkist.GTR.UnitySDK.csproj" />
+        <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj"/>
+        <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\Zeepkist.GTR.UnitySDK.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="discord_game_sdk.dll">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="discord_game_sdk.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

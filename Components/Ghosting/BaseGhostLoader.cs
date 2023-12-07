@@ -1,17 +1,14 @@
-﻿using System.Linq;
-using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
-using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
+﻿using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
-using TNRD.Zeepkist.GTR.FluentResults;
-using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
-using TNRD.Zeepkist.GTR.Mod.Patches;
 using UnityEngine;
 using ZeepSDK.Racing;
 
-namespace TNRD.Zeepkist.GTR.Mod.Components;
+namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
 public abstract class BaseGhostLoader : MonoBehaviourWithLogging
 {
+    private int validIdentifier;
+
     protected override void Awake()
     {
         base.Awake();
@@ -29,100 +26,78 @@ public abstract class BaseGhostLoader : MonoBehaviourWithLogging
             return;
 
         ClearGhosts();
-        LoadGhosts().Forget();
+        LoadGhosts(++validIdentifier).Forget();
     }
 
-    protected abstract bool ContainsGhost(RecordResponseModel recordModel);
-    protected abstract void AddGhost(RecordResponseModel recordModel, GameObject ghost);
+    protected abstract bool ContainsGhost(MediaResponseModel mediaModel);
+    protected abstract void AddGhost(MediaResponseModel mediaModel, GameObject ghost);
     protected abstract void ClearGhosts();
-    protected abstract UniTaskVoid LoadGhosts();
+    protected abstract UniTaskVoid LoadGhosts(int identifier);
 
-    protected static RecordResponseModel GetWorldRecordRecordModel(IResult<RecordsGetResponseDTO> wrGhost)
+    protected void SpawnWorldRecord(
+        int identifier,
+        MediaResponseModel mediaModel,
+        RecordResponseModel recordModel,
+        UserResponseModel userModel
+    )
     {
-        RecordResponseModel wr = null;
-        if (wrGhost.IsSuccess)
-        {
-            if (wrGhost.Value.TotalAmount == 1)
-                wr = wrGhost.Value.Records.First();
-        }
-        else
-        {
-            Logger.LogInfo("Loading world record failed");
-            Logger.LogInfo(wrGhost.ToString());
-        }
-
-        return wr;
-    }
-
-    protected static RecordResponseModel GetPersonalBestRecordModel(IResult<RecordsGetResponseDTO> pbGhost)
-    {
-        RecordResponseModel pb = null;
-        if (pbGhost.IsSuccess)
-        {
-            if (pbGhost.Value.TotalAmount == 1)
-                pb = pbGhost.Value.Records.First();
-        }
-        else
-        {
-            Logger.LogInfo("Loading personal best failed");
-            Logger.LogInfo(pbGhost.ToString());
-        }
-
-        return pb;
-    }
-
-    protected void SpawnWorldRecord(RecordResponseModel record)
-    {
-        if (record == null)
-            return;
-        string holderName = string.IsNullOrEmpty(record.User.SteamName)
-            ? record.User.SteamId
-            : record.User.SteamName;
-        SpawnGhost(record, $"WR\n{holderName}\r\n{record.Time.Value!.GetFormattedTime()}", new Color(0.6f, 0, 0.8f));
-    }
-
-    protected void SpawnPersonalBest(RecordResponseModel record)
-    {
-        if (record == null)
+        if (mediaModel == null)
             return;
 
-        if (string.IsNullOrEmpty(record.GhostUrl))
+        string holderName = string.IsNullOrEmpty(userModel.SteamName)
+            ? userModel.SteamId
+            : userModel.SteamName;
+        SpawnGhost(identifier,
+            mediaModel,
+            userModel,
+            $"WR\n{holderName}\r\n{recordModel.Time.GetFormattedTime()}",
+            new Color(0.6f, 0, 0.8f));
+    }
+
+    protected void SpawnPersonalBest(
+        int identifier,
+        MediaResponseModel mediaModel,
+        RecordResponseModel recordModel,
+        UserResponseModel userModel
+    )
+    {
+        if (mediaModel == null)
+            return;
+
+        if (string.IsNullOrEmpty(mediaModel.GhostUrl))
         {
             Logger.LogInfo("Skipping ghost because there's no ghost url yet");
             return;
         }
 
-        SpawnGhost(record, $"PB\n{record.Time.Value.GetFormattedTime()}", new Color(0, 0.7f, 0));
+        SpawnGhost(identifier,
+            mediaModel,
+            userModel,
+            $"PB\n{recordModel.Time.GetFormattedTime()}",
+            new Color(0, 0.7f, 0));
     }
 
-    protected void SpawnGhost(RecordResponseModel recordModel, string name, Color? color)
+    protected void SpawnGhost(
+        int identifier,
+        MediaResponseModel mediaModel,
+        UserResponseModel userModel,
+        string name,
+        Color? color
+    )
     {
-        if (ContainsGhost(recordModel))
+        if (ContainsGhost(mediaModel))
             return;
 
-        PhotonZeepkist photonZeepkist = FindObjectOfType<PhotonZeepkist>();
-        NetworkedGhostSpawner networkedGhostSpawner = FindObjectOfType<NetworkedGhostSpawner>();
+        if (identifier != validIdentifier)
+            return;
 
-        NetworkedZeepkistGhost networkedZeepkistGhost = Instantiate(networkedGhostSpawner.zeepkistGhostPrefab,
-            new Vector3(0, 5, 0),
-            Quaternion.identity,
-            photonZeepkist.physicsSceneTransform);
+        GameObject ghost = new($"Ghost for {name}");
+        GhostPlayer ghostPlayer = ghost.AddComponent<GhostPlayer>();
+        GhostVisuals ghostVisuals = ghost.AddComponent<GhostVisuals>();
 
-        GhostPlayer ghostPlayer = networkedZeepkistGhost.gameObject.AddComponent<GhostPlayer>();
-        ghostPlayer.Initialize(networkedZeepkistGhost, name, color, recordModel);
+        ghostPlayer.Initialize(null, name, color, mediaModel, ghostVisuals);
+        ghostVisuals.Initialize(name, userModel.SteamId, color);
 
-        Ghost_AnimateWheel[] ghostAnimateWheels =
-            ghostPlayer.gameObject.GetComponentsInChildren<Ghost_AnimateWheel>();
-
-        for (int i = ghostAnimateWheels.Length - 1; i >= 0; i--)
-        {
-            Ghost_AnimateWheel ghostAnimateWheel = ghostAnimateWheels[i];
-            Destroy(ghostAnimateWheel);
-        }
-
-        Destroy(networkedZeepkistGhost);
-
-        AddGhost(recordModel, ghostPlayer.gameObject);
-        // PlayerManager.Instance.currentMaster.flyingCamera.FlyingCamera.SetCurrentZeepkist();
+        AddGhost(mediaModel, ghost);
     }
 }

@@ -13,142 +13,47 @@ using TNRD.Zeepkist.GTR.SDK;
 using TNRD.Zeepkist.GTR.SDK.Client;
 using TNRD.Zeepkist.GTR.SDK.Models.Response;
 using UnityEngine;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Mod.Api.Levels;
 
 public static class InternalLevelApi
 {
-    private static ManualLogSource logger = EntryPoint.CreateLogger(nameof(InternalLevelApi));
+    private static readonly ManualLogSource logger = LoggerFactory.GetLogger(typeof(InternalLevelApi));
 
-    public static int CurrentLevelId { get; private set; }
     public static string CurrentLevelHash { get; private set; }
 
     public static event Action LevelCreating;
     public static event Action LevelCreated;
 
-    private static DirectoryOrLevel FindWorkshopLevel(DirectoryOrLevel directoryOrLevel, string uid)
-    {
-        if (directoryOrLevel.isLevel)
-            return directoryOrLevel.UID == uid ? directoryOrLevel : null;
-
-        foreach (DirectoryOrLevel dir in directoryOrLevel.contents)
-        {
-            DirectoryOrLevel temp = FindWorkshopLevel(dir, uid);
-            if (temp != null)
-                return temp;
-        }
-
-        return null;
-    }
-
-    private static bool IsAdventureLevel(LevelScriptableObject level)
-    {
-        if (level.IsAdventureLevel)
-            return true;
-
-        return LevelManager.Instance.AllAdventureLevels.Levels.Any(x => x.UID == level.UID);
-    }
-
-    public static async UniTask<Result> Create()
+    public static Result Create()
     {
         LevelCreating?.Invoke();
-        CurrentLevelId = -1;
         CurrentLevelHash = null;
         LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
 
-        string textToHash = GetTextToHash(level.LevelData);
-        CurrentLevelHash = Hash(textToHash);
-
-        Result<LevelsGetResponseDTO> getLevelResult = await SdkWrapper.Instance.LevelsApi.Get(builder => builder.WithUid(level.UID));
-        if (getLevelResult.IsSuccess)
+        if (level == null)
         {
-            if (getLevelResult.Value.Levels.Count == 1)
-            {
-                CurrentLevelId = getLevelResult.Value.Levels.First().Id;
-                LevelCreated?.Invoke();
-                return Result.Ok();
-            }
+            logger.LogError("No level available!");
+            return Result.Fail("No level available");
         }
 
-        logger.LogInfo($"Creating level metadata for: {level.UID}");
-        if (string.IsNullOrEmpty(level.UID))
+        try
         {
-            logger.LogError("Level UID is empty");
-            return Result.Fail("Level UID is empty");
+            string textToHash = GetTextToHash(level.LevelData);
+            CurrentLevelHash = Hash(textToHash);
+        }
+        catch (Exception e)
+        {
+            logger.LogError("Unable to hash level: " + e);
+            return Result.Fail("Unable to hash level");
         }
 
-        if (!IsAdventureLevel(level) && level.WorkshopID == 0)
-        {
-            return Result.Fail("No workshop id available");
-        }
-
-        string thumbnailB64 = await CreateThumbnail(level);
-
-        if (!IsAdventureLevel(level) && string.IsNullOrEmpty(thumbnailB64))
-            return Result.Fail("No thumbnail available");
-
-        CreateLevelRequestModel createLevelRequestModel = new CreateLevelRequestModel()
-        {
-            Author = level.Author,
-            Name = level.Name,
-            Uid = level.UID,
-            Wid = level.WorkshopID.ToString(),
-            TimeAuthor = level.TimeAuthor,
-            TimeBronze = level.TimeBronze,
-            TimeGold = level.TimeGold,
-            TimeSilver = level.TimeSilver,
-            Thumbnail = thumbnailB64,
-            IsValid = level.IsValidated
-        };
-
-        Result<CreateLevelResponseModel> result =
-            await SdkWrapper.Instance.ApiClient.Post<CreateLevelResponseModel>("levels", createLevelRequestModel);
-
-        if (result.IsFailed)
-            return result.ToResult();
-
-        CurrentLevelId = result.Value.Id;
         LevelCreated?.Invoke();
         return Result.Ok();
     }
 
-    private static async Task<string> CreateThumbnail(LevelScriptableObject level)
-    {
-        string thumbnailB64 = string.Empty;
-
-        try
-        {
-            if (!level.IsAdventureLevel)
-            {
-                DirectoryOrLevel dirOrLevel = FindWorkshopLevel(LevelManager.Instance.WorkshopDirectory, level.UID);
-                if (dirOrLevel != null)
-                {
-                    string[] files = Directory.GetFiles(dirOrLevel.URL, "*.jpg");
-                    if (files.Length == 1)
-                    {
-                        byte[] bytes = await File.ReadAllBytesAsync(files.First());
-
-                        if (bytes.Length > 500000)
-                        {
-                            Texture2D texture = new Texture2D(1, 1);
-                            texture.LoadImage(bytes);
-                            bytes = texture.EncodeToJPG(50);
-                        }
-
-                        thumbnailB64 = Convert.ToBase64String(bytes);
-                    }
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e);
-        }
-
-        return thumbnailB64;
-    }
-    
-    private static string GetTextToHash(string[] lines)
+    public static string GetTextToHash(string[] lines)
     {
         string[] splits = lines[2].Split(',');
 
@@ -159,7 +64,7 @@ public static class InternalLevelApi
         return string.Join("\n", lines.Skip(3).Prepend(skyboxAndBasePlate));
     }
 
-    private static string Hash(string input)
+    public static string Hash(string input)
     {
         using (SHA1 sha1 = SHA1.Create())
         {

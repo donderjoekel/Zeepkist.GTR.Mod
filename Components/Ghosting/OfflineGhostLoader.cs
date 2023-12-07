@@ -1,34 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
-using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
-using TNRD.Zeepkist.GTR.SDK;
+using TNRD.Zeepkist.GTR.Mod.Api.Levels;
+using TNRD.Zeepkist.GTR.Mod.Patches;
+using TNRD.Zeepkist.GTR.SDK.Extensions;
 using UnityEngine;
 using ZeepkistClient;
-using Random = UnityEngine.Random;
 
-namespace TNRD.Zeepkist.GTR.Mod.Components;
+namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
 public class OfflineGhostLoader : BaseGhostLoader
 {
-    private static readonly Dictionary<RecordResponseModel, GameObject> recordToGhost = new();
-
-    public static IReadOnlyDictionary<RecordResponseModel, GameObject> RecordToGhost => recordToGhost;
+    private static readonly Dictionary<MediaResponseModel, GameObject> recordToGhost = new();
 
     /// <inheritdoc />
-    protected override bool ContainsGhost(RecordResponseModel recordModel)
+    protected override bool ContainsGhost(MediaResponseModel recordModel)
     {
         return recordToGhost.ContainsKey(recordModel);
     }
 
     /// <inheritdoc />
-    protected override void AddGhost(RecordResponseModel recordModel, GameObject ghost)
+    protected override void AddGhost(MediaResponseModel recordModel, GameObject ghost)
     {
         recordToGhost.Add(recordModel, ghost);
     }
@@ -36,7 +30,7 @@ public class OfflineGhostLoader : BaseGhostLoader
     /// <inheritdoc />
     protected override void ClearGhosts()
     {
-        foreach (KeyValuePair<RecordResponseModel, GameObject> kvp in recordToGhost)
+        foreach (KeyValuePair<MediaResponseModel, GameObject> kvp in recordToGhost)
         {
             Destroy(kvp.Value);
         }
@@ -44,248 +38,64 @@ public class OfflineGhostLoader : BaseGhostLoader
         recordToGhost.Clear();
     }
 
-    protected override async UniTaskVoid LoadGhosts()
+    protected override async UniTaskVoid LoadGhosts(int identifier)
     {
         if (ZeepkistNetwork.IsConnected)
             return;
 
-        LevelScriptableObject level = PlayerManager.Instance.currentMaster.GlobalLevel;
+        string textToHash = InternalLevelApi.GetTextToHash(PlayerManager.Instance.currentMaster.GlobalLevel.LevelData);
+        string levelHash = InternalLevelApi.Hash(textToHash);
 
-        await UniTask.WhenAll(
-            SpawnWorldRecordGhost(level.UID),
-            SpawnPersonalBestGhost(level.UID),
-            SpawnAuthorMedalGhost(level),
-            SpawnGoldMedalGhost(level),
-            SpawnSilverMedalGhost(level),
-            SpawnBronzeMedalGhost(level),
-            SpawnGhostModeGhosts(level));
+        await UniTask.WhenAll(SpawnWorldRecordGhost(identifier, levelHash),
+            SpawnPersonalBestGhost(identifier, levelHash));
     }
 
-    private async UniTask SpawnGhostModeGhosts(LevelScriptableObject level)
+    private async UniTask SpawnWorldRecordGhost(int identifier, string levelHash)
     {
-        if (Plugin.ConfigOfflineGhostCount.Value == 0)
-        {
-            Logger.LogInfo("Skipping ghost mode ghosts because count is 0");
+        if (!Plugin.ConfigShowOfflineWorldRecord.Value)
             return;
-        }
 
-        if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.OFF)
+        Result<WorldRecordGetGhostResponseDTO> result = await SdkWrapper.Instance.WorldRecordApi.GetGhost(builder =>
         {
-            Logger.LogInfo("Skipping ghost mode ghosts because ghost mode is off");
-            return;
-        }
-
-        if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.RANDOM)
-        {
-            await LoadRandomGhosts(Plugin.ConfigOfflineGhostCount.Value);
-        }
-        else if (Plugin.ConfigOfflineGhostMode.Value == GhostMode.TOP)
-        {
-            Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder =>
-                builder.WithSort("time")
-                    .WithLevelUid(level.UID)
-                    .WithBestOnly(true)
-                    .WithOffset(1)
-                    .WithLimit(Plugin.ConfigOfflineGhostCount.Value));
-
-            if (result.IsFailed)
-            {
-                Logger.LogError("Unable to get top records: " + result.ToString());
-                return;
-            }
-
-            foreach (RecordResponseModel recordResponseModel in result.Value.Records)
-            {
-                SpawnGhostWithDefaultName(recordResponseModel);
-            }
-        }
-    }
-
-    private async UniTask SpawnWorldRecordGhost(string globalLevelUid)
-    {
-        if (Plugin.ConfigShowOfflineWorldRecord.Value)
-        {
-            Result<RecordsGetResponseDTO> wrGhost = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-                .WithLevelUid(globalLevelUid)
-                .WithWorldRecordOnly(true));
-            SpawnWorldRecord(GetWorldRecordRecordModel(wrGhost));
-        }
-    }
-
-    private async UniTask SpawnPersonalBestGhost(string globalLevelUid)
-    {
-        if (Plugin.ConfigShowOfflinePersonalBest.Value)
-        {
-            Result<RecordsGetResponseDTO> pbGhost = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-                .WithLevelUid(globalLevelUid)
-                .WithBestOnly(true)
-                .WithUserId(SdkWrapper.Instance.UsersApi.UserId));
-            SpawnPersonalBest(GetPersonalBestRecordModel(pbGhost));
-        }
-    }
-
-    private async UniTask SpawnAuthorMedalGhost(LevelScriptableObject level)
-    {
-        if (Plugin.ConfigShowOfflineAuthorMedal.Value)
-        {
-            await LoadMedalGhosts(level.TimeAuthor, 1);
-        }
-    }
-
-    private async UniTask SpawnGoldMedalGhost(LevelScriptableObject level)
-    {
-        if (Plugin.ConfigShowOfflineGoldMedal.Value)
-        {
-            await LoadMedalGhosts(level.TimeGold, 1);
-        }
-    }
-
-    private async UniTask SpawnSilverMedalGhost(LevelScriptableObject level)
-    {
-        if (Plugin.ConfigShowOfflineSilverMedal.Value)
-        {
-            await LoadMedalGhosts(level.TimeSilver, 1);
-        }
-    }
-
-    private async UniTask SpawnBronzeMedalGhost(LevelScriptableObject level)
-    {
-        if (Plugin.ConfigShowOfflineBronzeMedal.Value)
-        {
-            await LoadMedalGhosts(level.TimeBronze, 1);
-        }
-    }
-
-    private async UniTask LoadMedalGhosts(float time, int amount)
-    {
-        const float timeTolerance = 1.5f;
-
-        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-            .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
-            .WithMinimumTime(time - timeTolerance)
-            .WithMaximumTime(time + timeTolerance)
-            .WithWorldRecordOnly(false)
-            .WithValidOnly(true));
+            builder
+                .WithLevel(levelHash);
+        });
 
         if (result.IsFailed)
         {
-            Logger.LogError($"Unable to load medal ghosts ({time}): {result.ToString()}");
+            if (!result.IsNotFound())
+            {
+                Logger.LogError("Unable to load world record: " + result);
+            }
+
             return;
         }
 
-        List<RecordResponseModel> records = result.Value.Records;
-        if (records.Count == 0)
-            return;
-
-        if (amount > records.Count)
-        {
-            foreach (RecordResponseModel record in records)
-            {
-                SpawnGhostWithDefaultName(record);
-            }
-        }
-        else
-        {
-            for (int i = 0; i < amount; i++)
-            {
-                int index = Random.Range(0, records.Count);
-                RecordResponseModel record = records[index];
-                records.RemoveAt(index);
-                SpawnGhostWithDefaultName(record);
-            }
-        }
+        SpawnWorldRecord(identifier, result.Value.Media, result.Value.Record, result.Value.User);
     }
 
-    private async UniTask LoadRandomGhosts(int amount)
+    private async UniTask SpawnPersonalBestGhost(int identifier, string levelHash)
     {
-        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-            .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
-            .WithWorldRecordOnly(false)
-            .WithValidOnly(true));
+        if (!Plugin.ConfigShowOfflinePersonalBest.Value)
+            return;
+
+        Result<PersonalBestGetGhostResponseDTO> result = await SdkWrapper.Instance.PersonalBestApi.GetGhost(builder =>
+        {
+            builder
+                .WithLevel(levelHash)
+                .WithUser(SdkWrapper.Instance.UsersApi.UserId);
+        });
 
         if (result.IsFailed)
         {
-            Logger.LogError($"Unable to load random ghosts: {result.ToString()}");
+            if (!result.IsNotFound())
+            {
+                Logger.LogError("Unable to load personal best: " + result);
+            }
+
             return;
         }
 
-        if (result.Value.TotalAmount < amount)
-        {
-            List<UniTask> tasks = new List<UniTask>();
-
-            for (int i = 0; i < result.Value.TotalAmount; i++)
-            {
-                tasks.Add(LoadRandomGhost(i));
-            }
-
-            await UniTask.WhenAll(tasks);
-        }
-        else
-        {
-            List<UniTask> tasks = new List<UniTask>();
-
-            for (int i = 0; i < amount; i++)
-            {
-                int index = Random.Range(0, result.Value.TotalAmount);
-                tasks.Add(LoadRandomGhost(index));
-            }
-
-            await UniTask.WhenAll(tasks);
-        }
-    }
-
-    private async UniTask LoadRandomGhost(int index)
-    {
-        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Zeepkist",
-            "GTR",
-            "Models");
-
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
-
-        string key = PlayerManager.Instance.currentMaster.GlobalLevel.UID + "_" + index + ".json";
-        string filename = Path.Combine(folder, key);
-
-        RecordResponseModel model;
-
-        if (File.Exists(filename))
-        {
-            this.Logger().LogInfo($"Reading model from disk: {filename}");
-            string contents = await File.ReadAllTextAsync(filename);
-            model = JsonConvert.DeserializeObject<RecordResponseModel>(contents);
-        }
-        else
-        {
-            this.Logger().LogInfo($"Downloading model: {key}");
-            Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-                .WithLevelUid(PlayerManager.Instance.currentMaster.GlobalLevel.UID)
-                .WithWorldRecordOnly(false)
-                .WithValidOnly(true)
-                .WithOffset(index)
-                .WithLimit(1));
-
-            if (result.IsFailed)
-            {
-                Logger.LogError($"Unable to load random ghost ({index}): {result.ToString()}");
-                return;
-            }
-
-            if (result.Value.TotalAmount == 0)
-                return;
-
-            model = result.Value.Records[0];
-        }
-
-        SpawnGhostWithDefaultName(model);
-        await File.WriteAllTextAsync(filename, JsonConvert.SerializeObject(model));
-    }
-
-    private void SpawnGhostWithDefaultName(RecordResponseModel record)
-    {
-        string holderName = string.IsNullOrEmpty(record.User.SteamName)
-            ? record.User.SteamId
-            : record.User.SteamName;
-        SpawnGhost(record, $"{holderName}\r\n{record.Time.Value.GetFormattedTime()}", null);
+        SpawnPersonalBest(identifier, result.Value.Media, result.Value.Record, result.Value.User);
     }
 }

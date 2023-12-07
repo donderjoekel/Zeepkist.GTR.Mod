@@ -1,5 +1,6 @@
 ﻿using BepInEx.Logging;
 using UnityEngine;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components;
 
@@ -9,6 +10,6 @@ public abstract class MonoBehaviourWithLogging : MonoBehaviour
     
     protected virtual void Awake()
     {
-        Logger = EntryPoint.CreateLogger(GetType().Name);
+        Logger = LoggerFactory.GetLogger(GetType());
     }
 }

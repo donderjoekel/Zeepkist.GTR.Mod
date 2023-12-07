@@ -38,7 +38,7 @@ public class RatingPopupHandler : MonoBehaviour
         if (!Plugin.ConfigEnableVoting.Value)
             return;
 
-        if (InternalLevelApi.CurrentLevelId == -1)
+        if (string.IsNullOrEmpty(InternalLevelApi.CurrentLevelHash))
             return;
 
         LoadAndShow().Forget();
@@ -58,9 +58,9 @@ public class RatingPopupHandler : MonoBehaviour
         favoriteButton.Clicked += OnFavoriteButtonClicked;
 
         Result<FavoritesGetAllResponseDTO> getFavoriteResult = await SdkWrapper.Instance.FavoritesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
+            builder.WithLevel(InternalLevelApi.CurrentLevelHash).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
         Result<VotesGetResponseDTO> getVotesResult = await SdkWrapper.Instance.VotesApi.Get(builder =>
-            builder.WithLevelId(InternalLevelApi.CurrentLevelId).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
+            builder.WithLevel(InternalLevelApi.CurrentLevelHash).WithUserId(SdkWrapper.Instance.UsersApi.UserId));
 
         if (getFavoriteResult.IsFailed)
         {
@@ -87,15 +87,15 @@ public class RatingPopupHandler : MonoBehaviour
 
         if (getVotesResult.Value.Votes.Count > 0)
         {
-            VoteResponseModel vote = getVotesResult.Value.Votes.FirstOrDefault(x => x.Category == 0);
+            VoteResponseModel vote = getVotesResult.Value.Votes.FirstOrDefault();
             if (vote == null)
             {
                 starButtons.DeactivateAll();
             }
             else
             {
-                starButtons.ActivateUntil(vote.Score.Value - 1);
-                lastScore = vote.Score.Value - 1;
+                starButtons.ActivateUntil(vote.Score - 1);
+                lastScore = vote.Score - 1;
             }
         }
         else
@@ -123,7 +123,7 @@ public class RatingPopupHandler : MonoBehaviour
         int score = index + 1;
 
         Result submitResult = await SdkWrapper.Instance.VotesApi.Submit(builder =>
-            builder.WithLevel(InternalLevelApi.CurrentLevelId).WithScore(score));
+            builder.WithLevel(InternalLevelApi.CurrentLevelHash).WithScore(score));
 
         if (submitResult.IsFailed)
         {
@@ -138,7 +138,8 @@ public class RatingPopupHandler : MonoBehaviour
         if (score > 3)
         {
             Result<GenericIdResponseDTO> result =
-                await SdkWrapper.Instance.UpvotesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await SdkWrapper.Instance.UpvotesApi.Add(
+                    builder => builder.WithLevel(InternalLevelApi.CurrentLevelHash));
             upvoteResult = result.ToResult();
         }
         else if (score < 3)
@@ -146,7 +147,7 @@ public class RatingPopupHandler : MonoBehaviour
             Result<UpvotesGetResponseDTO> getUpvoteResult = await SdkWrapper.Instance.UpvotesApi.Get(builder =>
             {
                 builder
-                    .WithLevelId(InternalLevelApi.CurrentLevelId)
+                    .WithLevel(InternalLevelApi.CurrentLevelHash)
                     .WithUserId(SdkWrapper.Instance.UsersApi.UserId);
             });
 
@@ -180,7 +181,8 @@ public class RatingPopupHandler : MonoBehaviour
         if (favoriteButton.IsActive)
         {
             Result<GenericIdResponseDTO> addResult =
-                await SdkWrapper.Instance.FavoritesApi.Add(builder => builder.WithLevelId(InternalLevelApi.CurrentLevelId));
+                await SdkWrapper.Instance.FavoritesApi.Add(builder =>
+                    builder.WithLevel(InternalLevelApi.CurrentLevelHash));
             result = addResult.ToResult();
         }
         else
@@ -188,7 +190,7 @@ public class RatingPopupHandler : MonoBehaviour
             Result<FavoritesGetAllResponseDTO> getFavoriteResult = await SdkWrapper.Instance.FavoritesApi.Get(builder =>
             {
                 builder
-                    .WithLevelId(InternalLevelApi.CurrentLevelId)
+                    .WithLevel(InternalLevelApi.CurrentLevelHash)
                     .WithUserId(SdkWrapper.Instance.UsersApi.UserId);
             });
 

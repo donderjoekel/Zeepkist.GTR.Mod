@@ -39,6 +39,7 @@ internal class Plugin : MonoBehaviour
 
     public static ConfigEntry<bool> ConfigShowGhosts;
     public static ConfigEntry<bool> ConfigShowGhostNames;
+    public static ConfigEntry<bool> ConfigShowGhostTransparent;
     public static ConfigEntry<bool> ConfigShowRecordSetMessage;
     public static ConfigEntry<bool> ConfigShowWorldRecordHolder;
 
@@ -46,17 +47,12 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<KeyCode> ConfigToggleEnableRecords;
     public static ConfigEntry<KeyCode> ConfigToggleShowGhosts;
     public static ConfigEntry<KeyCode> ConfigToggleShowGhostNames;
+    public static ConfigEntry<KeyCode> ConfigToggleShowGhostTransparent;
     public static ConfigEntry<KeyCode> ConfigToggleShowRecordSetMessage;
     public static ConfigEntry<KeyCode> ConfigToggleShowWorldRecordHolder;
 
     public static ConfigEntry<bool> ConfigShowOfflineWorldRecord;
     public static ConfigEntry<bool> ConfigShowOfflinePersonalBest;
-    public static ConfigEntry<bool> ConfigShowOfflineAuthorMedal;
-    public static ConfigEntry<bool> ConfigShowOfflineGoldMedal;
-    public static ConfigEntry<bool> ConfigShowOfflineSilverMedal;
-    public static ConfigEntry<bool> ConfigShowOfflineBronzeMedal;
-    public static ConfigEntry<string> ConfigOfflineGhostMode;
-    public static ConfigEntry<int> ConfigOfflineGhostCount;
 
     public static ConfigEntry<string> ConfigAuthUrl;
     public static ConfigEntry<string> ConfigApiUrl;
@@ -155,6 +151,10 @@ internal class Plugin : MonoBehaviour
 
         ConfigShowGhosts = Config.Bind("Visibility", "Show Ghosts", true, "Should ghosts be shown");
         ConfigShowGhostNames = Config.Bind("Visibility", "Show Ghost Names", true, "Should ghost names be shown");
+        ConfigShowGhostTransparent = Config.Bind("Visibility",
+            "Show Ghost Transparent",
+            true,
+            "Should ghosts be transparent");
         ConfigShowRecordSetMessage = Config.Bind("Visibility",
             "Show Record Set Message",
             true,
@@ -198,6 +198,10 @@ internal class Plugin : MonoBehaviour
             "Toggle Ghost Name Visibility",
             KeyCode.None,
             "Toggles the ghost name visibility");
+        ConfigToggleShowGhostTransparent = Config.Bind("Keys",
+            "Toggle Ghost Transparency",
+            KeyCode.None,
+            "Toggles the ghost transparency");
 
         ConfigToggleShowRecordSetMessage = Config.Bind("Keys",
             "Toggle Record Set Message Visibility",
@@ -221,37 +225,6 @@ internal class Plugin : MonoBehaviour
             "Show Personal Best",
             true,
             "Should the personal best ghost be shown");
-
-        ConfigShowOfflineAuthorMedal = Config.Bind("Ghosts (Offline)",
-            "Show Author Medal",
-            true,
-            "Should the author medal ghost be shown");
-
-        ConfigShowOfflineGoldMedal = Config.Bind("Ghosts (Offline)",
-            "Show Gold Medal",
-            true,
-            "Should the gold medal ghost be shown");
-
-        ConfigShowOfflineSilverMedal = Config.Bind("Ghosts (Offline)",
-            "Show Silver Medal",
-            true,
-            "Should the silver medal ghost be shown");
-
-        ConfigShowOfflineBronzeMedal = Config.Bind("Ghosts (Offline)",
-            "Show Bronze Medal",
-            true,
-            "Should the bronze medal ghost be shown");
-
-        ConfigOfflineGhostMode = Config.Bind("Ghosts (Offline)",
-            "Ghost Mode",
-            GhostMode.OFF,
-            new ConfigDescription("The ghost mode to use",
-                new AcceptableValueList<string>(GhostMode.OFF, GhostMode.RANDOM, GhostMode.TOP)));
-
-        ConfigOfflineGhostCount = Config.Bind("Ghosts (Offline)",
-            "Ghost Count",
-            10,
-            "The amount of ghosts to show based on the ghost mode");
     }
 
     private void MainMenuUiOnAwake()
@@ -339,6 +312,7 @@ internal class Plugin : MonoBehaviour
 
             try
             {
+                await CustomUsersApi.UpdateName();
                 await CustomUsersApi.UpdateDiscordId();
             }
             catch (Exception e)

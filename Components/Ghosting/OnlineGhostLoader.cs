@@ -4,36 +4,32 @@ using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
-using TNRD.Zeepkist.GTR.SDK;
-using TNRD.Zeepkist.GTR.SDK.Models;
-using TNRD.Zeepkist.GTR.SDK.Models.Response;
+using TNRD.Zeepkist.GTR.SDK.Extensions;
 using UnityEngine;
 using ZeepkistClient;
 
-namespace TNRD.Zeepkist.GTR.Mod.Components;
+namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
 public class OnlineGhostLoader : BaseGhostLoader
 {
-    private static readonly Dictionary<RecordResponseModel, GameObject> recordToGhost = new();
-
-    public static IReadOnlyDictionary<RecordResponseModel, GameObject> RecordToGhost => recordToGhost;
+    private static readonly Dictionary<MediaResponseModel, GameObject> recordToGhost = new();
 
     /// <inheritdoc />
-    protected override bool ContainsGhost(RecordResponseModel recordModel)
+    protected override bool ContainsGhost(MediaResponseModel mediaModel)
     {
-        return recordToGhost.ContainsKey(recordModel);
+        return recordToGhost.ContainsKey(mediaModel);
     }
 
     /// <inheritdoc />
-    protected override void AddGhost(RecordResponseModel recordModel, GameObject ghost)
+    protected override void AddGhost(MediaResponseModel mediaModel, GameObject ghost)
     {
-        recordToGhost.Add(recordModel, ghost);
+        recordToGhost.Add(mediaModel, ghost);
     }
 
     /// <inheritdoc />
     protected override void ClearGhosts()
     {
-        foreach (KeyValuePair<RecordResponseModel, GameObject> kvp in recordToGhost)
+        foreach (KeyValuePair<MediaResponseModel, GameObject> kvp in recordToGhost)
         {
             Destroy(kvp.Value);
         }
@@ -41,29 +37,39 @@ public class OnlineGhostLoader : BaseGhostLoader
         recordToGhost.Clear();
     }
 
-    protected override async UniTaskVoid LoadGhosts()
+    protected override async UniTaskVoid LoadGhosts(int identifier)
     {
         if (!ZeepkistNetwork.IsConnected)
             return;
 
         for (int i = 0; i < 1000; i++)
         {
-            if (InternalLevelApi.CurrentLevelId != -1)
+            if (!string.IsNullOrEmpty(InternalLevelApi.CurrentLevelHash))
                 break;
 
             await UniTask.Yield();
         }
 
-        if (InternalLevelApi.CurrentLevelId == -1)
+        if (string.IsNullOrEmpty(InternalLevelApi.CurrentLevelHash))
             return;
 
-        Result<RecordsGetResponseDTO> result = await SdkWrapper.Instance.RecordsApi.Get(builder => builder
-            .WithLevelId(InternalLevelApi.CurrentLevelId)
-            .WithBestOnly(true)
-            .WithUserId(SdkWrapper.Instance.UsersApi.UserId));
+        Result<PersonalBestGetGhostResponseDTO> result = await SdkWrapper.Instance.PersonalBestApi.GetGhost(builder =>
+        {
+            builder
+                .WithLevel(InternalLevelApi.CurrentLevelHash)
+                .WithUser(SdkWrapper.Instance.UsersApi.UserId);
+        });
 
-        RecordResponseModel pb = GetPersonalBestRecordModel(result);
+        if (result.IsFailed)
+        {
+            if (!result.IsNotFound())
+            {
+                Logger.LogError("Unable to load personal best: " + result);
+            }
 
-        SpawnPersonalBest(pb);
+            return;
+        }
+
+        SpawnPersonalBest(identifier, result.Value.Media, result.Value.Record, result.Value.User);
     }
 }
