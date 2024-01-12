@@ -132,7 +132,7 @@ public partial class GhostVisuals : MonoBehaviourWithLogging
         AddRenderersRecursive(ghostModel.transform);
 
         // Set the color of the ghosts once already
-        Color color = new Color(1, 1, 1, 0);
+        Color color = new(1, 1, 1, 0);
 
         if (PlayerManager.Instance.objectsList.wardrobe.everyColor.ContainsKey(colorId))
         {
@@ -147,6 +147,9 @@ public partial class GhostVisuals : MonoBehaviourWithLogging
             materialData.SetGhostColor(color);
         }
 
+        OnShowGhostsChanged(this, null);
+        OnShowNamesChanged(this, null);
+        OnShowGhostTransparentChanged(this, null);
         hasSetup = true;
     }
 
@@ -290,7 +293,7 @@ public partial class GhostVisuals : MonoBehaviourWithLogging
 
         Transform nameDisplayTransform = nameDisplay.transform;
 
-        nameDisplayTransform.position = transform.position + (Vector3.up * 2.5f);
+        nameDisplayTransform.position = transform.position + Vector3.up * 2.5f;
         nameDisplayTransform.LookAt(cameraPosition);
         nameDisplayTransform.LookAt(nameDisplayTransform.position -
                                     nameDisplayTransform.forward);
@@ -391,7 +394,7 @@ public partial class GhostVisuals : MonoBehaviourWithLogging
         if (playerDistance < 3f)
             return;
 
-        Color color = new Color(1, 1, 1, fadeAmount);
+        Color color = new(1, 1, 1, fadeAmount);
 
         if (PlayerManager.Instance.objectsList.wardrobe.everyColor.ContainsKey(colorId))
         {
