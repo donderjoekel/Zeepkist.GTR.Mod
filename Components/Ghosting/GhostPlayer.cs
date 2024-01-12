@@ -34,7 +34,7 @@ public class GhostPlayer : MonoBehaviourWithLogging
     private Quaternion targetRotation;
 
     private static float Ticker =>
-        PlayerManager.Instance.currentMaster.PlayersReady.FirstOrDefault()?.ticker.what_ticker ?? 0;
+        PlayerManager.Instance.currentMaster.PlayersReady.FirstOrDefault()?.ticker.what_ticker + 0.05f ?? 0;
 
     protected override void Awake()
     {
