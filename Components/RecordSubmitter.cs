@@ -13,6 +13,11 @@ namespace TNRD.Zeepkist.GTR.Mod.Components;
 
 public class RecordSubmitter : MonoBehaviourWithLogging
 {
+    private static readonly string[] bannedLevels = new[]
+    {
+        "BE6DBC63CD48A2B1B0B14E7F337FD4BF0813DD6C" // NYE KICK OR CLUTCH VOTING MAP Decorated by Fred (ioi8)
+    };
+
     private bool HasScreenshot => screenshotBuffer != null;
     private bool HasGhost => !string.IsNullOrEmpty(ghostJson);
     private SetupCar setupCar;
@@ -89,6 +94,9 @@ public class RecordSubmitter : MonoBehaviourWithLogging
         int user = SdkWrapper.Instance.UsersApi.UserId;
 
         if (string.IsNullOrEmpty(InternalLevelApi.CurrentLevelHash))
+            return;
+
+        if (bannedLevels.Contains(InternalLevelApi.CurrentLevelHash, StringComparer.OrdinalIgnoreCase))
             return;
 
         Result result = await SdkWrapper.Instance.RecordsApi.Submit(builder =>
