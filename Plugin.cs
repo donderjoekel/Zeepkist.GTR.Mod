@@ -56,6 +56,7 @@ internal class Plugin : MonoBehaviour
 
     public static ConfigEntry<string> ConfigAuthUrl;
     public static ConfigEntry<string> ConfigApiUrl;
+    public static ConfigEntry<string> ConfigGraphQLUrl;
 
     public static AssetBundle AssetBundle { get; private set; }
 
@@ -96,6 +97,8 @@ internal class Plugin : MonoBehaviour
 
         ChatCommandApi.RegisterLocalChatCommand<FavoriteLocalChatCommand>();
         ChatCommandApi.RegisterLocalChatCommand<UpvoteLocalChatCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<RankLocalChatCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<WorldRecordLocalChatCommand>();
 
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -173,6 +176,11 @@ internal class Plugin : MonoBehaviour
             "The Auth address",
             Sdk.DEFAULT_AUTH_ADDRESS,
             "Allows you to set a custom Auth address");
+
+        ConfigGraphQLUrl = Config.Bind("URLs",
+            "The GraphQL address",
+            Sdk.DEFAULT_GRAPHQL_ADDRESS,
+            "Allows you to set a custom GraphQL address");
 
         SetupShortcutKeys();
         SetupGhostsConfig();
