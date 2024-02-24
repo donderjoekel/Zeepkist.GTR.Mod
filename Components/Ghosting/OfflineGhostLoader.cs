@@ -8,6 +8,7 @@ using TNRD.Zeepkist.GTR.Mod.Patches;
 using TNRD.Zeepkist.GTR.SDK.Extensions;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepSDK.Level;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
@@ -43,8 +44,7 @@ public class OfflineGhostLoader : BaseGhostLoader
         if (ZeepkistNetwork.IsConnected)
             return;
 
-        string textToHash = InternalLevelApi.GetTextToHash(PlayerManager.Instance.currentMaster.GlobalLevel.LevelData);
-        string levelHash = InternalLevelApi.Hash(textToHash);
+        string levelHash = LevelApi.GetLevelHash(PlayerManager.Instance.currentMaster.GlobalLevel);
 
         await UniTask.WhenAll(SpawnWorldRecordGhost(identifier, levelHash),
             SpawnPersonalBestGhost(identifier, levelHash));
