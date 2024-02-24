@@ -65,20 +65,21 @@ public partial class GhostVisuals : MonoBehaviourWithLogging
             transform);
         nameDisplay.enabled = false;
 
-        if (!PlayerManager.Instance.instellingen.Settings.online_disable_physics)
-        {
-            fakeRagdoll = Instantiate(NetworkedGhostSpawner.zeepkistGhostPrefab.fakeRagdoll, transform);
-            fakeRagdoll.physicalTransform = ghostModel.transform;
-            fakeRagdoll.visualTop = ghostModel.transform.Find("Character/Armature/Top");
-            fakeRagdoll.visualLeftArm = ghostModel.transform.Find("Character/Left Arm");
-            fakeRagdoll.visualRightArm = ghostModel.transform.Find("Character/Right Arm");
-            fakeRagdoll.visualBottom = ghostModel.transform.Find("Character/Armature/Bottom");
-            fakeRagdoll.visualCharacter = ghostModel.transform.Find("Character").gameObject;
-
-            fakeRagdoll.DoSetup();
-            fakeRagdoll.SetAlive();
-            fakeRagdoll.enabled = false;
-        }
+        // NOTE: Disabled for now as this is causing issues with the physics
+        // if (!PlayerManager.Instance.instellingen.Settings.online_disable_physics)
+        // {
+        //     fakeRagdoll = Instantiate(NetworkedGhostSpawner.zeepkistGhostPrefab.fakeRagdoll, transform);
+        //     fakeRagdoll.physicalTransform = ghostModel.transform;
+        //     fakeRagdoll.visualTop = ghostModel.transform.Find("Character/Armature/Top");
+        //     fakeRagdoll.visualLeftArm = ghostModel.transform.Find("Character/Left Arm");
+        //     fakeRagdoll.visualRightArm = ghostModel.transform.Find("Character/Right Arm");
+        //     fakeRagdoll.visualBottom = ghostModel.transform.Find("Character/Armature/Bottom");
+        //     fakeRagdoll.visualCharacter = ghostModel.transform.Find("Character").gameObject;
+        //
+        //     fakeRagdoll.DoSetup();
+        //     fakeRagdoll.SetAlive();
+        //     fakeRagdoll.enabled = false;
+        // }
 
         Plugin.ConfigShowGhosts.SettingChanged += OnShowGhostsChanged;
         Plugin.ConfigShowGhostNames.SettingChanged += OnShowNamesChanged;
