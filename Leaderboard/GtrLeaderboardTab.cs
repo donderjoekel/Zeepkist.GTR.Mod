@@ -11,7 +11,7 @@ using ZeepSDK.Leaderboard.Pages;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
 
-internal class GtrLeaderboardTab : BaseLeaderboardTab
+internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
 {
     private const int AMOUNT_PER_PAGE = 16;
     private const int TOTAL_ITEMS = AMOUNT_PER_PAGE * 4;
