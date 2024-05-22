@@ -14,7 +14,7 @@ using TNRD.Zeepkist.GTR.Mod.Api.Users;
 using TNRD.Zeepkist.GTR.Mod.ChatCommands;
 using TNRD.Zeepkist.GTR.Mod.Components;
 using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
-using TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
+using TNRD.Zeepkist.GTR.Mod.Leaderboard;
 using TNRD.Zeepkist.GTR.Mod.Patches;
 using TNRD.Zeepkist.GTR.Mod.Stats;
 using TNRD.Zeepkist.GTR.SDK;
@@ -185,11 +185,6 @@ internal class Plugin : MonoBehaviour
             "The GraphQL address",
             Sdk.DEFAULT_GRAPHQL_ADDRESS,
             "Allows you to set a custom GraphQL address");
-        
-        ConfigZworpUrl = Config.Bind("URLs",
-            "The Zworpshop address",
-            Sdk.DEFAULT_ZWORP_ADDRESS,
-            "Allows you to set a custom Zworpshop address");
         
         ConfigZworpUrl = Config.Bind("URLs",
             "The Zworpshop address",

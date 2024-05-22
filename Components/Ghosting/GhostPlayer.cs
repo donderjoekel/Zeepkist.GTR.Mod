@@ -47,12 +47,25 @@ public class GhostPlayer : MonoBehaviourWithLogging
         NetworkedZeepkistGhost original,
         string name,
         Color? color,
+        int ghostId,
+        string ghostUrl,
+        GhostVisuals ghostVisuals
+    )
+    {
+        this.ghostVisuals = ghostVisuals;
+        GetGhost(ghostId, ghostUrl).Forget();
+    }
+
+    public void Initialize(
+        NetworkedZeepkistGhost original,
+        string name,
+        Color? color,
         MediaResponseModel mediaResponseModel,
         GhostVisuals ghostVisuals
     )
     {
         this.ghostVisuals = ghostVisuals;
-        GetGhost(mediaResponseModel).Forget();
+        GetGhost(mediaResponseModel.Id, mediaResponseModel.GhostUrl).Forget();
 
         // ghostModel = original.ghostModel;
         // cameraManModel = original.cameraManModel;
@@ -77,7 +90,8 @@ public class GhostPlayer : MonoBehaviourWithLogging
         // original.brake = false;
     }
 
-    private async UniTaskVoid GetGhost(MediaResponseModel mediaResponseModel)
+    // private async UniTaskVoid GetGhost(MediaResponseModel mediaResponseModel)
+    private async UniTaskVoid GetGhost(int ghostId, string ghostUrl)
     {
         string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "Zeepkist",
@@ -87,7 +101,7 @@ public class GhostPlayer : MonoBehaviourWithLogging
         if (!Directory.Exists(folder))
             Directory.CreateDirectory(folder);
 
-        string filename = Path.Combine(folder, $"{mediaResponseModel.Id}.bin");
+        string filename = Path.Combine(folder, $"{ghostId}.bin");
 
         byte[] buffer;
 
@@ -98,10 +112,10 @@ public class GhostPlayer : MonoBehaviourWithLogging
         }
         else
         {
-            this.Logger().LogInfo($"Download ghost: {mediaResponseModel.GhostUrl}");
+            this.Logger().LogInfo($"Download ghost: {ghostUrl}");
             using (HttpClient client = new())
             {
-                HttpResponseMessage response = await client.GetAsync(mediaResponseModel.GhostUrl);
+                HttpResponseMessage response = await client.GetAsync(ghostUrl);
                 if (response.IsSuccessStatusCode)
                 {
                     buffer = await response.Content.ReadAsByteArrayAsync();

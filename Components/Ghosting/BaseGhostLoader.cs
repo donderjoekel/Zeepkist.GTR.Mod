@@ -1,4 +1,5 @@
-﻿using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
+﻿using System;
+using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using UnityEngine;
 using ZeepSDK.Racing;
@@ -99,5 +100,27 @@ public abstract class BaseGhostLoader : MonoBehaviourWithLogging
         ghostVisuals.Initialize(name, userModel.SteamId, color);
 
         AddGhost(mediaModel, ghost);
+    }
+
+    protected void SpawnGhost(
+        int identifier,
+        int ghostId,
+        string ghostUrl,
+        string displayName,
+        string steamId,
+        Color? color
+    )
+    {
+        if (identifier != validIdentifier)
+            return;
+
+        GameObject ghost = new($"Ghost for {steamId}");
+        var ghostPlayer = ghost.AddComponent<GhostPlayer>();
+        var ghostVisuals = ghost.AddComponent<GhostVisuals>();
+
+        ghostPlayer.Initialize(null, displayName, color, ghostId, ghostUrl, ghostVisuals);
+        ghostVisuals.Initialize(displayName, steamId, color);
+
+        AddGhost(new MediaResponseModel { GhostUrl = ghostUrl }, ghost);
     }
 }
