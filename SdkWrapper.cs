@@ -8,6 +8,7 @@ internal class SdkWrapper
         Plugin.ConfigApiUrl.Value,
         Plugin.ConfigAuthUrl.Value,
         Plugin.ConfigGraphQLUrl.Value,
+        Plugin.ConfigZworpUrl.Value,
         1106610501674348554,
         false,
         false);

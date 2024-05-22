@@ -57,6 +57,7 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<string> ConfigAuthUrl;
     public static ConfigEntry<string> ConfigApiUrl;
     public static ConfigEntry<string> ConfigGraphQLUrl;
+    public static ConfigEntry<string> ConfigZworpUrl;
 
     public static AssetBundle AssetBundle { get; private set; }
 
@@ -181,6 +182,11 @@ internal class Plugin : MonoBehaviour
             "The GraphQL address",
             Sdk.DEFAULT_GRAPHQL_ADDRESS,
             "Allows you to set a custom GraphQL address");
+        
+        ConfigZworpUrl = Config.Bind("URLs",
+            "The Zworpshop address",
+            Sdk.DEFAULT_ZWORP_ADDRESS,
+            "Allows you to set a custom Zworpshop address");
 
         SetupShortcutKeys();
         SetupGhostsConfig();

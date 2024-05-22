@@ -28,8 +28,8 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Zeepkist.GameLibs" Version="1.0.0-alpha.15.50.546"/>
-        <PackageReference Include="ZeepSDK" Version="1.22.0"/>
+        <PackageReference Include="Zeepkist.GameLibs" Version="15.999.76" />
+        <PackageReference Include="ZeepSDK" Version="1.29.3" />
     </ItemGroup>
 
     <ItemGroup>
