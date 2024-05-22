@@ -1,35 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
 using TNRD.Zeepkist.GTR.Mod.Api.Levels;
+using TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 using TNRD.Zeepkist.GTR.SDK.Extensions;
+using UnityEngine.Events;
+using ZeepkistClient;
+using ZeepSDK.Leaderboard;
 using ZeepSDK.Leaderboard.Pages;
+using ZeepSDK.Level;
 
-namespace TNRD.Zeepkist.GTR.Mod.Components.Leaderboard.Pages;
+namespace TNRD.Zeepkist.GTR.Mod.Leaderboard;
 
-internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
+internal class GtrLeaderboardTab : BaseCoreLeaderboardTab, IMultiplayerLeaderboardTab, ISingleplayerLeaderboardTab
 {
     private const int AMOUNT_PER_PAGE = 16;
-    private const int TOTAL_ITEMS = AMOUNT_PER_PAGE * 4;
 
-    private class ListItem
+    private static Dictionary<int, double> fibbonus = new()
     {
-        public ListItem(RecordResponseModel record, UserResponseModel user)
-        {
-            Record = record;
-            User = user;
-        }
+        { 0, 0.21 },
+        { 1, 0.13 },
+        { 2, 0.08 },
+        { 3, 0.05 },
+        { 4, 0.03 },
+        { 5, 0.02 },
+        { 6, 0.01 },
+        { 7, 0.01 }
+    };
 
-        public RecordResponseModel Record { get; private set; }
-        public UserResponseModel User { get; private set; }
-    }
+    private static UnityEvent[] originalEvents = new UnityEvent[AMOUNT_PER_PAGE];
 
-    private readonly List<ListItem> listItems = new();
+    private static string LevelHash => ZeepkistNetwork.IsConnectedToGame
+        ? InternalLevelApi.CurrentLevelHash
+        : LevelApi.GetLevelHash(PlayerManager.Instance.currentMaster.GlobalLevel);
+
+    // private readonly List<ListItem> listItems = new();
+    // private readonly List<PersonalBestsRoot.Data.AllPersonalBests.Node> nodes = [];
+    private readonly List<PersonalBest> nodes = new();
     private LevelPointsResponseModel levelPoints;
+    private int totalUsers;
 
     /// <inheritdoc />
     protected override string GetLeaderboardTitle()
@@ -41,6 +55,53 @@ internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
     protected override void OnEnable()
     {
         LoadRecords().Forget();
+
+        if (ZeepkistNetwork.IsConnectedToGame)
+            return;
+
+        for (int i = 0; i < AMOUNT_PER_PAGE; i++)
+        {
+            int index = i;
+            GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[index];
+            originalEvents[index] = instance.favoriteButton.onClick;
+            instance.favoriteButton.onClick = new UnityEvent();
+            instance.favoriteButton.onClick.AddListener(() => OnFavoriteButtonClicked(index));
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnDisable()
+    {
+        nodes.Clear();
+
+        if (ZeepkistNetwork.IsConnectedToGame)
+            return;
+
+        for (int i = 0; i < AMOUNT_PER_PAGE; i++)
+        {
+            Instance.leaderboard_tab_positions[i].favoriteButton.onClick = originalEvents[i];
+        }
+    }
+
+    private void OnFavoriteButtonClicked(int i)
+    {
+        int j = CurrentPage * AMOUNT_PER_PAGE + i;
+
+        GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[i];
+        instance.isFavorite = !instance.isFavorite;
+
+        PersonalBest node = nodes[j];
+
+        if (instance.isFavorite)
+        {
+            OfflineGhostLoader.AddCustomGhost(node.SteamId, node.SteamName, node.GhostId, node.GhostUrl);
+        }
+        else
+        {
+            OfflineGhostLoader.RemoveCustomGhost(node.GhostId);
+        }
+
+        instance.RedrawFavoriteImage();
     }
 
     private async UniTaskVoid LoadRecords()
@@ -48,32 +109,63 @@ internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
         if (!IsActive)
             return;
 
-        listItems.Clear();
+        nodes.Clear();
         PlayerManager.Instance.messenger.Log("[GTR] Loading records", 2f);
 
-        Result<PersonalBestGetLeaderboardResponseDTO> result = await SdkWrapper.Instance.PersonalBestApi.GetLeaderboard(
-            builder =>
-            {
-                builder
-                    .WithLevel(InternalLevelApi.CurrentLevelHash)
-                    .WithLimit(TOTAL_ITEMS);
-            });
+        if (!await GetPersonalBests())
+            return;
+
+        if (!await GetTotalUsers())
+            return;
+
+        await GetLevelPoints();
+
+        Draw();
+        UpdatePageNumber();
+    }
+
+    private async Task<bool> GetPersonalBests()
+    {
+        Result<PersonalBestsRoot> result = await SdkWrapper.Instance.GraphQLClient.Post<PersonalBestsRoot>(
+            $$"""
+              {
+                  "query": "{ allPersonalBests(condition: {level: \"{{LevelHash}}\"}) { nodes { recordByRecord { time mediaByRecord { nodes { id ghostUrl } } } userByUser { steamId steamName } } } }"
+              }
+              """);
 
         if (result.IsFailed)
         {
             Logger.LogError("Unable to get leaderboard records: " + result);
-            return;
+            return false;
         }
 
-        foreach (PersonalBestGetLeaderboardResponseDTO.Item item in result.Value.Items)
+        nodes.Clear();
+
+        foreach (PersonalBestsRoot.Data.AllPersonalBests.Node node in result.Value.data.allPersonalBests.nodes)
         {
-            listItems.Add(new ListItem(item.Record, item.User));
+            string steamId = node.userByUser.steamId;
+            string steamName = node.userByUser.steamName;
+            double time = node.recordByRecord.time;
+            PersonalBestsRoot.Data.AllPersonalBests.Node.RecordByRecord.MediaByRecord.MediaByRecordNode media =
+                node.recordByRecord.mediaByRecord.nodes[0];
+
+            nodes.Add(new PersonalBest(steamId,
+                steamName,
+                time,
+                media.id,
+                media.ghostUrl));
         }
 
-        MaxPages = (listItems.Count - 1) / AMOUNT_PER_PAGE;
+        nodes.Sort((lhs, rhs) => lhs.Time.CompareTo(rhs.Time));
 
+        MaxPages = (nodes.Count - 1) / AMOUNT_PER_PAGE;
+        return true;
+    }
+
+    private async Task GetLevelPoints()
+    {
         Result<LevelsGetPointsByLevelResponseDTO> pointsByLevel =
-            await SdkWrapper.Instance.LevelApi.GetPointsByLevel(InternalLevelApi.CurrentLevelHash);
+            await SdkWrapper.Instance.LevelApi.GetPointsByLevel(LevelHash);
 
         if (pointsByLevel.IsFailed)
         {
@@ -88,15 +180,25 @@ internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
         {
             levelPoints = pointsByLevel.Value.LevelPoints;
         }
-
-        Draw();
-        UpdatePageNumber();
     }
 
-    /// <inheritdoc />
-    protected override void OnDisable()
+    private async Task<bool> GetTotalUsers()
     {
-        listItems.Clear();
+        Result<AllUsersCountRoot> result = await SdkWrapper.Instance.GraphQLClient.Post<AllUsersCountRoot>(
+            $$"""
+              {
+                  "query": "{ allUsers { totalCount } }"
+              }
+              """);
+
+        if (result.IsFailed)
+        {
+            Logger.LogError("Unable to get leaderboard records: " + result);
+            return false;
+        }
+
+        totalUsers = result.Value.data.allUsers.totalCount;
+        return true;
     }
 
     /// <inheritdoc />
@@ -106,44 +208,99 @@ internal class GtrLeaderboardTab : BaseMultiplayerLeaderboardTab
         {
             int j = CurrentPage * AMOUNT_PER_PAGE + i;
 
-            if (j >= listItems.Count)
+            if (j >= nodes.Count)
                 continue;
 
-            ListItem listItem = listItems[j];
+            PersonalBest node = nodes[j];
 
-            string name = !string.IsNullOrEmpty(listItem.User.SteamName)
-                ? listItem.User.SteamName
-                : listItem.User.SteamId;
+            string name = !string.IsNullOrEmpty(node.SteamName)
+                ? node.SteamName
+                : node.SteamId;
 
-            Instance.leaderboard_tab_positions[i].position.gameObject.SetActive(true);
-            Instance.leaderboard_tab_positions[i].position.text = (j + 1).ToString(CultureInfo.InvariantCulture);
-            Instance.leaderboard_tab_positions[i].position.color = PlayerManager.Instance.GetColorFromPosition(j + 1);
-            Instance.leaderboard_tab_positions[i].player_name.text = $"<link=\"{listItem.User.SteamId}\">{name}</link>";
-            Instance.leaderboard_tab_positions[i].time.text = listItem.Record.Time.GetFormattedTime();
+            GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[i];
+
+            instance.favoriteButton.gameObject.SetActive(!ZeepkistNetwork.IsConnectedToGame);
+            instance.isFavorite = OfflineGhostLoader.IsCustomGhostEnabled(node.GhostId);
+            instance.RedrawFavoriteImage();
+            instance.position.gameObject.SetActive(true);
+            instance.position.text = (j + 1).ToString(CultureInfo.InvariantCulture);
+            instance.position.color = PlayerManager.Instance.GetColorFromPosition(j + 1);
+            instance.player_name.text = $"<link=\"{node.SteamId}\">{name}</link>";
+            instance.time.text = node.Time.GetFormattedTime();
 
             if (levelPoints == null)
                 continue;
 
-            int points = (int)Math.Floor(CalculatePercentageYield(j + 1) * levelPoints.Points! / 100d);
-            // Instance.leaderboard_tab_positions[i].pointsCurrent.text = I2.Loc.LocalizationManager
-            //     .GetTranslation("Online/Leaderboard/Points")
-            //     .Replace("{[POINTS]}", pb.User.Score.ToString());
-            Instance.leaderboard_tab_positions[i].pointsWon.text = $"(+{points})";
+            // This should probably be done only once, but it's fine for now
+            int placementPoints = Math.Max(0, nodes.Count - j);
+            double a = 1d / (totalUsers / (double)nodes.Count);
+            int b = j + 1;
+            double c = j < 8 ? fibbonus[j] : 0;
+            double points = placementPoints * (1 + a / b) + c;
+
+            instance.pointsWon.text = $"(+{(int)Math.Round(points)})";
         }
     }
 
-    private static double CalculatePercentageYield(int position)
+    private record PersonalBest(string SteamId, string SteamName, double Time, int GhostId, string GhostUrl);
+
+    private class PersonalBestsRoot
     {
-        switch (position)
+        public Data data { get; set; }
+
+        public class Data
         {
-            case 1:
-                return 100;
-            case >= 25:
-                return 5;
-            default:
+            public AllPersonalBests allPersonalBests { get; set; }
+
+            public class AllPersonalBests
             {
-                double percentage = Math.Round(100 * Math.Exp(-0.15 * (position - 1)));
-                return Math.Max(percentage, 5);
+                public int totalCount { get; set; }
+                public List<Node> nodes { get; set; }
+
+                public class Node
+                {
+                    public RecordByRecord recordByRecord { get; set; }
+                    public UserByUser userByUser { get; set; }
+
+                    public class RecordByRecord
+                    {
+                        public double time { get; set; }
+
+                        public MediaByRecord mediaByRecord { get; set; }
+
+                        public class MediaByRecord
+                        {
+                            public List<MediaByRecordNode> nodes { get; set; }
+
+                            public class MediaByRecordNode
+                            {
+                                public int id { get; set; }
+                                public string ghostUrl { get; set; }
+                            }
+                        }
+                    }
+
+                    public class UserByUser
+                    {
+                        public string steamName { get; set; }
+                        public string steamId { get; set; }
+                    }
+                }
+            }
+        }
+    }
+
+    private class AllUsersCountRoot
+    {
+        public Data data { get; set; }
+
+        public class Data
+        {
+            public AllUsers allUsers { get; set; }
+
+            public class AllUsers
+            {
+                public int totalCount { get; set; }
             }
         }
     }
