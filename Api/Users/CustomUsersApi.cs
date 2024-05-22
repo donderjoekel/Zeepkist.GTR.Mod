@@ -30,8 +30,21 @@ internal class CustomUsersApi
         return await SdkWrapper.Instance.ApiClient.Post("users/name", requestDTO);
     }
 
-    internal static async UniTask<Result> UpdateDiscordId()
+    internal static UniTask<Result> UpdateDiscordId(bool link)
     {
+        if (link)
+        {
+            return LinkDiscord();
+        }
+        else
+        {
+            return UnlinkDiscord();
+        }
+    }
+
+    private static async UniTask<Result> LinkDiscord()
+    {
+        
         if (!SdkWrapper.Instance.DiscordApplicationId.HasValue)
             return Result.Ok();
 
@@ -68,6 +81,15 @@ internal class CustomUsersApi
 
         UsersUpdateDiscordIdRequestDTO requestDTO = new UsersUpdateDiscordIdRequestDTOBuilder()
             .WithDiscordId(currentUser.Value.Id.ToString())
+            .Build();
+
+        return await SdkWrapper.Instance.ApiClient.Post("users/discord", requestDTO);
+    }
+
+    private static async UniTask<Result> UnlinkDiscord()
+    {
+        UsersUpdateDiscordIdRequestDTO requestDTO = new UsersUpdateDiscordIdRequestDTOBuilder()
+            .WithDiscordId("-1")
             .Build();
 
         return await SdkWrapper.Instance.ApiClient.Post("users/discord", requestDTO);

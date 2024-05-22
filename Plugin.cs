@@ -59,6 +59,9 @@ internal class Plugin : MonoBehaviour
     public static ConfigEntry<string> ConfigGraphQLUrl;
     public static ConfigEntry<string> ConfigZworpUrl;
 
+    public static ConfigEntry<bool> ConfigButtonLinkDiscord;
+    public static ConfigEntry<bool> ConfigButtonUnlinkDiscord;
+
     public static AssetBundle AssetBundle { get; private set; }
 
     public ConfigFile Config { get; set; }
@@ -187,6 +190,49 @@ internal class Plugin : MonoBehaviour
             "The Zworpshop address",
             Sdk.DEFAULT_ZWORP_ADDRESS,
             "Allows you to set a custom Zworpshop address");
+        
+        ConfigZworpUrl = Config.Bind("URLs",
+            "The Zworpshop address",
+            Sdk.DEFAULT_ZWORP_ADDRESS,
+            "Allows you to set a custom Zworpshop address");
+
+        ConfigButtonLinkDiscord = Config.Bind("Discord",
+            "Link",
+            true,
+            "[Button] Show the link discord button");
+
+        ConfigButtonLinkDiscord.SettingChanged += async (sender, args) =>
+        {
+            try
+            {
+                await CustomUsersApi.UpdateDiscordId(true);
+                MessengerApi.LogSuccess("[GTR] Linked Discord");
+            }
+            catch (Exception e)
+            {
+                MessengerApi.LogError("[GTR] Failed to link Discord");
+                Logger.LogError(e);
+            }
+        };
+
+        ConfigButtonUnlinkDiscord = Config.Bind("Discord",
+            "Unlink",
+            true,
+            "[Button] Show the unlink discord button");
+
+        ConfigButtonUnlinkDiscord.SettingChanged += async (sender, args) =>
+        {
+            try
+            {
+                await CustomUsersApi.UpdateDiscordId(false);
+                MessengerApi.LogSuccess("[GTR] Unlinked Discord");
+            }
+            catch (Exception e)
+            {
+                MessengerApi.LogError("[GTR] Failed to unlink Discord");
+                Logger.LogError(e);
+            }
+        };
 
         SetupShortcutKeys();
         SetupGhostsConfig();
@@ -327,7 +373,6 @@ internal class Plugin : MonoBehaviour
             try
             {
                 await CustomUsersApi.UpdateName();
-                await CustomUsersApi.UpdateDiscordId();
             }
             catch (Exception e)
             {
