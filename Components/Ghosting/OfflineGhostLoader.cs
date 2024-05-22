@@ -1,20 +1,48 @@
 ﻿using System.Collections.Generic;
+using BepInEx.Logging;
 using TNRD.Zeepkist.GTR.Cysharp.Threading.Tasks;
 using TNRD.Zeepkist.GTR.DTOs.ResponseDTOs;
 using TNRD.Zeepkist.GTR.DTOs.ResponseModels;
 using TNRD.Zeepkist.GTR.FluentResults;
-using TNRD.Zeepkist.GTR.Mod.Api.Levels;
-using TNRD.Zeepkist.GTR.Mod.Patches;
 using TNRD.Zeepkist.GTR.SDK.Extensions;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.Level;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Mod.Components.Ghosting;
 
 public class OfflineGhostLoader : BaseGhostLoader
 {
+    private static ManualLogSource logger = LoggerFactory.GetLogger<OfflineGhostLoader>();
+
     private static readonly Dictionary<MediaResponseModel, GameObject> recordToGhost = new();
+    private static readonly Dictionary<int, CustomGhost> idToCustomGhost = new();
+
+    private record CustomGhost(string SteamId, string SteamName, int GhostId, string GhostUrl);
+
+    public static void AddCustomGhost(string steamId, string steamName, int ghostId, string ghostUrl)
+    {
+        logger.LogInfo("Adding custom ghost: " + ghostId);
+        idToCustomGhost.Add(ghostId, new CustomGhost(steamId, steamName, ghostId, ghostUrl));
+    }
+
+    public static void RemoveCustomGhost(int ghostId)
+    {
+        logger.LogInfo("Removing custom ghost: " + ghostId);
+        idToCustomGhost.Remove(ghostId);
+    }
+
+    public static void ClearCustomGhosts()
+    {
+        logger.LogInfo("Clearing custom ghosts");
+        idToCustomGhost.Clear();
+    }
+
+    public static bool IsCustomGhostEnabled(int ghostId)
+    {
+        return idToCustomGhost.ContainsKey(ghostId);
+    }
 
     /// <inheritdoc />
     protected override bool ContainsGhost(MediaResponseModel recordModel)
@@ -45,6 +73,12 @@ public class OfflineGhostLoader : BaseGhostLoader
             return;
 
         string levelHash = LevelApi.GetLevelHash(PlayerManager.Instance.currentMaster.GlobalLevel);
+
+        foreach (KeyValuePair<int, CustomGhost> kvp in idToCustomGhost)
+        {
+            logger.LogInfo("Spawning custom ghost: " + kvp.Key);
+            SpawnGhost(identifier, kvp.Key, kvp.Value.GhostUrl, kvp.Value.SteamName, kvp.Value.SteamId, null);
+        }
 
         await UniTask.WhenAll(SpawnWorldRecordGhost(identifier, levelHash),
             SpawnPersonalBestGhost(identifier, levelHash));
