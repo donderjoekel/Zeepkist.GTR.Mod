@@ -1,0 +1,192 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Messaging;
+using TNRD.Zeepkist.GTR.Screenshots;
+using ZeepkistClient;
+using ZeepSDK.External.Cysharp.Threading.Tasks;
+using ZeepSDK.Level;
+using ZeepSDK.Racing;
+
+namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
+
+public class RecordingService : IEagerService
+{
+    private readonly MessengerService _messengerService;
+    private readonly ILogger<RecordingService> _logger;
+    private readonly GhostRecorderFactory _ghostRecorderFactory;
+    private readonly ScreenshotService _screenshotService;
+    private readonly ApiHttpClient _apiHttpClient;
+
+    private CancellationTokenSource _cancellationTokenSource;
+    private GhostRecorder _activeGhostRecorder;
+
+    private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
+
+    public RecordingService(
+        MessengerService messengerService,
+        ILogger<RecordingService> logger,
+        GhostRecorderFactory ghostRecorderFactory,
+        ScreenshotService screenshotService,
+        ApiHttpClient apiHttpClient)
+    {
+        _messengerService = messengerService;
+        _logger = logger;
+        _ghostRecorderFactory = ghostRecorderFactory;
+        _screenshotService = screenshotService;
+        _apiHttpClient = apiHttpClient;
+
+        RacingApi.PlayerSpawned += OnPlayerSpawned;
+        RacingApi.RoundStarted += OnRoundStarted;
+        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        RacingApi.RoundEnded += OnRoundEnded;
+    }
+
+    private void OnPlayerSpawned()
+    {
+        _logger.LogInformation("Stopping existing recorder if any");
+        _activeGhostRecorder?.Stop();
+
+        if (!IsPlayingOnline)
+            return;
+
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = new CancellationTokenSource();
+        _logger.LogInformation("Creating new recorder");
+        _activeGhostRecorder = _ghostRecorderFactory.Create();
+    }
+
+    private void OnRoundStarted()
+    {
+        if (!IsPlayingOnline)
+            return;
+
+        _logger.LogInformation("Starting recorder");
+        _activeGhostRecorder.Start();
+    }
+
+    private void OnCrossedFinishLine(float time)
+    {
+        if (_activeGhostRecorder == null)
+            return;
+
+        _logger.LogInformation("Stopping recorder");
+        GhostRecorder recorder = _activeGhostRecorder;
+        _activeGhostRecorder = null;
+        StartSubmit(recorder).Forget();
+    }
+
+    private void OnRoundEnded()
+    {
+        _logger.LogInformation("Discarding recorder");
+        _activeGhostRecorder?.Stop();
+        _activeGhostRecorder = null;
+    }
+
+    private async UniTaskVoid StartSubmit(GhostRecorder ghostRecorder)
+    {
+        ghostRecorder.Stop();
+
+        _logger.LogInformation("Waiting for screenshot");
+        string screenshotData = await _screenshotService.TakeScreenshot(_cancellationTokenSource.Token);
+
+        if (screenshotData == null)
+        {
+            _messengerService.LogError("Unable to take screenshot, discarding record");
+            _logger.LogWarning("Screenshot was cancelled");
+            return;
+        }
+
+        _logger.LogInformation("Collecting extra information");
+        string hash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
+        WinCompare.Result result = PlayerManager.Instance.currentMaster.playerResults.First();
+        IEnumerable<float> splits = result.split_times.Select(x => x.time);
+        IEnumerable<float> speeds = result.split_times.Select(x => x.velocity);
+        float time = result.time;
+
+        _logger.LogInformation("Processing ghost data");
+        string ghostData = ProcessGhostRecorder(ghostRecorder);
+        if (string.IsNullOrEmpty(ghostData))
+        {
+            _logger.LogWarning("Something went wrong here");
+        }
+
+        await Submit(hash, time, splits, speeds, ghostData, screenshotData);
+    }
+
+    private string ProcessGhostRecorder(GhostRecorder ghostRecorder)
+    {
+        try
+        {
+            _logger.LogInformation("Creating stream");
+            using MemoryStream stream = new();
+            _logger.LogInformation("Writing to stream");
+            if (!ghostRecorder.Write(stream))
+            {
+                _logger.LogError("Failed to write to stream, returning empty string");
+                return string.Empty;
+            }
+
+            _logger.LogInformation("Closing stream");
+            stream.Close();
+            _logger.LogInformation("Getting buffer");
+            byte[] buffer = stream.ToArray();
+            _logger.LogInformation("Converting to base64");
+            return Convert.ToBase64String(buffer);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to process ghost data");
+            return string.Empty;
+        }
+    }
+
+    private async UniTask Submit(
+        string hash,
+        float time,
+        IEnumerable<float> splits,
+        IEnumerable<float> speeds,
+        string ghostData,
+        string screenshotData)
+    {
+        _logger.LogInformation("Creating resource");
+        RecordPostResource resource = new()
+        {
+            Level = hash,
+            Time = time,
+            Splits = splits.ToList(),
+            Speeds = speeds.ToList(),
+            GhostData = ghostData,
+            ScreenshotData = screenshotData,
+            IsValid = splits.Count() == PlayerManager.Instance.currentMaster.racePoints,
+            ModVersion = MyPluginInfo.PLUGIN_VERSION,
+            GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
+        };
+
+        try
+        {
+            HttpResponseMessage response = await _apiHttpClient.PostAsync("records", resource);
+            if (response.IsSuccessStatusCode)
+            {
+                _messengerService.Log("Record submitted");
+            }
+            else
+            {
+                string responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Failed to submit record: {Response}", responseContent);
+                _messengerService.LogError("Failed to submit record");
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to submit record");
+            _messengerService.LogError("Failed to submit record");
+        }
+    }
+}

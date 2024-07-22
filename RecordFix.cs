@@ -1,4 +1,4 @@
-﻿namespace System.Runtime.CompilerServices;
+﻿namespace TNRD.Zeepkist.GTR;
 
 internal class IsExternalInit
 {
