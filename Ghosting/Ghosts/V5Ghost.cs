@@ -18,7 +18,7 @@ public class V5Ghost : IGhost
     private int _fixedUpdateFrame;
     private float _time;
 
-    private GhostVisuals _ghost;
+    private GhostData _ghost;
 
     public V5Ghost(string taggedUsername, Color color, ulong steamId, CosmeticIDs cosmeticIds, List<Frame> frames)
     {
@@ -29,7 +29,9 @@ public class V5Ghost : IGhost
         _frames = frames;
     }
 
-    public void Initialize(GhostVisuals ghost)
+    public Color Color => _color;
+
+    public void Initialize(GhostData ghost)
     {
         _ghost = ghost;
     }
@@ -50,20 +52,20 @@ public class V5Ghost : IGhost
 
     public void ApplyCosmetics(string steamName)
     {
-        _ghost.Cosmetics.IDsToCosmeticsWithSteamID(_cosmeticIds, _steamId);
-        _ghost.GhostModel.DoCarSetup(_ghost.Cosmetics, true, true, false);
-        _ghost.GhostModel.SetupParaglider(_ghost.Cosmetics.GetParaglider());
-        _ghost.GhostModel.DisableParaglider();
-        _ghost.HornHolder.SetActive(false);
-        _ghost.NameDisplay.kingHat.gameObject.SetActive(false);
-        _ghost.NameDisplay.DoSetup(_taggedUsername, _steamId.ToString(), _color);
+        _ghost.Visuals.Cosmetics.IDsToCosmeticsWithSteamID(_cosmeticIds, _steamId);
+        _ghost.Visuals.GhostModel.DoCarSetup(_ghost.Visuals.Cosmetics, true, true, false);
+        _ghost.Visuals.GhostModel.SetupParaglider(_ghost.Visuals.Cosmetics.GetParaglider());
+        _ghost.Visuals.GhostModel.DisableParaglider();
+        _ghost.Visuals.HornHolder.SetActive(false);
+        _ghost.Visuals.NameDisplay.kingHat.gameObject.SetActive(false);
+        _ghost.Visuals.NameDisplay.DoSetup(_taggedUsername, _steamId.ToString(), _color);
 
-        if (_ghost.Cosmetics.horn != null)
+        if (_ghost.Visuals.Cosmetics.horn != null)
         {
-            _ghost.CurrentHornType = _ghost.Cosmetics.horn.hornType;
+            _ghost.CurrentHornType = _ghost.Visuals.Cosmetics.horn.hornType;
             _ghost.CurrentHornIsOneShot = _ghost.CurrentHornType == FMOD_HornsIndex.HornType.fallback ||
-                                          _ghost.Cosmetics.horn.currentHornIsOneShot;
-            _ghost.CurrentHornTone = _ghost.Cosmetics.horn.tone;
+                                          _ghost.Visuals.Cosmetics.horn.currentHornIsOneShot;
+            _ghost.CurrentHornTone = _ghost.Visuals.Cosmetics.horn.tone;
         }
         else
         {
@@ -107,7 +109,7 @@ public class V5Ghost : IGhost
         float t = Mathf.InverseLerp(previousFrame.Time, nextFrame.Time, _time);
         Vector3 position = Vector3.Lerp(previousFrame.Position, nextFrame.Position, t);
         Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
-        _ghost.transform.SetPositionAndRotation(position, rotation);
+        _ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
     }
 
     public void FixedUpdate()
@@ -134,7 +136,7 @@ public class V5Ghost : IGhost
     {
         bool currentHorn = frame.InputFlags.HasFlagFast(InputFlags.Horn);
         bool previousHorn = previousFrame.InputFlags.HasFlagFast(InputFlags.Horn);
-        _ghost.HornHolder.SetActive(currentHorn);
+        _ghost.Visuals.HornHolder.SetActive(currentHorn);
 
         if (currentHorn == previousHorn)
             return;
@@ -149,7 +151,7 @@ public class V5Ghost : IGhost
 
             _ghost.CurrentHorn = PlayerManager.Instance.hornsIndex.PlayHornPlayback(
                 _ghost.CurrentHornType,
-                _ghost.GhostModel.transform,
+                _ghost.Visuals.GhostModel.transform,
                 _ghost.CurrentHornTone);
         }
         else
@@ -216,11 +218,11 @@ public class V5Ghost : IGhost
 
         if (currentParaglider)
         {
-            _ghost.GhostModel.EnableParaglider();
+            _ghost.Visuals.GhostModel.EnableParaglider();
         }
         else
         {
-            _ghost.GhostModel.DisableParaglider();
+            _ghost.Visuals.GhostModel.DisableParaglider();
         }
     }
 

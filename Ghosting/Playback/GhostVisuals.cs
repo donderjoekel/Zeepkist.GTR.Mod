@@ -10,11 +10,6 @@ public class GhostVisuals : MonoBehaviour
     public GameObject HornHolder { get; set; }
     public CosmeticsV16 Cosmetics { get; set; }
 
-    public RoyTheunissen.FMODSyntax.FmodAudioPlayback CurrentHorn { get; set; }
-    public bool CurrentHornIsOneShot { get; set; }
-    public FMOD_HornsIndex.HornType CurrentHornType { get; set; }
-    public int CurrentHornTone { get; set; }
-
     private void Awake()
     {
         GhostModel = Instantiate(ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostModel, transform);
@@ -23,6 +18,8 @@ public class GhostVisuals : MonoBehaviour
             ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.nameDisplay.transform.position,
             ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.nameDisplay.transform.rotation,
             transform);
+
+        NameDisplay.enabled = false;
 
         foreach (Ghost_AnimateWheel wheel in GhostModel.GetComponentsInChildren<Ghost_AnimateWheel>())
         {
@@ -33,8 +30,6 @@ public class GhostVisuals : MonoBehaviour
         {
             wheel.enabled = false;
         }
-
-        NameDisplay.enabled = false;
 
         Cosmetics = new CosmeticsV16();
         HornHolder = GhostModel.transform.Find("Visible Horn").gameObject;

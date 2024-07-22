@@ -6,19 +6,20 @@ using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 using UnityEngine.Pool;
 using ZeepSDK.Racing;
-using ZeepSDK.Utilities;
 using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public partial class GhostPlayer : IEagerService
 {
-    private readonly ObjectPool<GhostVisuals> _pool = new(CreateGhost, GetGhost, ReleaseGhost, DestroyGhost);
+    private readonly ObjectPool<GhostData> _pool = new(CreateGhost, GetGhost, ReleaseGhost, DestroyGhost);
 
     private readonly Dictionary<int, IGhost> _ghosts = new();
-    private readonly Dictionary<int, GhostVisuals> _ghostVisuals = new();
+    private readonly Dictionary<int, GhostData> _ghostData = new();
 
     private bool _roundStarted;
+
+    public IEnumerable<GhostData> ActiveGhosts => _ghostData.Values;
 
     public event EventHandler<GhostAddedEventArgs> GhostAdded;
     public event EventHandler<GhostRemovedEventArgs> GhostRemoved;
@@ -32,26 +33,26 @@ public partial class GhostPlayer : IEagerService
         RacingApi.PlayerSpawned += OnPlayerSpawned;
     }
 
-    private static GhostVisuals CreateGhost()
+    private static GhostData CreateGhost()
     {
         GameObject gameObject = new("Ghost");
         GhostVisuals ghostVisuals = gameObject.AddComponent<GhostVisuals>();
-        return ghostVisuals;
+        return new GhostData(ghostVisuals);
     }
 
-    private static void GetGhost(GhostVisuals obj)
+    private static void GetGhost(GhostData ghostData)
     {
-        obj.gameObject.SetActive(true);
+        ghostData.GameObject.SetActive(true);
     }
 
-    private static void ReleaseGhost(GhostVisuals obj)
+    private static void ReleaseGhost(GhostData ghostData)
     {
-        obj.gameObject.SetActive(false);
+        ghostData.GameObject.SetActive(false);
     }
 
-    private static void DestroyGhost(GhostVisuals obj)
+    private static void DestroyGhost(GhostData ghostData)
     {
-        Object.Destroy(obj.gameObject);
+        Object.Destroy(ghostData.GameObject);
     }
 
     private void OnRoundStarted()
@@ -94,27 +95,31 @@ public partial class GhostPlayer : IEagerService
         if (HasGhost(recordId))
             return;
 
-        _ghosts.Add(recordId, ghost);
-        GhostVisuals networkedZeepkistGhost = _pool.Get();
-        _ghostVisuals.Add(recordId, networkedZeepkistGhost);
-        ghost.Initialize(networkedZeepkistGhost);
+        // The order here is important. The renderer needs to be the last thing to make sure we got all the materials etc
+        GhostData ghostData = _pool.Get();
+        ghostData.Initialize(ghost);
+        ghost.Initialize(ghostData);
         ghost.ApplyCosmetics(steamName);
+        ghostData.InitializeRenderer();
 
-        GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, networkedZeepkistGhost));
+        _ghosts.Add(recordId, ghost);
+        _ghostData.Add(recordId, ghostData);
+
+        GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, ghostData));
     }
 
     public void ClearGhosts()
     {
         foreach ((int recordId, IGhost _) in _ghosts)
         {
-            if (_ghostVisuals.TryGetValue(recordId, out GhostVisuals ghostVisuals))
+            if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
             {
-                _pool.Release(ghostVisuals);
+                _pool.Release(ghostData);
                 GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));
             }
         }
 
-        _ghostVisuals.Clear();
+        _ghostData.Clear();
         _ghosts.Clear();
     }
 

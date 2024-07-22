@@ -61,6 +61,7 @@ namespace TNRD.Zeepkist.GTR
                         services.AddEagerService<PlayerLoopService>();
                         services.AddEagerService<GhostPlayer>();
                         services.AddEagerService<GhostMaterialService>();
+                        services.AddEagerService<GhostNamePositioniongService>();
                         services.AddSingleton<AssetService>();
                         services.AddSingleton<GhostRepository>();
                         services.AddSingleton<GhostReaderFactory>();

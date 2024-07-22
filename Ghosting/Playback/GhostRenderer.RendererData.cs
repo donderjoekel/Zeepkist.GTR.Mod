@@ -26,12 +26,12 @@ public partial class GhostRenderer
 
         public void SwitchToNormal()
         {
-            _renderer.sharedMaterials = _normalMaterials;
+            _renderer.materials = _normalMaterials;
         }
 
         public void SwitchToGhost()
         {
-            _renderer.sharedMaterials = _ghostMaterials;
+            _renderer.materials = _ghostMaterials;
         }
 
         public void Enable()

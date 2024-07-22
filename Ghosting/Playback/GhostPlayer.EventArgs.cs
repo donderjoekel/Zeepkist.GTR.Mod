@@ -19,13 +19,13 @@ public partial class GhostPlayer
     {
         public int RecordId { get; }
         public IGhost Ghost { get; }
-        public GhostVisuals Visuals { get; }
+        public GhostData GhostData { get; }
 
-        public GhostAddedEventArgs(int recordId, IGhost ghost, GhostVisuals visuals)
+        public GhostAddedEventArgs(int recordId, IGhost ghost, GhostData ghostData)
         {
             RecordId = recordId;
             Ghost = ghost;
-            Visuals = visuals;
+            GhostData = ghostData;
         }
     }
 }

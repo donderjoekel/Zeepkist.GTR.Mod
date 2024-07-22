@@ -23,7 +23,9 @@ public class V2Ghost : IGhost
 
     public int CurrentFrameIndex { get; private set; }
 
-    public void Initialize(GhostVisuals ghost)
+    public Color Color { get; }
+
+    public void Initialize(GhostData ghost)
     {
         throw new System.NotImplementedException();
     }
