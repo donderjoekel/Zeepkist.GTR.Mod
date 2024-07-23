@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using UnityEngine;
+using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public class V4Ghost : IGhost
+public partial class V4Ghost : GhostBase
 {
     private readonly ulong _steamId;
     private readonly int _soapboxId;
@@ -21,72 +22,16 @@ public class V4Ghost : IGhost
         _frames = frames;
     }
 
-    public int CurrentFrameIndex { get; private set; }
+    protected override int FrameCount => _frames.Count;
+    public override Color Color => CosmeticsApi.GetColor(_colorId, false).skinColor.color;
 
-    public Color Color { get; }
-
-    public void Initialize(GhostData ghost)
+    public override void ApplyCosmetics(string steamName)
     {
-        throw new System.NotImplementedException();
+        // TODO: Apply cosmetics
     }
 
-    public void ApplyCosmetics(string steamName)
+    protected override IFrame GetFrame(int index)
     {
-        throw new System.NotImplementedException();
-    }
-
-    public void Start()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void Stop()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void Update()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void FixedUpdate()
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void Update(NetworkedZeepkistGhost ghost)
-    {
-        throw new System.NotImplementedException();
-    }
-
-    public void IncrementFrame()
-    {
-        SetFrame(CurrentFrameIndex + 1);
-    }
-
-    public void SetFrame(int index)
-    {
-        CurrentFrameIndex = Mathf.Clamp(index, 0, _frames.Count - 1);
-    }
-
-    public class Frame
-    {
-        public Frame(float time, Vector3 position, Quaternion rotation, float steering, bool armsUp, bool isBraking)
-        {
-            Time = time;
-            Position = position;
-            Rotation = rotation;
-            Steering = steering;
-            ArmsUp = armsUp;
-            IsBraking = isBraking;
-        }
-
-        public float Time { get; private set; }
-        public Vector3 Position { get; private set; }
-        public Quaternion Rotation { get; private set; }
-        public float Steering { get; private set; }
-        public bool ArmsUp { get; private set; }
-        public bool IsBraking { get; private set; }
+        return _frames[index];
     }
 }
