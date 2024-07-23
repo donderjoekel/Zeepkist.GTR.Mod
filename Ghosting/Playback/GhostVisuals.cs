@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
@@ -9,6 +11,7 @@ public class GhostVisuals : MonoBehaviour
     public DisplayPlayerName NameDisplay { get; set; }
     public GameObject HornHolder { get; set; }
     public CosmeticsV16 Cosmetics { get; set; }
+    public List<Ghost_AnimateWheel_v16> Wheels { get; set; }
 
     private void Awake()
     {
@@ -26,7 +29,8 @@ public class GhostVisuals : MonoBehaviour
             wheel.enabled = false;
         }
 
-        foreach (Ghost_AnimateWheel_v16 wheel in GhostModel.GetComponentsInChildren<Ghost_AnimateWheel_v16>())
+        Wheels = GhostModel.GetComponentsInChildren<Ghost_AnimateWheel_v16>().ToList();
+        foreach (Ghost_AnimateWheel_v16 wheel in Wheels)
         {
             wheel.enabled = false;
         }

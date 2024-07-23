@@ -179,6 +179,12 @@ public class V5Ghost : IGhost
 
         if (currentNone)
         {
+            foreach (Ghost_AnimateWheel_v16 wheel in _ghost.Visuals.Wheels)
+            {
+                wheel.offroadWheelModel.gameObject.SetActive(false);
+                wheel.soapwheelModel.gameObject.SetActive(false);
+                wheel.wheelModel.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -192,6 +198,12 @@ public class V5Ghost : IGhost
 
         if (currentSoap)
         {
+            foreach (Ghost_AnimateWheel_v16 wheel in _ghost.Visuals.Wheels)
+            {
+                wheel.wheelModel.gameObject.SetActive(false);
+                wheel.offroadWheelModel.gameObject.SetActive(false);
+                wheel.soapwheelModel.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -205,6 +217,12 @@ public class V5Ghost : IGhost
 
         if (currentOffroad)
         {
+            foreach (Ghost_AnimateWheel_v16 wheel in _ghost.Visuals.Wheels)
+            {
+                wheel.wheelModel.gameObject.SetActive(false);
+                wheel.soapwheelModel.gameObject.SetActive(false);
+                wheel.offroadWheelModel.gameObject.SetActive(true);
+            }
         }
     }
 
