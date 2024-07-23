@@ -10,7 +10,7 @@ public partial class GhostRenderer
 
     public GhostRenderer(GameObject gameObject)
     {
-        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>();
+        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(true);
         renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer)));
     }
 
