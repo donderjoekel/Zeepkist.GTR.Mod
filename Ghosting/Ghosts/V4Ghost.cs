@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using TNRD.Zeepkist.GTR.Ghosting.Playback;
+using TNRD.Zeepkist.GTR.Extensions;
 using UnityEngine;
 using ZeepSDK.Cosmetics;
 
@@ -27,7 +27,9 @@ public partial class V4Ghost : GhostBase
 
     public override void ApplyCosmetics(string steamName)
     {
-        // TODO: Apply cosmetics
+        CosmeticsV16 cosmetics = new();
+        cosmetics.FromPreV16(_soapboxId, _hatId, _colorId);
+        SetupCosmetics(cosmetics, steamName, _steamId);
     }
 
     protected override IFrame GetFrame(int index)

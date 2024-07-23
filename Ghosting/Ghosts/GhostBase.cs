@@ -22,6 +22,31 @@ public abstract class GhostBase : IGhost
 
     public abstract void ApplyCosmetics(string steamName);
 
+    protected void SetupCosmetics(CosmeticsV16 cosmetics, string steamName, ulong steamId)
+    {
+        Ghost.Visuals.Cosmetics = cosmetics;
+        Ghost.Visuals.GhostModel.DoCarSetup(Ghost.Visuals.Cosmetics, true, true, false);
+        Ghost.Visuals.GhostModel.SetupParaglider(Ghost.Visuals.Cosmetics.GetParaglider());
+        Ghost.Visuals.GhostModel.DisableParaglider();
+        Ghost.Visuals.HornHolder.SetActive(false);
+        Ghost.Visuals.NameDisplay.kingHat.gameObject.SetActive(false);
+        Ghost.Visuals.NameDisplay.DoSetup(steamName, steamId.ToString(), Color);
+
+        if (Ghost.Visuals.Cosmetics.horn != null)
+        {
+            Ghost.CurrentHornType = Ghost.Visuals.Cosmetics.horn.hornType;
+            Ghost.CurrentHornIsOneShot = Ghost.CurrentHornType == FMOD_HornsIndex.HornType.fallback ||
+                                         Ghost.Visuals.Cosmetics.horn.currentHornIsOneShot;
+            Ghost.CurrentHornTone = Ghost.Visuals.Cosmetics.horn.tone;
+        }
+        else
+        {
+            Ghost.CurrentHornType = FMOD_HornsIndex.HornType.fallback;
+            Ghost.CurrentHornIsOneShot = true;
+            Ghost.CurrentHornTone = 0;
+        }
+    }
+
     public void Start()
     {
         _time = 0;

@@ -27,27 +27,9 @@ public partial class V5Ghost : GhostBase
 
     public override void ApplyCosmetics(string steamName)
     {
-        Ghost.Visuals.Cosmetics.IDsToCosmeticsWithSteamID(_cosmeticIds, _steamId);
-        Ghost.Visuals.GhostModel.DoCarSetup(Ghost.Visuals.Cosmetics, true, true, false);
-        Ghost.Visuals.GhostModel.SetupParaglider(Ghost.Visuals.Cosmetics.GetParaglider());
-        Ghost.Visuals.GhostModel.DisableParaglider();
-        Ghost.Visuals.HornHolder.SetActive(false);
-        Ghost.Visuals.NameDisplay.kingHat.gameObject.SetActive(false);
-        Ghost.Visuals.NameDisplay.DoSetup(_taggedUsername, _steamId.ToString(), _color);
-
-        if (Ghost.Visuals.Cosmetics.horn != null)
-        {
-            Ghost.CurrentHornType = Ghost.Visuals.Cosmetics.horn.hornType;
-            Ghost.CurrentHornIsOneShot = Ghost.CurrentHornType == FMOD_HornsIndex.HornType.fallback ||
-                                         Ghost.Visuals.Cosmetics.horn.currentHornIsOneShot;
-            Ghost.CurrentHornTone = Ghost.Visuals.Cosmetics.horn.tone;
-        }
-        else
-        {
-            Ghost.CurrentHornType = FMOD_HornsIndex.HornType.fallback;
-            Ghost.CurrentHornIsOneShot = true;
-            Ghost.CurrentHornTone = 0;
-        }
+        CosmeticsV16 cosmetics = new();
+        cosmetics.IDsToCosmeticsWithSteamID(_cosmeticIds, _steamId);
+        SetupCosmetics(cosmetics, steamName, _steamId);
     }
 
     protected override IFrame GetFrame(int index)
