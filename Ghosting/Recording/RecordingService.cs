@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.Screenshots;
@@ -23,24 +24,28 @@ public class RecordingService : IEagerService
     private readonly GhostRecorderFactory _ghostRecorderFactory;
     private readonly ScreenshotService _screenshotService;
     private readonly ApiHttpClient _apiHttpClient;
+    private readonly ConfigService _configService;
 
     private CancellationTokenSource _cancellationTokenSource;
     private GhostRecorder _activeGhostRecorder;
 
     private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
+    private bool CanRecord => IsPlayingOnline && _configService.EnableRecords.Value;
 
     public RecordingService(
         MessengerService messengerService,
         ILogger<RecordingService> logger,
         GhostRecorderFactory ghostRecorderFactory,
         ScreenshotService screenshotService,
-        ApiHttpClient apiHttpClient)
+        ApiHttpClient apiHttpClient,
+        ConfigService configService)
     {
         _messengerService = messengerService;
         _logger = logger;
         _ghostRecorderFactory = ghostRecorderFactory;
         _screenshotService = screenshotService;
         _apiHttpClient = apiHttpClient;
+        _configService = configService;
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundStarted += OnRoundStarted;
@@ -53,7 +58,7 @@ public class RecordingService : IEagerService
         _logger.LogInformation("Stopping existing recorder if any");
         _activeGhostRecorder?.Stop();
 
-        if (!IsPlayingOnline)
+        if (!CanRecord)
             return;
 
         _cancellationTokenSource?.Cancel();
@@ -64,7 +69,7 @@ public class RecordingService : IEagerService
 
     private void OnRoundStarted()
     {
-        if (!IsPlayingOnline)
+        if (!CanRecord)
             return;
 
         _logger.LogInformation("Starting recorder");
@@ -73,6 +78,9 @@ public class RecordingService : IEagerService
 
     private void OnCrossedFinishLine(float time)
     {
+        if (!CanRecord)
+            return;
+
         if (_activeGhostRecorder == null)
             return;
 
