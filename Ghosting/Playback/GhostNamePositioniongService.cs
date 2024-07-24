@@ -1,5 +1,6 @@
 ﻿using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 
@@ -10,15 +11,18 @@ public class GhostNamePositioniongService : IEagerService
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
+    private readonly MessengerService _messengerService;
 
     public GhostNamePositioniongService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
-        ConfigService configService)
+        ConfigService configService,
+        MessengerService messengerService)
     {
         _playerLoopService = playerLoopService;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
+        _messengerService = messengerService;
 
         _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
@@ -50,6 +54,15 @@ public class GhostNamePositioniongService : IEagerService
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
             ghostData.Visuals.NameDisplay.gameObject.SetActive(_configService.ShowGhostNames.Value);
+        }
+
+        if (_configService.ShowGhostNames.Value)
+        {
+            _messengerService.Log("Showing Ghost Names");
+        }
+        else
+        {
+            _messengerService.Log("Hiding Ghost Names");
         }
     }
 

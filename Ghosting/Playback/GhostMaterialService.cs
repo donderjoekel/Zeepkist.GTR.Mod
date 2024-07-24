@@ -1,5 +1,6 @@
 ﻿using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 
@@ -10,15 +11,18 @@ public class GhostMaterialService : IEagerService
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
+    private readonly MessengerService _messengerService;
 
     public GhostMaterialService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
-        ConfigService configService)
+        ConfigService configService,
+        MessengerService messengerService)
     {
         _playerLoopService = playerLoopService;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
+        _messengerService = messengerService;
 
         _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
@@ -61,6 +65,15 @@ public class GhostMaterialService : IEagerService
             {
                 ghostData.Renderer.SwitchToNormal();
             }
+        }
+
+        if (_configService.ShowGhostTransparent.Value)
+        {
+            _messengerService.Log("Transparent Ghosts");
+        }
+        else
+        {
+            _messengerService.Log("Opaque Ghosts");
         }
     }
 
