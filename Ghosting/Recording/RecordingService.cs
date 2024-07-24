@@ -182,7 +182,10 @@ public class RecordingService : IEagerService
             HttpResponseMessage response = await _apiHttpClient.PostAsync("records", resource);
             if (response.IsSuccessStatusCode)
             {
-                _messengerService.Log("Record submitted");
+                if (_configService.ShowRecordSetMessage.Value)
+                {
+                    _messengerService.Log("Record submitted");
+                }
             }
             else
             {
