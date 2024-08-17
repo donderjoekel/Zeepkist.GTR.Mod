@@ -75,15 +75,13 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
         gui.time.text = item.Time.GetFormattedTime();
 
-        gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
-
-
         int placementPoints = Math.Max(0, Count - index);
         double a = 1d / (_totalUsers / (double)Count);
         int b = index + 1;
         double c = index < 8 ? _fibbonus[index] : 0;
         double points = placementPoints * (1 + a / b) + c;
 
+        gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
         gui.pointsWon.text = $"(+{(int)Math.Round(points)})";
     }
 }

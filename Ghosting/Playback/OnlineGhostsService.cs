@@ -1,11 +1,13 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Steamworks;
-using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
-using TNRD.Zeepkist.GTR.Json;
+using TNRD.Zeepkist.GTR.Messaging;
+using TNRD.Zeepkist.GTR.PlayerLoop;
+using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Level;
@@ -16,32 +18,56 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class OnlineGhostsService : IEagerService
 {
-    private const string GetPersonalBestQuery
-        = "query($steamId:BigFloat,$hash:String){allPersonalBestGlobals(filter:{userByIdUser:{steamId:{equalTo:$steamId}}levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{recordByIdRecord{id userByIdUser{steamName} recordMediasByIdRecord{nodes{ghostUrl}}}}}}";
-
     private readonly ILogger<OnlineGhostsService> _logger;
-    private readonly GraphQLApiHttpClient _client;
+    private readonly OnlineGhostGraphqlService _onlineGhostGraphqlService;
     private readonly GhostRepository _ghostRepository;
     private readonly GhostPlayer _ghostPlayer;
+    private readonly ConfigService _configService;
+    private readonly PlayerLoopService _playerLoopService;
+    private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
     private string _levelHash;
 
     public OnlineGhostsService(
         ILogger<OnlineGhostsService> logger,
-        GraphQLApiHttpClient client,
         GhostRepository ghostRepository,
-        GhostPlayer ghostPlayer)
+        GhostPlayer ghostPlayer,
+        ConfigService configService,
+        PlayerLoopService playerLoopService,
+        MessengerService messengerService,
+        OnlineGhostGraphqlService onlineGhostGraphqlService)
     {
         _logger = logger;
-        _client = client;
         _ghostRepository = ghostRepository;
         _ghostPlayer = ghostPlayer;
+        _configService = configService;
+        _playerLoopService = playerLoopService;
+        _messengerService = messengerService;
+        _onlineGhostGraphqlService = onlineGhostGraphqlService;
+        _playerLoopService.SubscribeUpdate(OnUpdate);
 
         RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
+    }
+
+    private void OnUpdate()
+    {
+        if (Input.GetKeyDown(_configService.ToggleEnableGhosts.Value))
+        {
+            _configService.EnableGhosts.Value = !_configService.EnableGhosts.Value;
+
+            if (_configService.EnableGhosts.Value)
+            {
+                _messengerService.Log("Ghosts enabled");
+            }
+            else
+            {
+                _messengerService.Log("Ghosts disabled");
+            }
+        }
     }
 
     private void OnDisconnectedFromGame()
@@ -56,7 +82,10 @@ public class OnlineGhostsService : IEagerService
 
     private void OnPlayerSpawned()
     {
-        LoadPersonalBest();
+        if (_configService.EnableGhosts.Value)
+        {
+            LoadPersonalBest();
+        }
     }
 
     private void OnRoundEnded()
@@ -74,14 +103,9 @@ public class OnlineGhostsService : IEagerService
     private async UniTaskVoid LoadPersonalBestAsync(CancellationToken ct)
     {
         _logger.LogInformation("Loading personal best...");
-        Result<PersonalBestGhostData> result = await _client.PostAsync<PersonalBestGhostData>(
-            GetPersonalBestQuery,
-            new
-            {
-                steamId = SteamClient.SteamId.ToString(),
-                hash = _levelHash
-            },
-            ct);
+
+        Result<List<OnlineGhostGraphqlService.PersonalBest>> result
+            = await _onlineGhostGraphqlService.GetPersonalBests(_levelHash);
 
         if (ct.IsCancellationRequested)
             return;
@@ -92,29 +116,28 @@ public class OnlineGhostsService : IEagerService
             return;
         }
 
-        if (result.Value?.Id == null)
+        List<OnlineGhostGraphqlService.PersonalBest> personalBests = result.Value;
+
+        IReadOnlyList<int> loadedGhostIds = _ghostPlayer.GetLoadedGhostIds();
+
+        foreach (int loadedGhostId in loadedGhostIds)
         {
-            return;
+            if (personalBests.All(x => x.Id != loadedGhostId))
+            {
+                _ghostPlayer.RemoveGhost(loadedGhostId);
+            }
         }
 
-        IGhost ghost = await _ghostRepository.GetGhost(result.Value.Id.Value, result.Value.GhostUrl);
-        if (!_ghostPlayer.HasGhost(result.Value.Id.Value))
+        foreach (OnlineGhostGraphqlService.PersonalBest personalBest in personalBests)
         {
-            _ghostPlayer.ClearGhosts();
-            _ghostPlayer.AddGhost(result.Value.Id.Value, result.Value.SteamName, ghost);
+            Result<IGhost> ghost = await _ghostRepository.GetGhost(personalBest.Id, personalBest.GhostUrl);
+            if (ghost.IsFailed)
+            {
+                _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
+                continue;
+            }
+
+            _ghostPlayer.AddGhost(personalBest.Id, personalBest.SteamName, ghost.Value);
         }
-    }
-
-    [JsonConverter(typeof(JsonPathConverter))]
-    private class PersonalBestGhostData
-    {
-        [JsonProperty("data.allPersonalBestGlobals.nodes[0].recordByIdRecord.id")]
-        public int? Id { get; set; }
-
-        [JsonProperty("data.allPersonalBestGlobals.nodes[0].recordByIdRecord.userByIdUser.steamName")]
-        public string SteamName { get; set; }
-
-        [JsonProperty("data.allPersonalBestGlobals.nodes[0].recordByIdRecord.recordMediasByIdRecord.nodes[0].ghostUrl")]
-        public string GhostUrl { get; set; }
     }
 }

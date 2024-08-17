@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -85,6 +86,11 @@ public partial class GhostPlayer : IEagerService
         }
     }
 
+    public IReadOnlyList<int> GetLoadedGhostIds()
+    {
+        return _ghosts.Keys.ToList();
+    }
+
     public bool HasGhost(int recordId)
     {
         return _ghosts.ContainsKey(recordId);
@@ -108,19 +114,30 @@ public partial class GhostPlayer : IEagerService
         GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, ghostData));
     }
 
-    public void ClearGhosts()
+    public void RemoveGhost(int recordId)
     {
-        foreach ((int recordId, IGhost _) in _ghosts)
+        if (!_ghosts.TryGetValue(recordId, out IGhost ghost))
+            return;
+
+        ghost.Stop();
+
+        if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
-            if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
-            {
-                _pool.Release(ghostData);
-                GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));
-            }
+            _pool.Release(ghostData);
+            GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));
         }
 
-        _ghostData.Clear();
-        _ghosts.Clear();
+        _ghostData.Remove(recordId);
+        _ghosts.Remove(recordId);
+    }
+
+    public void ClearGhosts()
+    {
+        List<int> recordIds = _ghosts.Keys.ToList();
+        foreach (int recordId in recordIds)
+        {
+            RemoveGhost(recordId);
+        }
     }
 
     private void Update()

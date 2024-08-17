@@ -24,12 +24,13 @@
         <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0"/>
+        <PackageReference Include="EasyCompressor" Version="2.0.2"/>
+        <PackageReference Include="EasyCompressor.LZMA" Version="2.0.2"/>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="JsonApiSerializer" Version="2.0.1"/>
-        <PackageReference Include="LZMA-SDK" Version="22.1.1"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.6"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.8"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1"/>
         <PackageReference Include="protobuf-net" Version="3.2.30"/>
         <PackageReference Include="RestEase" Version="1.6.4"/>
@@ -37,11 +38,10 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Serilog" Version="4.0.0"/>
+        <PackageReference Include="Serilog" Version="4.0.1"/>
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="16.0.1392"/>
-        <PackageReference Include="ZeepSDK" Version="1.32.1"/>
+        <PackageReference Include="ZeepSDK" Version="1.34.5"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -81,6 +81,7 @@
             <OutputFiles Include="$(TargetDir)Polly*.dll"/>
             <OutputFiles Include="$(TargetDir)protobuf*.dll"/>
             <OutputFiles Include="$(TargetDir)SevenZip.dll"/>
+            <OutputFiles Include="$(TargetDir)EasyCompressor*.dll"/>
             <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>

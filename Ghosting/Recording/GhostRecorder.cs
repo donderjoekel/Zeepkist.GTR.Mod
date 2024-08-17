@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EasyCompressor;
 using Microsoft.Extensions.Logging;
 using ProtoBuf;
 using SevenZip.Compression.LZMA;
@@ -79,11 +80,6 @@ public partial class GhostRecorder
 
         Transform carTransform = _setupCar.transform;
         New_ControlCar cc = _setupCar.cc;
-
-        if (_isHorn)
-        {
-            _logger.LogInformation("HOOOOORN");
-        }
 
         _frames.Add(
             new Frame()
@@ -250,11 +246,8 @@ public partial class GhostRecorder
 
     private static void Encode(byte[] buffer, Stream outStream)
     {
-        using MemoryStream inStream = new(buffer);
-        Encoder encoder = new();
-        encoder.WriteCoderProperties(outStream);
-        outStream.Write(BitConverter.GetBytes(inStream.Length), 0, 8);
-        encoder.Code(inStream, outStream, inStream.Length, -1, null);
+        LZMACompressor.Shared.CompressionLevel = LZMACompressionLevel.Ultra;
+        LZMACompressor.Shared.Compress(buffer, outStream);
     }
 
     private static InputFlags CreateInputFlags(Frame frame)

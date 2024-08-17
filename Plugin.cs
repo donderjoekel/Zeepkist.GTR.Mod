@@ -74,8 +74,14 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton<OfflineLeaderboardTab>();
                         services.AddSingleton<MessengerService>();
                         services.AddSingleton<ScreenshotService>();
+                        services.AddSingleton<OnlineGhostGraphqlService>();
                         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
                         services.AddTransient<GhostRecorder>();
+                        services.AddTransient<V1Reader>();
+                        services.AddTransient<V2Reader>();
+                        services.AddTransient<V3Reader>();
+                        services.AddTransient<V4Reader>();
+                        services.AddTransient<V5Reader>();
                         services.AddHttpClient<ApiHttpClient>();
                         services.AddHttpClient<JsonApiHttpClient>();
                         services.AddHttpClient<GraphQLApiHttpClient>();

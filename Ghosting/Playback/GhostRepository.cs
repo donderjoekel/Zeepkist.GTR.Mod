@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using Newtonsoft.Json;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
@@ -39,11 +40,11 @@ public class GhostRepository
         _httpClient = httpClient;
     }
 
-    public async UniTask<IGhost> GetGhost(int recordId)
+    public async UniTask<Result<IGhost>> GetGhost(int recordId)
     {
         if (TryGetGhostFromDisk(recordId, out IGhost ghost))
         {
-            return ghost;
+            return Result.Ok(ghost);
         }
 
         Result<GetGhostByRecordIdResponse> result = await _client.PostAsync<GetGhostByRecordIdResponse>(
@@ -53,38 +54,49 @@ public class GhostRepository
                 id = recordId
             });
 
-        if (!result.IsSuccess)
+        if (result.IsFailed)
         {
-            // TODO: Handle
-            return null;
+            return result.ToResult();
         }
 
         if (string.IsNullOrEmpty(result.Value.GhostUrl))
         {
-            // TODO: Handle
-            return null;
+            return Result.Fail("Ghost URL is empty");
         }
 
         return await GetGhost(recordId, result.Value.GhostUrl);
     }
 
-    public async UniTask<IGhost> GetGhost(int recordId, string ghostUrl)
+    public async UniTask<Result<IGhost>> GetGhost(int recordId, string ghostUrl)
     {
         if (TryGetGhostFromDisk(recordId, out IGhost ghost))
         {
-            return ghost;
+            return Result.Ok(ghost);
         }
 
-        HttpResponseMessage response = await _httpClient.GetAsync(ghostUrl);
-        if (!response.IsSuccessStatusCode)
+        HttpResponseMessage response;
+
+        try
         {
-            // TODO: Log?
-            return null;
+            response = await _httpClient.GetAsync(ghostUrl);
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        try
+        {
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException e)
+        {
+            return Result.Fail(new ExceptionalError(e));
         }
 
         byte[] buffer = await response.Content.ReadAsByteArrayAsync();
         _modStorage.WriteBlob("ghosts/" + recordId, buffer);
-        return _ghostReaderFactory.GetReader(buffer).Read(buffer);
+        return Result.Ok(_ghostReaderFactory.GetReader(buffer).Read(buffer));
     }
 
     private bool TryGetGhostFromDisk(int recordId, out IGhost ghost)

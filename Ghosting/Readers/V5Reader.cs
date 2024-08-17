@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using EasyCompressor;
 using Microsoft.Extensions.Logging;
 using ProtoBuf;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
@@ -115,23 +116,7 @@ public class V5Reader : IGhostReader
 
     private static byte[] Decode(byte[] buffer)
     {
-        using MemoryStream inStream = new(buffer);
-        using MemoryStream outStream = new();
-        byte[] properties = new byte[5];
-        inStream.Read(properties, 0, 5);
-        byte[] lengthBuffer = new byte[8];
-        inStream.Read(lengthBuffer, 0, 8);
-        long length = BitConverter.ToInt64(lengthBuffer, 0);
-        Decoder decoder = new();
-        decoder.SetDecoderProperties(properties);
-        decoder.Code(inStream, outStream, inStream.Length, length, null);
-        outStream.Close();
-        return outStream.ToArray();
-    }
-
-    private static bool IsGZipped(byte[] buffer)
-    {
-        return buffer[0] == 0x1f && buffer[1] == 0x8b;
+        return LZMACompressor.Shared.Decompress(buffer);
     }
 
     private CosmeticIDs ReadCosmetics(BinaryReader reader)

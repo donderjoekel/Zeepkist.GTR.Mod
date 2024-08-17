@@ -1,95 +1,89 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using ZeepSDK.Storage;
+using EasyCompressor;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
 public class GhostReaderFactory
 {
-    private readonly IModStorage _modStorage;
+    private readonly ILogger<GhostReaderFactory> _logger;
+    private readonly IServiceProvider _provider;
 
-    public GhostReaderFactory(IModStorage modStorage)
+    public GhostReaderFactory(ILogger<GhostReaderFactory> logger, IServiceProvider provider)
     {
-        _modStorage = modStorage;
+        _logger = logger;
+        _provider = provider;
     }
 
     public IGhostReader GetReader(byte[] buffer)
     {
         int version = GetVersion(buffer);
+        _logger.LogInformation("Ghost version: {Version}", version);
 
         switch (version)
         {
             case 1:
-                return new V1Reader();
+                return _provider.GetService<V1Reader>();
             case 2:
-                return new V2Reader();
+                return _provider.GetService<V2Reader>();
             case 3:
-                return new V3Reader();
+                return _provider.GetService<V3Reader>();
             case 4:
-                return new V4Reader();
+                return _provider.GetService<V4Reader>();
             case 5:
-                return new V5Reader(null);
+                return _provider.GetService<V5Reader>();
             default:
                 throw new NotSupportedException($"Version {version} is not supported.");
         }
     }
 
-    private static int GetVersion(byte[] buffer)
+    private int GetVersion(byte[] buffer)
     {
-        if (IsLZMA(buffer))
+        if (IsLZMA(buffer, out _))
         {
-            return 5; // Hardcoded right now since there's nothing above 5. I'll deal with that if that happens
+            return 5;
         }
 
-        if (IsGZipped(buffer))
+        if (IsGZipped(buffer, out byte[] decompressed))
         {
-            using MemoryStream ms = new(buffer);
-            using GZipStream zip = new(ms, CompressionMode.Decompress);
-            using BinaryReader reader = new(zip);
+            using BinaryReader reader = new(new MemoryStream(decompressed));
             return reader.ReadInt32();
         }
         else
         {
-            using MemoryStream ms = new(buffer);
-            using BinaryReader reader = new(ms);
+            using MemoryStream stream = new(buffer);
+            using BinaryReader reader = new(stream);
             return reader.ReadInt32();
         }
     }
 
-    private static bool IsGZipped(byte[] buffer)
+    private static bool IsLZMA(byte[] buffer, out byte[] decompressed)
     {
-        return buffer[0] == 0x1f && buffer[1] == 0x8b;
-    }
-
-    private static bool IsLZMA(byte[] buffer)
-    {
-        if (buffer.Length < 13) return false;
-
         try
         {
-            // Check LZMA header (first 5 bytes + 8 bytes for uncompressed size)
-            using (MemoryStream memoryStream = new MemoryStream(buffer))
-            {
-                byte[] properties = new byte[5];
-                byte[] uncompressedSizeBytes = new byte[8];
-
-                memoryStream.Read(properties, 0, 5);
-                memoryStream.Read(uncompressedSizeBytes, 0, 8);
-
-                // Optionally, you can further validate the properties and uncompressed size if needed.
-
-                // Try to create an LZMA decoder with the properties
-                SevenZip.Compression.LZMA.Decoder decoder = new SevenZip.Compression.LZMA.Decoder();
-                decoder.SetDecoderProperties(properties);
-
-                // If no exceptions, the header is likely correct
-                return true;
-            }
+            decompressed = LZMACompressor.Shared.Decompress(buffer);
+            return true;
         }
         catch
         {
-            // If any exceptions are thrown, it is not valid LZMA compressed data
+            decompressed = null;
+            return false;
+        }
+    }
+
+    private static bool IsGZipped(byte[] buffer, out byte[] decompressed)
+    {
+        try
+        {
+            decompressed = GZipCompressor.Shared.Decompress(buffer);
+            return true;
+        }
+        catch
+        {
+            decompressed = null;
             return false;
         }
     }
