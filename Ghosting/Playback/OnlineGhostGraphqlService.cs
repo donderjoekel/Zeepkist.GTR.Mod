@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using JetBrains.Annotations;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Api;
@@ -18,6 +17,8 @@ public class OnlineGhostGraphqlService
         = "fragment frag on Record{id,userByIdUser{steamName}recordMediasByIdRecord{nodes{ghostUrl}}}query personalbests($steamId:BigFloat,$hash:String,$year:Int,$quarter:Int,$month:Int,$week:Int,$day:Int){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}}}){nodes{recordByIdRecord{...frag}}}allPersonalBestYearlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}},year:{equalTo:$year}}){nodes{recordByIdRecord{...frag}}}allPersonalBestQuarterlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}},year:{equalTo:$month},quarter:{equalTo:$quarter}}){nodes{recordByIdRecord{...frag}}}allPersonalBestMonthlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}},year:{equalTo:$year},month:{equalTo:$month}}){nodes{recordByIdRecord{...frag}}}allPersonalBestWeeklies(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}},year:{equalTo:$year},week:{equalTo:$week}}){nodes{recordByIdRecord{...frag}}}allPersonalBestDailies(filter:{levelByIdLevel:{hash:{equalTo:$hash}},userByIdUser:{steamId:{equalTo:$steamId}},year:{equalTo:$year},day:{equalTo:$day}}){nodes{recordByIdRecord{...frag}}}}";
 
     private readonly GraphQLApiHttpClient _client;
+
+    protected GraphQLApiHttpClient Client => _client;
 
     public OnlineGhostGraphqlService(GraphQLApiHttpClient client)
     {
@@ -153,7 +154,7 @@ public class OnlineGhostGraphqlService
         return Map(dailies.Nodes.FirstOrDefault()?.RecordByIdRecord);
     }
 
-    private static PersonalBest Map(RecordByIdRecord record)
+    protected static PersonalBest Map(RecordByIdRecord record)
     {
         if (record == null)
             return null;
@@ -166,17 +167,17 @@ public class OnlineGhostGraphqlService
         };
     }
 
-    private static string Map(UserByIdUser userByIdUser)
+    protected static string Map(UserByIdUser userByIdUser)
     {
         return userByIdUser.SteamName;
     }
 
-    private static string Map(RecordMediasByIdRecord recordMediasByIdRecord)
+    protected static string Map(RecordMediasByIdRecord recordMediasByIdRecord)
     {
         return Map(recordMediasByIdRecord.Nodes.FirstOrDefault());
     }
 
-    private static string Map(RecordMediaNode recordMediaNode)
+    protected static string Map(RecordMediaNode recordMediaNode)
     {
         return recordMediaNode == null ? string.Empty : recordMediaNode.GhostUrl;
     }
@@ -199,7 +200,7 @@ public class OnlineGhostGraphqlService
     }
 
     [UsedImplicitly]
-    private class AllPersonalBestGlobals
+    protected class AllPersonalBestGlobals
     {
         [UsedImplicitly] public List<Node> Nodes { get; set; }
     }
@@ -235,13 +236,13 @@ public class OnlineGhostGraphqlService
     }
 
     [UsedImplicitly]
-    private class Node
+    protected class Node
     {
         public RecordByIdRecord RecordByIdRecord { get; set; }
     }
 
     [UsedImplicitly]
-    private class RecordByIdRecord
+    protected class RecordByIdRecord
     {
         public int Id { get; set; }
         public UserByIdUser UserByIdUser { get; set; }
@@ -249,19 +250,19 @@ public class OnlineGhostGraphqlService
     }
 
     [UsedImplicitly]
-    private class UserByIdUser
+    protected class UserByIdUser
     {
         public string SteamName { get; set; }
     }
 
     [UsedImplicitly]
-    private class RecordMediasByIdRecord
+    protected class RecordMediasByIdRecord
     {
         [UsedImplicitly] public List<RecordMediaNode> Nodes { get; set; }
     }
 
     [UsedImplicitly]
-    private class RecordMediaNode
+    protected class RecordMediaNode
     {
         public string GhostUrl { get; set; }
     }

@@ -19,11 +19,10 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 public class OnlineGhostsService : IEagerService
 {
     private readonly ILogger<OnlineGhostsService> _logger;
-    private readonly OnlineGhostGraphqlService _onlineGhostGraphqlService;
+    private readonly OnlineGhostGraphqlService _graphqlService;
     private readonly GhostRepository _ghostRepository;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
-    private readonly PlayerLoopService _playerLoopService;
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
@@ -36,16 +35,16 @@ public class OnlineGhostsService : IEagerService
         ConfigService configService,
         PlayerLoopService playerLoopService,
         MessengerService messengerService,
-        OnlineGhostGraphqlService onlineGhostGraphqlService)
+        OnlineGhostGraphqlService graphqlService)
     {
         _logger = logger;
         _ghostRepository = ghostRepository;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
-        _playerLoopService = playerLoopService;
         _messengerService = messengerService;
-        _onlineGhostGraphqlService = onlineGhostGraphqlService;
-        _playerLoopService.SubscribeUpdate(OnUpdate);
+        _graphqlService = graphqlService;
+
+        playerLoopService.SubscribeUpdate(OnUpdate);
 
         RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
@@ -55,6 +54,7 @@ public class OnlineGhostsService : IEagerService
 
     private void OnUpdate()
     {
+        // TODO: Move this to a separate service
         if (Input.GetKeyDown(_configService.ToggleEnableGhosts.Value))
         {
             _configService.EnableGhosts.Value = !_configService.EnableGhosts.Value;
@@ -72,28 +72,40 @@ public class OnlineGhostsService : IEagerService
 
     private void OnDisconnectedFromGame()
     {
+        if (!MultiplayerApi.IsPlayingOnline)
+            return;
+
         _ghostPlayer.ClearGhosts();
     }
 
     private void OnLevelLoaded()
     {
+        if (!MultiplayerApi.IsPlayingOnline)
+            return;
+
         _levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
     }
 
-    private void OnPlayerSpawned()
+    protected virtual void OnPlayerSpawned()
     {
+        if (!MultiplayerApi.IsPlayingOnline)
+            return;
+
         if (_configService.EnableGhosts.Value)
         {
-            LoadPersonalBest();
+            LoadPersonalBests();
         }
     }
 
     private void OnRoundEnded()
     {
+        if (!MultiplayerApi.IsPlayingOnline)
+            return;
+
         _ghostPlayer.ClearGhosts();
     }
 
-    private void LoadPersonalBest()
+    private void LoadPersonalBests()
     {
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
@@ -105,7 +117,7 @@ public class OnlineGhostsService : IEagerService
         _logger.LogInformation("Loading personal best...");
 
         Result<List<OnlineGhostGraphqlService.PersonalBest>> result
-            = await _onlineGhostGraphqlService.GetPersonalBests(_levelHash);
+            = await _graphqlService.GetPersonalBests(_levelHash);
 
         if (ct.IsCancellationRequested)
             return;

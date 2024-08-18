@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,6 +21,7 @@ using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using TNRD.Zeepkist.GTR.Screenshots;
+using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Storage;
 
@@ -75,6 +79,7 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton<MessengerService>();
                         services.AddSingleton<ScreenshotService>();
                         services.AddSingleton<OnlineGhostGraphqlService>();
+                        services.AddSingleton<OfflineGhostGraphqlService>();
                         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
                         services.AddTransient<GhostRecorder>();
                         services.AddTransient<V1Reader>();
@@ -92,12 +97,37 @@ namespace TNRD.Zeepkist.GTR
 
                 // Plugin startup logic
                 Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+
+                ServicePointManager.ServerCertificateValidationCallback += ValidateCertificate;
             }
             catch (Exception e)
             {
                 Logger.LogError("Failed to start plugin");
                 Logger.LogError(e);
             }
+        }
+
+        private bool ValidateCertificate(
+            object sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                return true;
+            }
+
+            if (sender is not HttpWebRequest request)
+                return false;
+
+            return request.RequestUri.ToString().StartsWith(
+                       "https://cdn.zeepkist-gtr.com",
+                       StringComparison.OrdinalIgnoreCase)
+                   &&
+                   certificate.Subject.StartsWith(
+                       "CN=*.eu-central-1.wasabisys.com",
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         private async UniTaskVoid StopHost()

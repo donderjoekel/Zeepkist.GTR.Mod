@@ -17,8 +17,10 @@ public partial class GhostPlayer : IEagerService
 
     private readonly Dictionary<int, IGhost> _ghosts = new();
     private readonly Dictionary<int, GhostData> _ghostData = new();
+    private readonly HashSet<int> _ghostsToRemove = new();
 
     private bool _roundStarted;
+    private bool _paused;
 
     public IEnumerable<GhostData> ActiveGhosts => _ghostData.Values;
 
@@ -32,6 +34,8 @@ public partial class GhostPlayer : IEagerService
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
+        RacingApi.QuickReset += OnQuickReset;
+        RacingApi.Quit += OnQuit;
     }
 
     private static GhostData CreateGhost()
@@ -66,6 +70,16 @@ public partial class GhostPlayer : IEagerService
         }
     }
 
+    private void OnQuickReset()
+    {
+        _roundStarted = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Start();
+        }
+    }
+
     private void OnRoundEnded()
     {
         _roundStarted = false;
@@ -77,6 +91,16 @@ public partial class GhostPlayer : IEagerService
     }
 
     private void OnPlayerSpawned()
+    {
+        _roundStarted = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Stop();
+        }
+    }
+
+    private void OnQuit()
     {
         _roundStarted = false;
 
@@ -140,14 +164,41 @@ public partial class GhostPlayer : IEagerService
         }
     }
 
+    public void PauseGhosts()
+    {
+        _paused = true;
+    }
+
+    public void ResumeGhosts()
+    {
+        _paused = false;
+    }
+
     private void Update()
     {
         if (!_roundStarted)
             return;
 
-        foreach ((int _, IGhost ghost) in _ghosts)
+        if (_paused)
+            return;
+
+        _ghostsToRemove.Clear();
+
+        foreach ((int id, IGhost ghost) in _ghosts)
         {
-            ghost.Update();
+            try
+            {
+                ghost.Update();
+            }
+            catch (Exception)
+            {
+                _ghostsToRemove.Add(id);
+            }
+        }
+
+        foreach (int id in _ghostsToRemove)
+        {
+            RemoveGhost(id);
         }
     }
 
@@ -156,9 +207,26 @@ public partial class GhostPlayer : IEagerService
         if (!_roundStarted)
             return;
 
-        foreach ((int _, IGhost ghost) in _ghosts)
+        if (_paused)
+            return;
+
+        _ghostsToRemove.Clear();
+
+        foreach ((int id, IGhost ghost) in _ghosts)
         {
-            ghost.FixedUpdate();
+            try
+            {
+                ghost.FixedUpdate();
+            }
+            catch (Exception)
+            {
+                _ghostsToRemove.Add(id);
+            }
+        }
+
+        foreach (int id in _ghostsToRemove)
+        {
+            RemoveGhost(id);
         }
     }
 }

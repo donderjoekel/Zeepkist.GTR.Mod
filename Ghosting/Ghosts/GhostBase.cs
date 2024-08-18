@@ -52,6 +52,9 @@ public abstract class GhostBase : IGhost
         _time = 0;
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
+
+        IFrame frame = GetFrame(0);
+        Ghost.GameObject.transform.SetPositionAndRotation(frame.Position, frame.Rotation);
     }
 
     public void Stop()

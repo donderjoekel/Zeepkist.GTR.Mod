@@ -12,7 +12,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
 
-    private static Dictionary<int, double> _fibbonus = new()
+    private static readonly Dictionary<int, double> Fibbonus = new()
     {
         { 0, 0.21 },
         { 1, 0.13 },
@@ -43,6 +43,10 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         LoadRecords().Forget();
     }
 
+    protected override void OnDisable()
+    {
+    }
+
     private async UniTaskVoid LoadRecords()
     {
         string levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
@@ -63,22 +67,19 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         Draw();
     }
 
-    protected override void OnDisable()
-    {
-    }
-
     protected override void OnDrawItem(GUI_OnlineLeaderboardPosition gui, LeaderboardRecord item, int index)
     {
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
+        gui.favoriteButton.gameObject.SetActive(false);
         gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
         gui.time.text = item.Time.GetFormattedTime();
 
         int placementPoints = Math.Max(0, Count - index);
         double a = 1d / (_totalUsers / (double)Count);
         int b = index + 1;
-        double c = index < 8 ? _fibbonus[index] : 0;
+        double c = index < 8 ? Fibbonus[index] : 0;
         double points = placementPoints * (1 + a / b) + c;
 
         gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
