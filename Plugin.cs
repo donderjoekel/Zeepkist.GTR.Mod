@@ -24,6 +24,7 @@ using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using TNRD.Zeepkist.GTR.Screenshots;
 using TNRD.Zeepkist.GTR.UI;
+using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Storage;
@@ -88,6 +89,8 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton<OfflineGhostGraphqlService>();
                         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
                         services.AddSingleton<RecordHolderGraphqlService>();
+                        services.AddSingleton<WorldRecordCommandGraphQlService>();
+                        services.AddSingleton<ServiceHelper>();
                         services.AddTransient<GhostRecorder>();
                         services.AddTransient<V1Reader>();
                         services.AddTransient<V2Reader>();
