@@ -10,6 +10,7 @@ using Serilog;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Authentication;
+using TNRD.Zeepkist.GTR.Commands;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting;
@@ -61,6 +62,7 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton(Logger);
                         services.AddSingleton(Info);
                         services.AddEagerService<AuthenticationService>();
+                        services.AddEagerService<CommandsService>();
                         services.AddEagerService<ConfigService>();
                         services.AddEagerService<OfflineGhostsService>();
                         services.AddEagerService<OnlineGhostsService>();
