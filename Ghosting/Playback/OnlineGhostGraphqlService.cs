@@ -66,23 +66,33 @@ public class OnlineGhostGraphqlService
             uniquePersonalBests.Add(personalBests.Global);
         }
 
+        if (personalBests.Yearly != null && uniquePersonalBests.All(x => x.Id != personalBests.Yearly.Id))
+        {
+            personalBests.Yearly.SteamName += " (Yearly)";
+            uniquePersonalBests.Add(personalBests.Yearly);
+        }
+
         if (personalBests.Quarterly != null && uniquePersonalBests.All(x => x.Id != personalBests.Quarterly.Id))
         {
+            personalBests.Quarterly.SteamName += " (Quarterly)";
             uniquePersonalBests.Add(personalBests.Quarterly);
         }
 
         if (personalBests.Monthly != null && uniquePersonalBests.All(x => x.Id != personalBests.Monthly.Id))
         {
+            personalBests.Monthly.SteamName += " (Monthly)";
             uniquePersonalBests.Add(personalBests.Monthly);
         }
 
         if (personalBests.Weekly != null && uniquePersonalBests.All(x => x.Id != personalBests.Weekly.Id))
         {
+            personalBests.Weekly.SteamName += " (Weekly)";
             uniquePersonalBests.Add(personalBests.Weekly);
         }
 
         if (personalBests.Daily != null && uniquePersonalBests.All(x => x.Id != personalBests.Daily.Id))
         {
+            personalBests.Daily.SteamName += " (Daily)";
             uniquePersonalBests.Add(personalBests.Daily);
         }
 
