@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
@@ -18,6 +19,7 @@ public class RecordHolderService : IEagerService
     private readonly RecordHolderGraphqlService _recordHolderGraphqlService;
     private readonly ConfigService _configService;
     private readonly ILogger<RecordHolderService> _logger;
+    private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
     private string _levelHash;
@@ -29,11 +31,13 @@ public class RecordHolderService : IEagerService
         RecordHolderGraphqlService recordHolderGraphqlService,
         ConfigService configService,
         PlayerLoopService playerLoopService,
-        ILogger<RecordHolderService> logger)
+        ILogger<RecordHolderService> logger,
+        MessengerService messengerService)
     {
         _recordHolderGraphqlService = recordHolderGraphqlService;
         _configService = configService;
         _logger = logger;
+        _messengerService = messengerService;
 
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
         RacingApi.Quit += OnQuit;
@@ -80,6 +84,48 @@ public class RecordHolderService : IEagerService
 
     private void OnUpdate()
     {
+        if (Input.GetKeyDown(_configService.ToggleShowRecordHolder.Value))
+        {
+            _configService.ShowRecordHolder.Value = !_configService.ShowRecordHolder.Value;
+
+            if (_configService.ShowRecordHolder.Value)
+            {
+                _messengerService.Log("Showing Record Holder");
+            }
+            else
+            {
+                _messengerService.Log("Hiding Record Holder");
+            }
+        }
+
+        if (Input.GetKeyDown(_configService.ToggleShowWorldRecordOnHolder.Value))
+        {
+            _configService.ShowWorldRecordOnHolder.Value = !_configService.ShowWorldRecordOnHolder.Value;
+
+            if (_configService.ShowWorldRecordOnHolder.Value)
+            {
+                _messengerService.Log("Showing World Record Holder");
+            }
+            else
+            {
+                _messengerService.Log("Hiding World Record Holder");
+            }
+        }
+
+        if (Input.GetKeyDown(_configService.ToggleShowPersonalBestOnHolder.Value))
+        {
+            _configService.ShowPersonalBestOnHolder.Value = !_configService.ShowPersonalBestOnHolder.Value;
+
+            if (_configService.ShowPersonalBestOnHolder.Value)
+            {
+                _messengerService.Log("Showing Personal Best Holder");
+            }
+            else
+            {
+                _messengerService.Log("Hiding Personal Best Holder");
+            }
+        }
+
         if (_recordHolders == null)
             return;
 

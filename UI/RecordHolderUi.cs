@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
+using Microsoft.Extensions.DependencyInjection;
+using TNRD.Zeepkist.GTR.Configuration;
+using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TNRD.Zeepkist.GTR.UI;
 
@@ -92,15 +92,60 @@ public class RecordHolderUi : MonoBehaviour
 
     private readonly List<ToggleAction> _toggleActions = new();
 
+    private RecordHolders _recordHolders;
+    private ConfigService _configService;
+
+    private void Awake()
+    {
+        _configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
+        _configService.ShowRecordHolder.SettingChanged += OnShowRecordHolderChanged;
+        _configService.ShowWorldRecordOnHolder.SettingChanged += OnShowWorldRecordChanged;
+        _configService.ShowPersonalBestOnHolder.SettingChanged += OnShowPersonalBestChanged;
+    }
+
+    private void OnDestroy()
+    {
+        _configService.ShowRecordHolder.SettingChanged -= OnShowRecordHolderChanged;
+        _configService.ShowWorldRecordOnHolder.SettingChanged -= OnShowWorldRecordChanged;
+        _configService.ShowPersonalBestOnHolder.SettingChanged -= OnShowPersonalBestChanged;
+    }
+
+    private void OnShowRecordHolderChanged(object sender, EventArgs e)
+    {
+        UpdateDisplayActions();
+        ToggleDisplay();
+    }
+
+    private void OnShowWorldRecordChanged(object sender, EventArgs e)
+    {
+        UpdateDisplayActions();
+        ToggleDisplay();
+    }
+
+    private void OnShowPersonalBestChanged(object sender, EventArgs e)
+    {
+        UpdateDisplayActions();
+        ToggleDisplay();
+    }
+
     private void SetRecordHolders(RecordHolders recordHolders)
     {
-        gameObject.SetActive(true);
-        _worldRecordHolderUi.SetWorldRecordHolder(recordHolders.WorldRecord);
-        _personalBestHolderUi.SetPersonalBestHolder(recordHolders.PersonalBest);
+        _recordHolders = recordHolders;
+        _worldRecordHolderUi.SetWorldRecordHolder(_recordHolders.WorldRecord);
+        _personalBestHolderUi.SetPersonalBestHolder(_recordHolders.PersonalBest);
+        UpdateDisplayActions();
+    }
 
+    private void UpdateDisplayActions()
+    {
+        gameObject.SetActive(_configService.ShowRecordHolder.Value);
+        _worldRecordHolderUi.gameObject.SetActive(false);
+        _personalBestHolderUi.gameObject.SetActive(false);
         _toggleActions.Clear();
-        _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
-        _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
+        if (_configService.ShowWorldRecordOnHolder.Value)
+            _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
+        if (_configService.ShowPersonalBestOnHolder.Value)
+            _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
     }
 
     private void ToggleDisplay()

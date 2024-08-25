@@ -45,7 +45,7 @@ public class WorldRecordHolderUi : MonoBehaviour
     {
         if (worldRecordHolder == null)
         {
-            _playerNameText.text = "be the first!";
+            _playerNameText.text = "Be the first!";
             _timeText.text = "--:--.---";
         }
         else

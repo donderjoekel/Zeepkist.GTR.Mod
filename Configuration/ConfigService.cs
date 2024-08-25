@@ -158,5 +158,18 @@ public class ConfigService : IEagerService
             "_Show Personal Best",
             true,
             "Should the personal best ghost be shown");
+
+
+        ToggleShowWorldRecordOnHolder = config.Bind(
+            "Keys",
+            "_Toggle Show World Record On Holder",
+            KeyCode.None,
+            "Toggles the world record holder visibility");
+
+        ToggleShowPersonalBestOnHolder = config.Bind(
+            "Keys",
+            "_Toggle Show Personal Best On Holder",
+            KeyCode.None,
+            "Toggles the personal best holder visibility");
     }
 }
