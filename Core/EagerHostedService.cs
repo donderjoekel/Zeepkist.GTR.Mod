@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Core;
 
@@ -12,7 +14,10 @@ public class EagerHostedService : IHostedService
     private readonly ILogger<EagerHostedService> _logger;
     private readonly IEnumerable<IEagerService> _eagerServices;
 
-    public EagerHostedService(ILogger<EagerHostedService> logger, IEnumerable<IEagerService> eagerServices)
+    public EagerHostedService(
+        ILogger<EagerHostedService> logger,
+        [UsedImplicitly] ServiceHelper helper,
+        IEnumerable<IEagerService> eagerServices)
     {
         _logger = logger;
         _eagerServices = eagerServices;
