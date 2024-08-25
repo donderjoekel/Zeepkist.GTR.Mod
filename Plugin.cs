@@ -95,7 +95,6 @@ namespace TNRD.Zeepkist.GTR
                         services.AddTransient<V4Reader>();
                         services.AddTransient<V5Reader>();
                         services.AddHttpClient<ApiHttpClient>();
-                        services.AddHttpClient<JsonApiHttpClient>();
                         services.AddHttpClient<GraphQLApiHttpClient>();
                         services.AddHttpClient();
                     });
