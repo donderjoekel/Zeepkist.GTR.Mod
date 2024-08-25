@@ -37,131 +37,125 @@ public class ConfigService : IEagerService
     {
         EnableRecords = config.Bind(
             "General",
-            "Enable Records",
+            "_Enable Records",
             true,
             "Should records be tracked");
         EnableGhosts = config.Bind(
             "General",
-            "Enable Ghosts",
+            "_Enable Ghosts",
             true,
             "Should ghosts be enabled");
         EnableVoting = config.Bind(
             "General",
-            "Enable Voting",
+            "_Enable Voting",
             false,
             "Should voting be enabled");
 
         ShowGhosts = config.Bind(
             "Visibility",
-            "Show Ghosts",
+            "_Show Ghosts",
             true,
             "Should ghosts be shown");
         ShowGhostNames = config.Bind(
             "Visibility",
-            "Show Ghost Names",
+            "_Show Ghost Names",
             true,
             "Should ghost names be shown");
         ShowGhostTransparent = config.Bind(
             "Visibility",
-            "Show Ghost Transparent",
+            "_Show Ghost Transparent",
             true,
             "Should ghosts be transparent");
         ShowRecordSetMessage = config.Bind(
             "Visibility",
-            "Show Record Set Message",
+            "_Show Record Set Message",
             true,
             "Should the record set message be shown");
         ShowRecordHolder = config.Bind(
             "Visibility",
-            "Show World Record Holder",
+            "_Show World Record Holder",
             true,
             "Should the record holder be shown");
         ShowWorldRecordOnHolder = config.Bind(
             "Visibility",
-            "Show World Record On Holder",
+            "_Show World Record On Holder",
             true,
             "Should the world record be shown on the record holder");
         ShowPersonalBestOnHolder = config.Bind(
             "Visibility",
-            "Show Personal Best On Holder",
+            "_Show Personal Best On Holder",
             true,
             "Should the personal best be shown on the record holder");
 
         ApiUrl = config.Bind(
             "URLs",
-            "The API address",
-            "https://api.zeepkist-gtr.com",
+            "_The API address",
+            "https://backend.zeepkist-gtr.com",
             "Allows you to set a custom API address");
-
-        JsonApiUrl = config.Bind(
-            "URLs",
-            "The JSON API address",
-            "https://jsonapi.zeepkist-gtr.com",
-            "Allows you to set a custom JSON API address");
 
         GraphQLApiUrl = config.Bind(
             "URLs",
-            "The GraphQL API address",
+            "_The GraphQL API address",
             "https://graphql.zeepkist-gtr.com",
             "Allows you to set a custom GraphQL API address");
 
         ButtonLinkDiscord = config.Bind(
             "Discord",
-            "Link",
+            "_Link",
             true,
             "[Button] Show the link discord button");
         ButtonUnlinkDiscord = config.Bind(
             "Discord",
-            "Unlink",
+            "_Unlink",
             true,
             "[Button] Show the unlink discord button");
 
         ToggleEnableRecords = config.Bind(
             "Keys",
-            "Toggle Enable Records",
+            "_Toggle Enable Records",
             KeyCode.None,
             "Toggles if records should be enabled");
         ToggleEnableGhosts = config.Bind(
             "Keys",
-            "Toggle Enable Ghosts",
+            "_Toggle Enable Ghosts",
             KeyCode.None,
             "Toggles if ghosts should be enabled");
 
         ToggleShowGhosts = config.Bind(
             "Keys",
-            "Toggle Ghost Model Visibility",
+            "_Toggle Ghost Model Visibility",
             KeyCode.None,
             "Toggles the ghost visibility");
         ToggleShowGhostNames = config.Bind(
             "Keys",
-            "Toggle Ghost Name Visibility",
+            "_Toggle Ghost Name Visibility",
             KeyCode.None,
             "Toggles the ghost name visibility");
         ToggleShowGhostTransparent = config.Bind(
             "Keys",
-            "Toggle Ghost Transparency",
+            "_Toggle Ghost Transparency",
             KeyCode.None,
             "Toggles the ghost transparency");
 
         ToggleShowRecordSetMessage = config.Bind(
             "Keys",
-            "Toggle Record Set Message Visibility",
+            "_Toggle Record Set Message Visibility",
             KeyCode.None,
             "Toggles the record set message visibility");
         ToggleShowRecordHolder = config.Bind(
             "Keys",
-            "Toggle World Record Holder Visibility",
+            "_Toggle World Record Holder Visibility",
             KeyCode.None,
             "Toggles the world record holder visibility");
 
         ShowOfflineWorldRecord = config.Bind(
             "Ghosts (Offline)",
-            "Show World Record",
+            "_Show World Record",
             true,
             "Should the world record ghost be shown");
         ShowOfflinePersonalBest = config.Bind(
             "Ghosts (Offline)",
-            "Show Personal Best",
+            "_Show Personal Best",
             true,
             "Should the personal best ghost be shown");
     }
