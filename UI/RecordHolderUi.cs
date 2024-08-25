@@ -99,16 +99,8 @@ public class RecordHolderUi : MonoBehaviour
         _personalBestHolderUi.SetPersonalBestHolder(recordHolders.PersonalBest);
 
         _toggleActions.Clear();
-
-        if (recordHolders.WorldRecord != null)
-        {
-            _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
-        }
-
-        if (recordHolders.PersonalBest != null)
-        {
-            _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
-        }
+        _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
+        _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
     }
 
     private void ToggleDisplay()

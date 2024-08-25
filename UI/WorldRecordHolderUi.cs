@@ -38,12 +38,21 @@ public class WorldRecordHolderUi : MonoBehaviour
         _headerText = texts.First(x => string.Equals(x.name, "Your Time Title", StringComparison.OrdinalIgnoreCase));
         _playerNameText = texts.First(x => string.Equals(x.name, "Player", StringComparison.OrdinalIgnoreCase));
         _timeText = texts.First(x => string.Equals(x.name, "Time", StringComparison.OrdinalIgnoreCase));
+        _headerText.text = "World Record";
     }
 
     public void SetWorldRecordHolder(WorldRecordHolder worldRecordHolder)
     {
-        _headerText.text = "World Record";
-        _playerNameText.text = worldRecordHolder.SteamName;
-        _timeText.text = worldRecordHolder.Time.GetFormattedTime();
+        if (worldRecordHolder == null)
+        {
+            _playerNameText.text = "be the first!";
+            _timeText.text = "--:--.---";
+        }
+        else
+        {
+            _playerNameText.text
+                = string.IsNullOrEmpty(worldRecordHolder.SteamName) ? "be the first!" : worldRecordHolder.SteamName;
+            _timeText.text = worldRecordHolder.Time <= 0 ? "--:--.---" : worldRecordHolder.Time.GetFormattedTime();
+        }
     }
 }
