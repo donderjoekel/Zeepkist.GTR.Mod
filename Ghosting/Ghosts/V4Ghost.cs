@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Extensions;
+using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using UnityEngine;
 using ZeepSDK.Cosmetics;
 
@@ -13,7 +14,13 @@ public partial class V4Ghost : GhostBase
     private readonly int _colorId;
     private readonly List<Frame> _frames;
 
-    public V4Ghost(ulong steamId, int soapboxId, int hatId, int colorId, List<Frame> frames)
+    public V4Ghost(
+        GhostTimingService timingService,
+        ulong steamId,
+        int soapboxId,
+        int hatId,
+        int colorId,
+        List<Frame> frames) : base(timingService)
     {
         _steamId = steamId;
         _soapboxId = soapboxId;

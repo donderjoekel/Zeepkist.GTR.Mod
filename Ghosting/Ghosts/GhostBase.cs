@@ -5,15 +5,20 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
 public abstract class GhostBase : IGhost
 {
+    private readonly GhostTimingService _timingService;
     private int _updateFrame;
     private int _fixedUpdateFrame;
-    private float _time;
 
     protected abstract int FrameCount { get; }
 
     protected GhostData Ghost { get; private set; }
 
     public abstract Color Color { get; }
+
+    protected GhostBase(GhostTimingService timingService)
+    {
+        _timingService = timingService;
+    }
 
     public void Initialize(GhostData ghost)
     {
@@ -49,7 +54,6 @@ public abstract class GhostBase : IGhost
 
     public void Start()
     {
-        _time = 0;
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
 
@@ -59,7 +63,6 @@ public abstract class GhostBase : IGhost
 
     public void Stop()
     {
-        _time = 0;
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
     }
@@ -69,15 +72,13 @@ public abstract class GhostBase : IGhost
         if (_updateFrame >= FrameCount - 1)
             return;
 
-        _time += Time.deltaTime;
-
         IFrame previousFrame = null;
         IFrame nextFrame = null;
 
         for (int i = _updateFrame; i < FrameCount; i++)
         {
             IFrame frame = GetFrame(i);
-            if (frame.Time < _time)
+            if (frame.Time < _timingService.CurrentTime)
             {
                 previousFrame = frame;
                 _updateFrame = i;
@@ -95,7 +96,7 @@ public abstract class GhostBase : IGhost
         if (_updateFrame >= FrameCount - 1)
             return;
 
-        float t = Mathf.InverseLerp(previousFrame.Time, nextFrame.Time, _time);
+        float t = Mathf.InverseLerp(previousFrame.Time, nextFrame.Time, _timingService.CurrentTime);
         Vector3 position = Vector3.Lerp(previousFrame.Position, nextFrame.Position, t);
         Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
         Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);

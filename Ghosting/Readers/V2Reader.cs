@@ -1,13 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
-public class V2Reader : IGhostReader
+public class V2Reader : GhostReaderBase<V2Ghost>
 {
-    public IGhost Read(byte[] data)
+    public V2Reader(IServiceProvider provider) : base(provider)
+    {
+    }
+
+    public override IGhost Read(byte[] data)
     {
         List<V2Ghost.Frame> frames = new();
         ulong steamId;
@@ -33,6 +38,6 @@ public class V2Reader : IGhostReader
             }
         }
 
-        return new V2Ghost(steamId, soapboxId, hatId, colorId, frames);
+        return CreateGhost(steamId, soapboxId, hatId, colorId, frames);
     }
 }

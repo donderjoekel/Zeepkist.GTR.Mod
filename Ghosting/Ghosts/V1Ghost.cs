@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using TNRD.Zeepkist.GTR.Extensions;
+using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using UnityEngine;
 using ZeepSDK.Cosmetics;
 
@@ -10,7 +11,7 @@ public partial class V1Ghost : GhostBase
 {
     private readonly List<Frame> _frames;
 
-    public V1Ghost(List<Frame> frames)
+    public V1Ghost(GhostTimingService timingService, List<Frame> frames) : base(timingService)
     {
         _frames = frames;
     }

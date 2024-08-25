@@ -7,9 +7,13 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
-public class V4Reader : IGhostReader
+public class V4Reader : GhostReaderBase<V4Ghost>
 {
-    public IGhost Read(byte[] data)
+    public V4Reader(IServiceProvider provider) : base(provider)
+    {
+    }
+
+    public override IGhost Read(byte[] data)
     {
         List<V4Ghost.Frame> frames = new();
         ulong steamId;
@@ -65,7 +69,7 @@ public class V4Reader : IGhostReader
             zip?.Dispose();
         }
 
-        return new V4Ghost(steamId, soapboxId, hatId, colorId, frames);
+        return CreateGhost(steamId, soapboxId, hatId, colorId, frames);
     }
 
     private static (V4Ghost.Frame, ResetFrame) ReadResetFrame(BinaryReader reader, List<DeltaFrame> deltaFrames)

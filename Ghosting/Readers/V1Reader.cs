@@ -1,13 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
-public class V1Reader : IGhostReader
+public class V1Reader : GhostReaderBase<V1Ghost>
 {
-    public IGhost Read(byte[] data)
+    public V1Reader(IServiceProvider provider) : base(provider)
+    {
+    }
+
+    public override IGhost Read(byte[] data)
     {
         List<V1Ghost.Frame> frames = new();
 
@@ -25,6 +30,6 @@ public class V1Reader : IGhostReader
             }
         }
 
-        return new V1Ghost(frames);
+        return CreateGhost(frames);
     }
 }

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 using UnityEngine.Pool;
+using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 using Object = UnityEngine.Object;
 
@@ -14,6 +16,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 public partial class GhostPlayer : IEagerService
 {
     private readonly ObjectPool<GhostData> _pool = new(CreateGhost, GetGhost, ReleaseGhost, DestroyGhost);
+    private static ILogger<GhostPlayer> _logger;
 
     private readonly Dictionary<int, IGhost> _ghosts = new();
     private readonly Dictionary<int, GhostData> _ghostData = new();
@@ -27,8 +30,10 @@ public partial class GhostPlayer : IEagerService
     public event EventHandler<GhostAddedEventArgs> GhostAdded;
     public event EventHandler<GhostRemovedEventArgs> GhostRemoved;
 
-    public GhostPlayer(PlayerLoopService playerLoopService)
+    public GhostPlayer(PlayerLoopService playerLoopService, ILogger<GhostPlayer> logger)
     {
+        _logger = logger;
+
         playerLoopService.SubscribeUpdate(Update);
         playerLoopService.SubscribeFixedUpdate(FixedUpdate);
         RacingApi.RoundStarted += OnRoundStarted;
@@ -36,6 +41,7 @@ public partial class GhostPlayer : IEagerService
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.QuickReset += OnQuickReset;
         RacingApi.Quit += OnQuit;
+        MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
     }
 
     private static GhostData CreateGhost()
@@ -57,7 +63,8 @@ public partial class GhostPlayer : IEagerService
 
     private static void DestroyGhost(GhostData ghostData)
     {
-        Object.Destroy(ghostData.GameObject);
+        if (ghostData.GameObject != null)
+            Object.Destroy(ghostData.GameObject);
     }
 
     private void OnRoundStarted()
@@ -103,11 +110,15 @@ public partial class GhostPlayer : IEagerService
     private void OnQuit()
     {
         _roundStarted = false;
+        ClearGhosts();
+        _pool.Clear();
+    }
 
-        foreach ((int _, IGhost ghost) in _ghosts)
-        {
-            ghost.Stop();
-        }
+    private void OnDisconnectedFromGame()
+    {
+        _roundStarted = false;
+        ClearGhosts();
+        _pool.Clear();
     }
 
     public IReadOnlyList<int> GetLoadedGhostIds()

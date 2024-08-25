@@ -13,14 +13,18 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostNames { get; private set; }
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowRecordSetMessage { get; private set; }
-    public ConfigEntry<bool> ShowWorldRecordHolder { get; private set; }
+    public ConfigEntry<bool> ShowRecordHolder { get; private set; }
+    public ConfigEntry<bool> ShowWorldRecordOnHolder { get; private set; }
+    public ConfigEntry<bool> ShowPersonalBestOnHolder { get; private set; }
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleEnableRecords { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhostNames { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhostTransparent { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowRecordSetMessage { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowWorldRecordHolder { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowRecordHolder { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowWorldRecordOnHolder { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowPersonalBestOnHolder { get; private set; }
     public ConfigEntry<bool> ShowOfflineWorldRecord { get; private set; }
     public ConfigEntry<bool> ShowOfflinePersonalBest { get; private set; }
     public ConfigEntry<string> ApiUrl { get; private set; }
@@ -67,11 +71,21 @@ public class ConfigService : IEagerService
             "Show Record Set Message",
             true,
             "Should the record set message be shown");
-        ShowWorldRecordHolder = config.Bind(
+        ShowRecordHolder = config.Bind(
             "Visibility",
             "Show World Record Holder",
             true,
-            "Should the world record holder be shown");
+            "Should the record holder be shown");
+        ShowWorldRecordOnHolder = config.Bind(
+            "Visibility",
+            "Show World Record On Holder",
+            true,
+            "Should the world record be shown on the record holder");
+        ShowPersonalBestOnHolder = config.Bind(
+            "Visibility",
+            "Show Personal Best On Holder",
+            true,
+            "Should the personal best be shown on the record holder");
 
         ApiUrl = config.Bind(
             "URLs",
@@ -134,7 +148,7 @@ public class ConfigService : IEagerService
             "Toggle Record Set Message Visibility",
             KeyCode.None,
             "Toggles the record set message visibility");
-        ToggleShowWorldRecordHolder = config.Bind(
+        ToggleShowRecordHolder = config.Bind(
             "Keys",
             "Toggle World Record Holder Visibility",
             KeyCode.None,

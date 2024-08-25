@@ -17,16 +17,16 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
-public class V5Reader : IGhostReader
+public class V5Reader : GhostReaderBase<V5Ghost>
 {
     private readonly ILogger<V5Reader> _logger;
 
-    public V5Reader(ILogger<V5Reader> logger)
+    public V5Reader(IServiceProvider provider, ILogger<V5Reader> logger) : base(provider)
     {
         _logger = logger;
     }
 
-    public IGhost Read(byte[] data)
+    public override IGhost Read(byte[] data)
     {
         byte[] decompressed;
         try
@@ -106,7 +106,7 @@ public class V5Reader : IGhostReader
             previousFrame = frame;
         }
 
-        return new V5Ghost(
+        return CreateGhost(
             deserializedGhost.TaggedUsername,
             ColorUtilities.FromHexString(deserializedGhost.Color),
             deserializedGhost.SteamId,

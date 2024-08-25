@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Recording;
 using UnityEngine;
 using ZeepkistNetworking;
@@ -13,7 +14,13 @@ public partial class V5Ghost : GhostBase
     private readonly CosmeticIDs _cosmeticIds;
     private readonly List<Frame> _frames;
 
-    public V5Ghost(string taggedUsername, Color color, ulong steamId, CosmeticIDs cosmeticIds, List<Frame> frames)
+    public V5Ghost(
+        GhostTimingService timingService,
+        string taggedUsername,
+        Color color,
+        ulong steamId,
+        CosmeticIDs cosmeticIds,
+        List<Frame> frames) : base(timingService)
     {
         _taggedUsername = taggedUsername;
         _color = color;

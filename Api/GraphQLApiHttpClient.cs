@@ -66,10 +66,34 @@ public class GraphQLApiHttpClient
     public async UniTask<Result<T>> PostAsync<T>(string query, object variables = null, CancellationToken ct = default)
     {
         HttpResponseMessage response = await PostAsync(query, variables, ct);
-        if (!response.IsSuccessStatusCode)
-            return Result.Fail(response.ReasonPhrase); // TODO: Improve error
 
-        string content = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<T>(content, _settings);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        string content = string.Empty;
+
+        try
+        {
+            content = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(content, _settings);
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
     }
 }
