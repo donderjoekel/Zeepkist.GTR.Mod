@@ -29,7 +29,7 @@ public class PersonalBestHolderUi : MonoBehaviour
         if (personalBestHolder == null)
             return;
 
-        _positionText.text = "#?";
+        _positionText.text = string.Empty;
         _playerNameText.text = SteamClient.Name;
         _timeText.text = personalBestHolder.Time.GetFormattedTime();
     }

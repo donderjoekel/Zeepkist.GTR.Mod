@@ -40,16 +40,6 @@ public class WorldRecordHolderUi : MonoBehaviour
         _timeText = texts.First(x => string.Equals(x.name, "Time", StringComparison.OrdinalIgnoreCase));
     }
 
-    // private IEnumerator ReplacePositionWithStar(TextMeshProUGUI position)
-    // {
-    //     GameObject positionGameObject = position.gameObject;
-    //     Destroy(position);
-    //     yield return null;
-    //     _worldRecordImage = positionGameObject.AddComponent<Image>();
-    //     _worldRecordImage.preserveAspect = true;
-    //     _worldRecordImage.sprite = PlayerManager.Instance.youTriedMedal;
-    // }
-
     public void SetWorldRecordHolder(WorldRecordHolder worldRecordHolder)
     {
         _headerText.text = "World Record";
