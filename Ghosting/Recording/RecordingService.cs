@@ -179,7 +179,7 @@ public class RecordingService : IEagerService
 
         try
         {
-            HttpResponseMessage response = await _apiHttpClient.PostAsync("records", resource);
+            HttpResponseMessage response = await _apiHttpClient.PostAsync("records/submit", resource);
             if (response.IsSuccessStatusCode)
             {
                 if (_configService.ShowRecordSetMessage.Value)
