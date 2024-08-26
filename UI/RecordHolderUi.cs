@@ -95,19 +95,21 @@ public class RecordHolderUi : MonoBehaviour
     private RecordHolders _recordHolders;
     private ConfigService _configService;
 
+    private ConfigService ConfigService =>
+        _configService ??= ServiceHelper.Instance.GetRequiredService<ConfigService>();
+
     private void Awake()
     {
-        _configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
-        _configService.ShowRecordHolder.SettingChanged += OnShowRecordHolderChanged;
-        _configService.ShowWorldRecordOnHolder.SettingChanged += OnShowWorldRecordChanged;
-        _configService.ShowPersonalBestOnHolder.SettingChanged += OnShowPersonalBestChanged;
+        ConfigService.ShowRecordHolder.SettingChanged += OnShowRecordHolderChanged;
+        ConfigService.ShowWorldRecordOnHolder.SettingChanged += OnShowWorldRecordChanged;
+        ConfigService.ShowPersonalBestOnHolder.SettingChanged += OnShowPersonalBestChanged;
     }
 
     private void OnDestroy()
     {
-        _configService.ShowRecordHolder.SettingChanged -= OnShowRecordHolderChanged;
-        _configService.ShowWorldRecordOnHolder.SettingChanged -= OnShowWorldRecordChanged;
-        _configService.ShowPersonalBestOnHolder.SettingChanged -= OnShowPersonalBestChanged;
+        ConfigService.ShowRecordHolder.SettingChanged -= OnShowRecordHolderChanged;
+        ConfigService.ShowWorldRecordOnHolder.SettingChanged -= OnShowWorldRecordChanged;
+        ConfigService.ShowPersonalBestOnHolder.SettingChanged -= OnShowPersonalBestChanged;
     }
 
     private void OnShowRecordHolderChanged(object sender, EventArgs e)
@@ -138,13 +140,13 @@ public class RecordHolderUi : MonoBehaviour
 
     private void UpdateDisplayActions()
     {
-        gameObject.SetActive(_configService.ShowRecordHolder.Value);
+        gameObject.SetActive(ConfigService.ShowRecordHolder.Value);
         _worldRecordHolderUi.gameObject.SetActive(false);
         _personalBestHolderUi.gameObject.SetActive(false);
         _toggleActions.Clear();
-        if (_configService.ShowWorldRecordOnHolder.Value)
+        if (ConfigService.ShowWorldRecordOnHolder.Value)
             _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
-        if (_configService.ShowPersonalBestOnHolder.Value)
+        if (ConfigService.ShowPersonalBestOnHolder.Value)
             _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
     }
 
