@@ -58,8 +58,13 @@ public partial class GhostRecorder
 
     public void Stop()
     {
-        _playerLoopService.UnsubscribeUpdate(_updateToken);
-        _playerLoopService.UnsubscribeFixedUpdate(_fixedUpdateToken);
+        if (_updateToken != null)
+            _playerLoopService.UnsubscribeUpdate(_updateToken);
+        if (_fixedUpdateToken != null)
+            _playerLoopService.UnsubscribeFixedUpdate(_fixedUpdateToken);
+
+        _updateToken = null;
+        _fixedUpdateToken = null;
     }
 
     private void Update()
