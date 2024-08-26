@@ -91,11 +91,21 @@ public class GhostMaterialService : IEagerService
         const float maxDistance = 8f;
         float maxAlpha = _configService.ShowGhostTransparent.Value ? 0.3f : 1f;
 
-        float playerDistance = PlayerManager.Instance.currentMaster.isPhotoMode
-            ? 1000
-            : Vector3.Distance(
-                ghostData.GameObject.transform.position,
-                PlayerManager.Instance.currentMaster.carSetups[0].transform.position);
+        if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null)
+            return;
+
+        float playerDistance = 1000;
+
+        if (!PlayerManager.Instance.currentMaster.isPhotoMode)
+        {
+            if (PlayerManager.Instance.currentMaster.carSetups != null &&
+                PlayerManager.Instance.currentMaster.carSetups.Count > 0)
+            {
+                playerDistance = Vector3.Distance(
+                    ghostData.GameObject.transform.position,
+                    PlayerManager.Instance.currentMaster.carSetups[0].transform.position);
+            }
+        }
 
         float inverseLerp = Mathf.InverseLerp(minDistance, maxDistance, playerDistance);
         float fadeAmount = Mathf.Lerp(0, maxAlpha, inverseLerp);
