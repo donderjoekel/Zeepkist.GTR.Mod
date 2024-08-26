@@ -20,6 +20,9 @@ public partial class PlayerLoopService
 
         public PlayerLoopSubscription SubscribeUpdate(Action action)
         {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
             PlayerLoopSubscription subscription = new();
             _updates.Add(subscription, action);
             return subscription;
@@ -27,12 +30,17 @@ public partial class PlayerLoopService
 
         public void UnsubscribeUpdate(PlayerLoopSubscription subscription)
         {
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
             _updatesToRemove.Add(subscription);
         }
 
         public PlayerLoopSubscription SubscribeFixedUpdate(Action action)
         {
-            _logger.LogInformation("Subscribing to FixedUpdate");
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
             PlayerLoopSubscription subscription = new();
             _fixedUpdates.Add(subscription, action);
             return subscription;
@@ -40,6 +48,9 @@ public partial class PlayerLoopService
 
         public void UnsubscribeFixedUpdate(PlayerLoopSubscription subscription)
         {
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
             _fixedUpdatesToRemove.Add(subscription);
         }
 
