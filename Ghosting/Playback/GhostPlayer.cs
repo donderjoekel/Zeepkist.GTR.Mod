@@ -134,7 +134,10 @@ public partial class GhostPlayer : IEagerService
     public void AddGhost(int recordId, string steamName, IGhost ghost)
     {
         if (HasGhost(recordId))
+        {
+            GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, _ghostData[recordId]));
             return;
+        }
 
         // The order here is important. The renderer needs to be the last thing to make sure we got all the materials etc
         GhostData ghostData = _pool.Get();
