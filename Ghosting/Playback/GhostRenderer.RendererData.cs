@@ -7,6 +7,8 @@ public partial class GhostRenderer
 {
     private class RendererData
     {
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+
         private readonly Renderer _renderer;
         private readonly Material[] _normalMaterials;
         private readonly Material[] _ghostMaterials;
@@ -48,6 +50,9 @@ public partial class GhostRenderer
         {
             foreach (Material normalMaterial in _normalMaterials)
             {
+                if (!normalMaterial.HasProperty(ColorId))
+                    continue;
+
                 normalMaterial.color = normalMaterial.color with
                 {
                     a = fade
@@ -59,6 +64,9 @@ public partial class GhostRenderer
         {
             foreach (Material ghostMaterial in _ghostMaterials)
             {
+                if (!ghostMaterial.HasProperty(ColorId))
+                    continue;
+
                 ghostMaterial.color = color;
             }
         }
