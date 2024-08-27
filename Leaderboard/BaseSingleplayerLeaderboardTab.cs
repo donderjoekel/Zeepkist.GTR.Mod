@@ -61,7 +61,6 @@ public abstract class BaseSingleplayerLeaderboardTab<TItem> : BaseSingleplayerLe
 
             if (j >= _items.Count)
             {
-                gui.gameObject.SetActive(false);
                 continue;
             }
 
