@@ -49,6 +49,8 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
     private async UniTaskVoid LoadRecords()
     {
+        ClearItems();
+        Draw();
         string levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
         Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(levelHash);
 
@@ -61,7 +63,6 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
         _levelPoints = result.Value.LevelPoints == 0 ? null : result.Value.LevelPoints;
         _totalUsers = result.Value.TotalUsers;
-        ClearItems();
         AddItems(result.Value.Records);
         SortItems((x, y) => x.Time.CompareTo(y.Time));
         Draw();
