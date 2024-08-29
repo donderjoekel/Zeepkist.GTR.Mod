@@ -30,7 +30,7 @@ public class RecordingService : IEagerService
     private GhostRecorder _activeGhostRecorder;
 
     private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
-    private bool CanRecord => IsPlayingOnline && _configService.EnableRecords.Value;
+    private bool CanRecord => IsPlayingOnline && _configService.SubmitRecords.Value;
 
     public RecordingService(
         MessengerService messengerService,
@@ -114,9 +114,16 @@ public class RecordingService : IEagerService
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
         WinCompare.Result result = PlayerManager.Instance.currentMaster.playerResults.First();
-        IEnumerable<float> splits = result.split_times.Select(x => x.time);
-        IEnumerable<float> speeds = result.split_times.Select(x => x.velocity);
+        List<float> splits = result.split_times.Select(x => x.time).ToList();
+        List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
         float time = result.time;
+
+        if (splits.Count != PlayerManager.Instance.currentMaster.racePoints &&
+            !_configService.SubmitAnyPercentRecords.Value)
+        {
+            _logger.LogInformation("Discarding any % record");
+            return;
+        }
 
         _logger.LogInformation("Processing ghost data");
         string ghostData = ProcessGhostRecorder(ghostRecorder);
@@ -158,8 +165,8 @@ public class RecordingService : IEagerService
     private async UniTask Submit(
         string hash,
         float time,
-        IEnumerable<float> splits,
-        IEnumerable<float> speeds,
+        List<float> splits,
+        List<float> speeds,
         string ghostData,
         string screenshotData)
     {
@@ -172,7 +179,7 @@ public class RecordingService : IEagerService
             Speeds = speeds.ToList(),
             GhostData = ghostData,
             ScreenshotData = screenshotData,
-            IsValid = splits.Count() == PlayerManager.Instance.currentMaster.racePoints,
+            IsValid = splits.Count == PlayerManager.Instance.currentMaster.racePoints,
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
         };
@@ -182,7 +189,7 @@ public class RecordingService : IEagerService
             HttpResponseMessage response = await _apiHttpClient.PostAsync("records/submit", resource);
             if (response.IsSuccessStatusCode)
             {
-                if (_configService.ShowRecordSetMessage.Value)
+                if (_configService.ShowRecordSubmitMessage.Value)
                 {
                     _messengerService.Log("Record submitted");
                 }

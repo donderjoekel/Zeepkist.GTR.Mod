@@ -30,7 +30,13 @@ public class GhostNamePositioniongService : IEagerService
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
     {
-        e.GhostData.Visuals.NameDisplay.gameObject.SetActive(_configService.ShowGhostNames.Value);
+        UpdateVisibility(e.GhostData);
+    }
+
+    private void UpdateVisibility(GhostData ghostData)
+    {
+        ghostData.Visuals.NameDisplay.gameObject.SetActive(
+            _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
     }
 
     private void OnUpdate()
@@ -53,7 +59,7 @@ public class GhostNamePositioniongService : IEagerService
 
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
-            ghostData.Visuals.NameDisplay.gameObject.SetActive(_configService.ShowGhostNames.Value);
+            UpdateVisibility(ghostData);
         }
 
         if (_configService.ShowGhostNames.Value)

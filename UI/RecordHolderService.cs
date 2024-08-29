@@ -78,7 +78,7 @@ public class RecordHolderService : IEagerService
         }
 
         _recordHolders = result.Value;
-        _timer = 10;
+        _timer = _configService.RecordHolderSwitchTime.Value;
         RecordHolderUi.Create(_recordHolders);
     }
 
@@ -134,7 +134,7 @@ public class RecordHolderService : IEagerService
         if (_timer <= 0)
         {
             RecordHolderUi.SwitchToNext();
-            _timer = 10;
+            _timer = _configService.RecordHolderSwitchTime.Value;
         }
     }
 
