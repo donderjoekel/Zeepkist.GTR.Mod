@@ -96,6 +96,16 @@ public class ApiHttpClient
             });
     }
 
+    public async UniTask<bool> LoginOrRefresh()
+    {
+        if (NeedsLogin)
+        {
+            return await Login();
+        }
+
+        return await Refresh();
+    }
+
     public async UniTask<bool> Login()
     {
         LoginPostResource data = new()
@@ -113,11 +123,10 @@ public class ApiHttpClient
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
             });
-        await ProcessAuthenticationResponse(response);
-        return !NeedsLogin && !NeedsRefresh;
+        return await ProcessAuthenticationResponse(response);
     }
 
-    private async UniTask Refresh()
+    private async UniTask<bool> Refresh()
     {
         HttpRequestMessage request = new(HttpMethod.Post, "Authentication/refresh");
         RefreshPostResource data = new()
@@ -130,16 +139,16 @@ public class ApiHttpClient
         string json = JsonConvert.SerializeObject(data);
         request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         HttpResponseMessage response = await _policy.ExecuteAsync(() => _httpClient.SendAsync(request));
-        await ProcessAuthenticationResponse(response);
+        return await ProcessAuthenticationResponse(response);
     }
 
-    private async Task ProcessAuthenticationResponse(HttpResponseMessage response)
+    private async UniTask<bool> ProcessAuthenticationResponse(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError("Failed to refresh: {StatusCode}", response.StatusCode);
             ResetData();
-            return;
+            return false;
         }
 
         // TODO: Should this be done in a safe way?
@@ -150,6 +159,7 @@ public class ApiHttpClient
         _refreshToken = resource.RefreshToken;
         _accessTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.AccessTokenExpiry));
         _refreshTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.RefreshTokenExpiry));
+        return true;
     }
 
     private void ResetData()

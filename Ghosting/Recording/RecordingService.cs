@@ -113,6 +113,14 @@ public class RecordingService : IEagerService
 
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
+
+        if (string.IsNullOrEmpty(hash))
+        {
+            _messengerService.LogError("Unable to figure out level, discarding record :(");
+            _logger.LogError("Unable to get the level hash");
+            return;
+        }
+
         WinCompare.Result result = PlayerManager.Instance.currentMaster.playerResults.First();
         List<float> splits = result.split_times.Select(x => x.time).ToList();
         List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
@@ -186,6 +194,14 @@ public class RecordingService : IEagerService
 
         try
         {
+            bool loginOrRefresh = await _apiHttpClient.LoginOrRefresh();
+            if (!loginOrRefresh)
+            {
+                _messengerService.LogError("Authentication failed, unable to submit record");
+                _logger.LogError("Authentication failed, unable to submit record");
+                return;
+            }
+
             HttpResponseMessage response = await _apiHttpClient.PostAsync("records/submit", resource);
             if (response.IsSuccessStatusCode)
             {
