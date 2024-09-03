@@ -67,6 +67,13 @@ public class RecordHolderService : IEagerService
 
     private async UniTaskVoid GetRecordHoldersAsync(CancellationToken ct = default)
     {
+        if (string.IsNullOrEmpty(_levelHash))
+        {
+            _logger.LogError("Unable to get level hash");
+            _recordHolders = null;
+            return;
+        }
+        
         Result<RecordHolders> result
             = await _recordHolderGraphqlService.GetRecordHolders(_levelHash, SteamClient.SteamId.Value);
 
