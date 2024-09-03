@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -13,7 +12,6 @@ using TNRD.Zeepkist.GTR.Authentication;
 using TNRD.Zeepkist.GTR.Commands;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
-using TNRD.Zeepkist.GTR.Ghosting;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
 using TNRD.Zeepkist.GTR.Ghosting.Recording;
@@ -24,8 +22,8 @@ using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using TNRD.Zeepkist.GTR.Screenshots;
 using TNRD.Zeepkist.GTR.UI;
+using TNRD.Zeepkist.GTR.Users;
 using TNRD.Zeepkist.GTR.Utilities;
-using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Storage;
 
@@ -91,6 +89,7 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton<RecordHolderGraphqlService>();
                         services.AddSingleton<WorldRecordCommandGraphQlService>();
                         services.AddSingleton<ServiceHelper>();
+                        services.AddSingleton<UserService>();
                         services.AddTransient<GhostRecorder>();
                         services.AddTransient<V1Reader>();
                         services.AddTransient<V2Reader>();
