@@ -49,7 +49,7 @@ public class RecordHolderService : IEagerService
 
     private void OnLevelLoaded()
     {
-        _levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
+        _levelHash = LevelApi.GetCurrentLevelHash();
     }
 
     private void OnPlayerSpawned()

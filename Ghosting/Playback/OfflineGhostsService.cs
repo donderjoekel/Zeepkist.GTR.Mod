@@ -76,7 +76,7 @@ public class OfflineGhostsService : IEagerService
         if (MultiplayerApi.IsPlayingOnline)
             return;
 
-        _levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
+        _levelHash = LevelApi.GetCurrentLevelHash();
     }
 
     protected virtual void OnPlayerSpawned()

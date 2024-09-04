@@ -51,7 +51,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
     {
         ClearItems();
         Draw();
-        string levelHash = LevelApi.GetLevelHash(LevelApi.CurrentLevel);
+        string levelHash = LevelApi.GetCurrentLevelHash();
         Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(levelHash);
 
         if (result.IsFailed)
