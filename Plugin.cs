@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -50,7 +51,17 @@ namespace TNRD.Zeepkist.GTR
             try
             {
                 IHostBuilder builder = Host.CreateDefaultBuilder();
-                builder.UseSerilog((context, provider, configuration) => { configuration.WriteTo.BepInEx(Logger); });
+                builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
+                builder.UseSerilog((context, provider, configuration) =>
+                {
+                    configuration.WriteTo.BepInEx(Logger);
+                    configuration.WriteTo.OpenObserve(
+                        context.Configuration["Logger:Url"],
+                        context.Configuration["Logger:Organization"],
+                        context.Configuration["Logger:Login"],
+                        context.Configuration["Logger:Token"],
+                        context.Configuration["Logger:Stream"]);
+                });
                 builder.ConfigureServices(
                     services =>
                     {
