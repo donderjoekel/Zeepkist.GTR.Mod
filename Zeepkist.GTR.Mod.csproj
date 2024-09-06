@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>0.34.2</Version>
+        <Version>0.34.3</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -41,6 +41,7 @@
         <PackageReference Include="Serilog" Version="4.0.1"/>
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageReference Include="Serilog.Sinks.OpenObserve-KKP" Version="1.0.4"/>
         <PackageReference Include="ZeepSDK" Version="1.35.7"/>
     </ItemGroup>
 
@@ -61,6 +62,9 @@
     <ItemGroup>
         <None Update="discord_game_sdk.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
@@ -83,6 +87,7 @@
             <OutputFiles Include="$(TargetDir)SevenZip.dll"/>
             <OutputFiles Include="$(TargetDir)EasyCompressor*.dll"/>
             <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
+            <OutputFiles Include="$(TargetDir)appsettings.json"/>
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>
