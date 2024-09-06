@@ -203,18 +203,21 @@ public class RecordingService : IEagerService
             }
 
             HttpResponseMessage response = await _apiHttpClient.PostAsync("records/submit", resource);
-            if (response.IsSuccessStatusCode)
+
+            try
             {
-                if (_configService.ShowRecordSubmitMessage.Value)
-                {
-                    _messengerService.Log("Record submitted");
-                }
+                response.EnsureSuccessStatusCode();
             }
-            else
+            catch (Exception e)
             {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Failed to submit record: {Response}", responseContent);
+                _logger.LogError(e, "Failed to submit record");
                 _messengerService.LogError("Failed to submit record");
+                return;
+            }
+
+            if (_configService.ShowRecordSubmitMessage.Value)
+            {
+                _messengerService.Log("Record submitted");
             }
         }
         catch (Exception e)
