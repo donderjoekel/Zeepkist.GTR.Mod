@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using TNRD.Zeepkist.GTR.Api;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -18,9 +19,12 @@ public class LeaderboardGraphqlService
         _client = client;
     }
 
-    public async UniTask<Result<LeaderboardRecords>> GetLeaderboardRecords(string levelHash)
+    public async UniTask<Result<LeaderboardRecords>> GetLeaderboardRecords(string levelHash,
+        CancellationToken ct = default)
     {
-        Result<Root> result = await _client.PostAsync<Root>(Query, new { hash = levelHash });
+        Result<Root> result = await _client.PostAsync<Root>(Query, new { hash = levelHash }, ct);
+        if (ct.IsCancellationRequested)
+            return Result.Ok();
 
         if (result.IsFailed)
         {

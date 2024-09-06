@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using TNRD.Zeepkist.GTR.Messaging;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -26,6 +27,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
     private double? _levelPoints;
     private int _totalUsers;
+    private CancellationTokenSource _cts;
 
     public OnlineLeaderboardTab(LeaderboardGraphqlService graphqlService, MessengerService messengerService)
     {
@@ -40,20 +42,25 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
     protected override void OnEnable()
     {
-        LoadRecords().Forget();
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        LoadRecords(_cts.Token).Forget();
     }
 
     protected override void OnDisable()
     {
     }
 
-    private async UniTaskVoid LoadRecords()
+    private async UniTaskVoid LoadRecords(CancellationToken ct = default)
     {
         ClearItems();
         Draw();
         string levelHash = LevelApi.GetCurrentLevelHash();
-        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(levelHash);
+        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(levelHash, ct);
 
+        if (ct.IsCancellationRequested)
+            return;
+        
         if (result.IsFailed)
         {
             Logger.LogError("Failed to load GTR records: " + result);
@@ -63,6 +70,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
         _levelPoints = result.Value.LevelPoints == 0 ? null : result.Value.LevelPoints;
         _totalUsers = result.Value.TotalUsers;
+        ClearItems();
         AddItems(result.Value.Records);
         SortItems((x, y) => x.Time.CompareTo(y.Time));
         Draw();
