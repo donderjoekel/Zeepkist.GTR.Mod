@@ -103,7 +103,12 @@ public class ApiHttpClient
             return await Login();
         }
 
-        return await Refresh();
+        if (await Refresh())
+        {
+            return true;
+        }
+
+        return await Login();
     }
 
     public async UniTask<bool> Login()
