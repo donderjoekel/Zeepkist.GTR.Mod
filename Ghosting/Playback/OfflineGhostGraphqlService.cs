@@ -2,6 +2,7 @@
 using System.Linq;
 using JetBrains.Annotations;
 using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Configuration;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -12,7 +13,8 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
     private const string Query
         = "fragment frag on Record{id userByIdUser{steamName}recordMediasByIdRecord{nodes{ghostUrl}}}query GetAdditionalGhosts($ids:[BigFloat!],$hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{in:$ids}}}){nodes{recordByIdRecord{...frag}}}}";
 
-    public OfflineGhostGraphqlService(GraphQLApiHttpClient client) : base(client)
+    public OfflineGhostGraphqlService(GraphQLApiHttpClient client, ConfigService configService)
+        : base(client, configService)
     {
     }
 

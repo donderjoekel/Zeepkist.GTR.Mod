@@ -5,6 +5,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Configuration;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using Result = ZeepSDK.External.FluentResults.Result;
@@ -17,12 +18,14 @@ public class OnlineGhostGraphqlService
         = "fragment frag on Record{id userByIdUser{steamName}recordMediasByIdRecord{nodes{ghostUrl}}}query personalbests($steamId:BigFloat $hash:String $year:Int $quarter:Int $month:Int $week:Int $day:Int){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}}){nodes{recordByIdRecord{...frag}}}allPersonalBestYearlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}year:{equalTo:$year}}){nodes{recordByIdRecord{...frag}}}allPersonalBestQuarterlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}year:{equalTo:$year}quarter:{equalTo:$quarter}}){nodes{recordByIdRecord{...frag}}}allPersonalBestMonthlies(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}year:{equalTo:$year}month:{equalTo:$month}}){nodes{recordByIdRecord{...frag}}}allPersonalBestWeeklies(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}year:{equalTo:$year}week:{equalTo:$week}}){nodes{recordByIdRecord{...frag}}}allPersonalBestDailies(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}year:{equalTo:$year}day:{equalTo:$day}}){nodes{recordByIdRecord{...frag}}}}";
 
     private readonly GraphQLApiHttpClient _client;
+    private readonly ConfigService _configService;
 
     protected GraphQLApiHttpClient Client => _client;
 
-    public OnlineGhostGraphqlService(GraphQLApiHttpClient client)
+    public OnlineGhostGraphqlService(GraphQLApiHttpClient client, ConfigService configService)
     {
         _client = client;
+        _configService = configService;
     }
 
     public async UniTask<Result<List<PersonalBest>>> GetPersonalBests(string levelHash)
@@ -57,40 +60,45 @@ public class OnlineGhostGraphqlService
         return Result.Ok(GetUniquePersonalBests(Map(result.Value)));
     }
 
-    private static List<PersonalBest> GetUniquePersonalBests(PersonalBests personalBests)
+    private List<PersonalBest> GetUniquePersonalBests(PersonalBests personalBests)
     {
         List<PersonalBest> uniquePersonalBests = [];
 
-        if (personalBests.Global != null)
+        if (personalBests.Global != null && _configService.ShowGlobalPersonalBest.Value)
         {
             uniquePersonalBests.Add(personalBests.Global);
         }
 
-        if (personalBests.Yearly != null && uniquePersonalBests.All(x => x.Id != personalBests.Yearly.Id))
+        if (personalBests.Yearly != null && _configService.ShowYearlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Yearly.Id))
         {
             personalBests.Yearly.SteamName += " (Yearly)";
             uniquePersonalBests.Add(personalBests.Yearly);
         }
 
-        if (personalBests.Quarterly != null && uniquePersonalBests.All(x => x.Id != personalBests.Quarterly.Id))
+        if (personalBests.Quarterly != null && _configService.ShowQuarterlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Quarterly.Id))
         {
             personalBests.Quarterly.SteamName += " (Quarterly)";
             uniquePersonalBests.Add(personalBests.Quarterly);
         }
 
-        if (personalBests.Monthly != null && uniquePersonalBests.All(x => x.Id != personalBests.Monthly.Id))
+        if (personalBests.Monthly != null && _configService.ShowMonthlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Monthly.Id))
         {
             personalBests.Monthly.SteamName += " (Monthly)";
             uniquePersonalBests.Add(personalBests.Monthly);
         }
 
-        if (personalBests.Weekly != null && uniquePersonalBests.All(x => x.Id != personalBests.Weekly.Id))
+        if (personalBests.Weekly != null && _configService.ShowWeeklyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Weekly.Id))
         {
             personalBests.Weekly.SteamName += " (Weekly)";
             uniquePersonalBests.Add(personalBests.Weekly);
         }
 
-        if (personalBests.Daily != null && uniquePersonalBests.All(x => x.Id != personalBests.Daily.Id))
+        if (personalBests.Daily != null && _configService.ShowDailyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Daily.Id))
         {
             personalBests.Daily.SteamName += " (Daily)";
             uniquePersonalBests.Add(personalBests.Daily);
