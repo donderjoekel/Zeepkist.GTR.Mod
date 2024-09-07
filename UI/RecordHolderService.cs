@@ -22,7 +22,6 @@ public class RecordHolderService : IEagerService
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
-    private string _levelHash;
     private RecordHolders _recordHolders;
 
     private float _timer;
@@ -41,15 +40,9 @@ public class RecordHolderService : IEagerService
 
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
         RacingApi.Quit += OnQuit;
-        RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
 
         playerLoopService.SubscribeUpdate(OnUpdate);
-    }
-
-    private void OnLevelLoaded()
-    {
-        _levelHash = LevelApi.GetCurrentLevelHash();
     }
 
     private void OnPlayerSpawned()
@@ -67,7 +60,7 @@ public class RecordHolderService : IEagerService
 
     private async UniTaskVoid GetRecordHoldersAsync(CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(_levelHash))
+        if (string.IsNullOrEmpty(LevelApi.CurrentHash))
         {
             _logger.LogError("Unable to get level hash");
             _recordHolders = null;
@@ -75,7 +68,7 @@ public class RecordHolderService : IEagerService
         }
         
         Result<RecordHolders> result
-            = await _recordHolderGraphqlService.GetRecordHolders(_levelHash, SteamClient.SteamId.Value);
+            = await _recordHolderGraphqlService.GetRecordHolders(LevelApi.CurrentHash, SteamClient.SteamId.Value);
 
         if (result.IsFailed)
         {

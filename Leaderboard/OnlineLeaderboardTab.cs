@@ -55,8 +55,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
     {
         ClearItems();
         Draw();
-        string levelHash = LevelApi.GetCurrentLevelHash();
-        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(levelHash, ct);
+        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return;

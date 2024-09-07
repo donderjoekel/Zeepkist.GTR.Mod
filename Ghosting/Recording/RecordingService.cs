@@ -112,7 +112,7 @@ public class RecordingService : IEagerService
         }
 
         _logger.LogInformation("Collecting extra information");
-        string hash = LevelApi.GetCurrentLevelHash();
+        string hash = LevelApi.CurrentHash;
 
         if (string.IsNullOrEmpty(hash))
         {

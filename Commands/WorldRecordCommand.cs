@@ -36,8 +36,7 @@ public class WorldRecordCommand : ILocalChatCommand
 
     private async UniTaskVoid HandleAsync(string arguments)
     {
-        string levelHash = LevelApi.GetCurrentLevelHash();
-        Result<WorldRecords> result = await _service.GetWorldRecord(levelHash);
+        Result<WorldRecords> result = await _service.GetWorldRecord(LevelApi.CurrentHash);
 
         if (result.IsFailed)
         {

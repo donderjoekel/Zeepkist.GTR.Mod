@@ -26,7 +26,6 @@ public class OnlineGhostsService : IEagerService
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
-    private string _levelHash;
 
     public OnlineGhostsService(
         ILogger<OnlineGhostsService> logger,
@@ -46,7 +45,6 @@ public class OnlineGhostsService : IEagerService
 
         playerLoopService.SubscribeUpdate(OnUpdate);
 
-        RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
@@ -76,14 +74,6 @@ public class OnlineGhostsService : IEagerService
             return;
 
         _ghostPlayer.ClearGhosts();
-    }
-
-    private void OnLevelLoaded()
-    {
-        if (!MultiplayerApi.IsPlayingOnline)
-            return;
-
-        _levelHash = LevelApi.GetCurrentLevelHash();
     }
 
     protected virtual void OnPlayerSpawned()
@@ -117,7 +107,7 @@ public class OnlineGhostsService : IEagerService
         _logger.LogInformation("Loading personal best...");
 
         Result<List<OnlineGhostGraphqlService.PersonalBest>> result
-            = await _graphqlService.GetPersonalBests(_levelHash);
+            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)
             return;

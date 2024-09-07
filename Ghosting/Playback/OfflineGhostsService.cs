@@ -28,7 +28,6 @@ public class OfflineGhostsService : IEagerService
     private readonly List<string> _additionalGhosts = new();
 
     private CancellationTokenSource _cts;
-    private string _levelHash;
 
     public OfflineGhostsService(
         ILogger<OfflineGhostsService> logger,
@@ -48,7 +47,6 @@ public class OfflineGhostsService : IEagerService
 
         playerLoopService.SubscribeUpdate(OnUpdate);
 
-        RacingApi.LevelLoaded += OnLevelLoaded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.Quit += OnQuit;
@@ -69,14 +67,6 @@ public class OfflineGhostsService : IEagerService
         {
             PlayerManager.Instance.currentMaster.OnlineGameplayUI.OnlineTabLeaderboard.Open(true);
         }
-    }
-
-    private void OnLevelLoaded()
-    {
-        if (MultiplayerApi.IsPlayingOnline)
-            return;
-
-        _levelHash = LevelApi.GetCurrentLevelHash();
     }
 
     protected virtual void OnPlayerSpawned()
@@ -167,7 +157,7 @@ public class OfflineGhostsService : IEagerService
         CancellationToken ct)
     {
         Result<List<OnlineGhostGraphqlService.PersonalBest>> result
-            = await _graphqlService.GetPersonalBests(_levelHash);
+            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
@@ -182,7 +172,7 @@ public class OfflineGhostsService : IEagerService
         CancellationToken ct)
     {
         Result<List<OnlineGhostGraphqlService.PersonalBest>> result
-            = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, _levelHash);
+            = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
