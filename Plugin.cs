@@ -7,6 +7,7 @@ using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Steamworks;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Authentication;
@@ -54,6 +55,9 @@ namespace TNRD.Zeepkist.GTR
                 builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
                 builder.UseSerilog((context, provider, configuration) =>
                 {
+                    configuration.Enrich.FromLogContext();
+                    configuration.Enrich.WithProperty("steam_id", SteamClient.SteamId);
+                    configuration.Enrich.WithProperty("steam_name", SteamClient.Name);
                     configuration.WriteTo.BepInEx(Logger);
                     configuration.WriteTo.OpenObserve(
                         context.Configuration["Logger:Url"],
