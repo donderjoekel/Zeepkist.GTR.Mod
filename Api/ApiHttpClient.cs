@@ -133,7 +133,6 @@ public class ApiHttpClient
 
     private async UniTask<bool> Refresh()
     {
-        HttpRequestMessage request = new(HttpMethod.Post, "Authentication/refresh");
         RefreshPostResource data = new()
         {
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
@@ -141,9 +140,14 @@ public class ApiHttpClient
             RefreshToken = _refreshToken,
             SteamId = SteamClient.SteamId
         };
-        string json = JsonConvert.SerializeObject(data);
-        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        HttpResponseMessage response = await _policy.ExecuteAsync(() => _httpClient.SendAsync(request));
+
+        HttpResponseMessage response = await _policy.ExecuteAsync(() =>
+        {
+            HttpRequestMessage request = new(HttpMethod.Post, "Authentication/refresh");
+            string json = JsonConvert.SerializeObject(data);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            return _httpClient.SendAsync(request);
+        });
         return await ProcessAuthenticationResponse(response);
     }
 
