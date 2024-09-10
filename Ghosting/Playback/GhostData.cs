@@ -8,6 +8,7 @@ public class GhostData
     public GhostData(GhostVisuals ghostVisuals)
     {
         Visuals = ghostVisuals;
+        Object.DontDestroyOnLoad(GameObject.transform.root.gameObject);
     }
 
     public void Initialize(IGhost ghost)

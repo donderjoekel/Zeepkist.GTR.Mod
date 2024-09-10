@@ -1,4 +1,6 @@
-﻿using TNRD.Zeepkist.GTR.Api;
+﻿using Serilog.Context;
+using Steamworks;
+using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.Patching.Patches;
@@ -12,6 +14,7 @@ public class AuthenticationService : IEagerService
     private readonly MessengerService _messengerService;
     private readonly ApiHttpClient _apiHttpClient;
     private readonly UserService _userService;
+    private bool _pushedProperties;
 
     public AuthenticationService(
         MessengerService messengerService,
@@ -27,6 +30,13 @@ public class AuthenticationService : IEagerService
 
     private void OnMainMenuAwake()
     {
+        if (!_pushedProperties)
+        {
+            _pushedProperties = true;
+            GlobalLogContext.PushProperty("steam_id", SteamClient.SteamId);
+            GlobalLogContext.PushProperty("steam_name", SteamClient.Name);
+        }
+
         Login().Forget();
     }
 

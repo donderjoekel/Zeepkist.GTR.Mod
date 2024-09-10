@@ -47,6 +47,7 @@ public partial class GhostPlayer : IEagerService
     private static GhostData CreateGhost()
     {
         GameObject gameObject = new("Ghost");
+        Object.DontDestroyOnLoad(gameObject.transform.root.gameObject);
         GhostVisuals ghostVisuals = gameObject.AddComponent<GhostVisuals>();
         return new GhostData(ghostVisuals);
     }
@@ -63,8 +64,8 @@ public partial class GhostPlayer : IEagerService
 
     private static void DestroyGhost(GhostData ghostData)
     {
-        if (ghostData.GameObject != null)
-            Object.Destroy(ghostData.GameObject);
+        if (ghostData.Visuals.gameObject != null)
+            Object.Destroy(ghostData.Visuals.gameObject);
     }
 
     private void OnRoundStarted()

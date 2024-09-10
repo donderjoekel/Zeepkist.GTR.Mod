@@ -10,14 +10,7 @@ public class ScreenshotService
 {
     public async UniTask<string> TakeScreenshot(CancellationToken ct)
     {
-        bool resultScreenOpen = PlayerManager.Instance.currentMaster.RaceResultsUI.IsOpen;
-
-        if (!resultScreenOpen)
-        {
-            GameMaster_OpenResultScreen.OpenResultScreen += () => { resultScreenOpen = true; };
-        }
-
-        while (!resultScreenOpen && !ct.IsCancellationRequested)
+        while (!PlayerManager.Instance.currentMaster.RaceResultsUI.IsOpen && !ct.IsCancellationRequested)
         {
             await UniTask.Yield(PlayerLoopTiming.Update);
         }

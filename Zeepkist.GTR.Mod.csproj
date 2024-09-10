@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>0.34.5</Version>
+        <Version>0.34.9</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -39,6 +39,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Serilog" Version="4.0.1"/>
+        <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0"/>
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
         <PackageReference Include="Serilog.Sinks.OpenObserve-KKP" Version="1.0.4"/>

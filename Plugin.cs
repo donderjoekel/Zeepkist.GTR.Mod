@@ -7,13 +7,14 @@ using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Steamworks;
+using Serilog.Events;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Authentication;
 using TNRD.Zeepkist.GTR.Commands;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Discord;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
 using TNRD.Zeepkist.GTR.Ghosting.Recording;
@@ -56,15 +57,15 @@ namespace TNRD.Zeepkist.GTR
                 builder.UseSerilog((context, provider, configuration) =>
                 {
                     configuration.Enrich.FromLogContext();
-                    configuration.Enrich.WithProperty("steam_id", SteamClient.SteamId);
-                    configuration.Enrich.WithProperty("steam_name", SteamClient.Name);
-                    configuration.WriteTo.BepInEx(Logger);
+                    configuration.Enrich.FromGlobalLogContext();
+                    configuration.WriteTo.BepInEx(Logger, restrictedToMinimumLevel: LogEventLevel.Information);
                     configuration.WriteTo.OpenObserve(
                         context.Configuration["Logger:Url"],
                         context.Configuration["Logger:Organization"],
                         context.Configuration["Logger:Login"],
                         context.Configuration["Logger:Token"],
-                        context.Configuration["Logger:Stream"]);
+                        context.Configuration["Logger:Stream"],
+                        restrictedToMinimumLevel: LogEventLevel.Warning);
                 });
                 builder.ConfigureServices(
                     services =>
@@ -89,6 +90,8 @@ namespace TNRD.Zeepkist.GTR
                         services.AddEagerService<GhostTimingService>();
                         services.AddEagerService<LeaderboardService>();
                         services.AddEagerService<RecordHolderService>();
+                        services.AddEagerService<DiscordService>();
+                        services.AddEagerService<UnhandledExceptionLoggerService>();
                         services.AddSingleton<AssetService>();
                         services.AddSingleton<GhostRepository>();
                         services.AddSingleton<GhostReaderFactory>();

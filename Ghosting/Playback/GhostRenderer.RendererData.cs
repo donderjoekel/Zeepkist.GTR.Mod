@@ -28,12 +28,14 @@ public partial class GhostRenderer
 
         public void SwitchToNormal()
         {
-            _renderer.materials = _normalMaterials;
+            if (_renderer == null)
+                _renderer.materials = _normalMaterials;
         }
 
         public void SwitchToGhost()
         {
-            _renderer.materials = _ghostMaterials;
+            if (_renderer != null)
+                _renderer.materials = _ghostMaterials;
         }
 
         public void Enable()
