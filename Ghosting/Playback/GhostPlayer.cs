@@ -132,23 +132,29 @@ public partial class GhostPlayer : IEagerService
         return _ghosts.ContainsKey(recordId);
     }
 
-    public void AddGhost(int recordId, string steamName, IGhost ghost)
+    public void AddGhost(GhostType type, int recordId, string steamName, IGhost ghost)
     {
-        if (HasGhost(recordId))
+        bool hadExistingGhost = false;
+
+        if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
-            GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, _ghostData[recordId]));
-            return;
+            hadExistingGhost = true;
+        }
+        else
+        {
+            ghostData = _pool.Get();
         }
 
-        // The order here is important. The renderer needs to be the last thing to make sure we got all the materials etc
-        GhostData ghostData = _pool.Get();
-        ghostData.Initialize(ghost);
+        ghostData.Initialize(type, ghost);
         ghost.Initialize(ghostData);
         ghost.ApplyCosmetics(steamName);
         ghostData.InitializeRenderer();
 
-        _ghosts.Add(recordId, ghost);
-        _ghostData.Add(recordId, ghostData);
+        if (!hadExistingGhost)
+        {
+            _ghosts.Add(recordId, ghost);
+            _ghostData.Add(recordId, ghostData);
+        }
 
         GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, ghostData));
     }

@@ -66,42 +66,49 @@ public class OnlineGhostGraphqlService
 
         if (personalBests.Global != null && _configService.ShowGlobalPersonalBest.Value)
         {
-            uniquePersonalBests.Add(personalBests.Global);
-        }
-
-        if (personalBests.Yearly != null && _configService.ShowYearlyPersonalBest.Value &&
-            uniquePersonalBests.All(x => x.Id != personalBests.Yearly.Id))
-        {
-            personalBests.Yearly.SteamName += " (Yearly)";
-            uniquePersonalBests.Add(personalBests.Yearly);
-        }
-
-        if (personalBests.Quarterly != null && _configService.ShowQuarterlyPersonalBest.Value &&
-            uniquePersonalBests.All(x => x.Id != personalBests.Quarterly.Id))
-        {
-            personalBests.Quarterly.SteamName += " (Quarterly)";
-            uniquePersonalBests.Add(personalBests.Quarterly);
-        }
-
-        if (personalBests.Monthly != null && _configService.ShowMonthlyPersonalBest.Value &&
-            uniquePersonalBests.All(x => x.Id != personalBests.Monthly.Id))
-        {
-            personalBests.Monthly.SteamName += " (Monthly)";
-            uniquePersonalBests.Add(personalBests.Monthly);
-        }
-
-        if (personalBests.Weekly != null && _configService.ShowWeeklyPersonalBest.Value &&
-            uniquePersonalBests.All(x => x.Id != personalBests.Weekly.Id))
-        {
-            personalBests.Weekly.SteamName += " (Weekly)";
-            uniquePersonalBests.Add(personalBests.Weekly);
+            uniquePersonalBests.Add(personalBests.Global with { Type = GhostType.Global });
         }
 
         if (personalBests.Daily != null && _configService.ShowDailyPersonalBest.Value &&
             uniquePersonalBests.All(x => x.Id != personalBests.Daily.Id))
+            uniquePersonalBests.Add(personalBests.Daily with
+            {
+                Type = GhostType.Daily,
+                SteamName = personalBests.Daily.SteamName + " (Daily)"
+            });
+
+        if (personalBests.Weekly != null && _configService.ShowWeeklyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Weekly.Id))
+            uniquePersonalBests.Add(personalBests.Weekly with
+            {
+                Type = GhostType.Weekly,
+                SteamName = personalBests.Weekly.SteamName + " (Weekly)"
+            });
+
+        if (personalBests.Monthly != null && _configService.ShowMonthlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Monthly.Id))
+            uniquePersonalBests.Add(personalBests.Monthly with
+            {
+                Type = GhostType.Monthly,
+                SteamName = personalBests.Monthly.SteamName + " (Monthly)"
+            });
+
+        if (personalBests.Quarterly != null && _configService.ShowQuarterlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Quarterly.Id))
+            uniquePersonalBests.Add(personalBests.Quarterly with
+            {
+                Type = GhostType.Quarterly,
+                SteamName = personalBests.Quarterly.SteamName + " (Quarterly)"
+            });
+
+        if (personalBests.Yearly != null && _configService.ShowYearlyPersonalBest.Value &&
+            uniquePersonalBests.All(x => x.Id != personalBests.Yearly.Id))
         {
-            personalBests.Daily.SteamName += " (Daily)";
-            uniquePersonalBests.Add(personalBests.Daily);
+            uniquePersonalBests.Add(personalBests.Yearly with
+            {
+                Type = GhostType.Yearly,
+                SteamName = personalBests.Yearly.SteamName + " (Yearly)"
+            });
         }
 
         return uniquePersonalBests;
@@ -117,11 +124,12 @@ public class OnlineGhostGraphqlService
         public PersonalBest Daily { get; set; }
     }
 
-    public class PersonalBest
+    public record PersonalBest
     {
         public int Id { get; set; }
         public string SteamName { get; set; }
         public string GhostUrl { get; set; }
+        public GhostType Type { get; set; }
     }
 
     private static PersonalBests Map(Root root)

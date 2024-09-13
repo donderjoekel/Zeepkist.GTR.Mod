@@ -149,7 +149,7 @@ public class OfflineGhostsService : IEagerService
                 continue;
             }
 
-            _ghostPlayer.AddGhost(personalBest.Id, personalBest.SteamName, ghost.Value);
+            _ghostPlayer.AddGhost(personalBest.Type, personalBest.Id, personalBest.SteamName, ghost.Value);
         }
     }
 

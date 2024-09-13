@@ -1,4 +1,7 @@
-﻿using TNRD.Zeepkist.GTR.Configuration;
+﻿using System;
+using System.Linq;
+using BepInEx.Configuration;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -26,20 +29,85 @@ public class GhostVisibilityService : IEagerService
 
         _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
+
+        _configService.ShowGhosts.SettingChanged += OnShowGhostsChanged;
+        _configService.ShowGlobalPersonalBest.SettingChanged += OnShowGlobalChanged;
+        _configService.ShowYearlyPersonalBest.SettingChanged += OnShowYearlyChanged;
+        _configService.ShowQuarterlyPersonalBest.SettingChanged += OnShowQuarterlyChanged;
+        _configService.ShowMonthlyPersonalBest.SettingChanged += OnShowMonthlyChanged;
+        _configService.ShowWeeklyPersonalBest.SettingChanged += OnShowWeeklyChanged;
+        _configService.ShowDailyPersonalBest.SettingChanged += OnShowDailyChanged;
+    }
+
+    private void OnShowGhostsChanged(object sender, EventArgs e)
+    {
+        foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
+        {
+            UpdateGhostsVisibility(ghostData);
+        }
+    }
+
+    private void OnShowGlobalChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Global));
+    }
+
+    private void OnShowYearlyChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Yearly));
+    }
+
+    private void OnShowQuarterlyChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Quarterly));
+    }
+
+    private void OnShowMonthlyChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Monthly));
+    }
+
+    private void OnShowWeeklyChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Weekly));
+    }
+
+    private void OnShowDailyChanged(object sender, EventArgs e)
+    {
+        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Daily));
     }
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
     {
-        e.GhostData.GameObject.SetActive(_configService.ShowGhosts.Value);
+        UpdateGhostsVisibility(e.GhostData);
+    }
 
-        if (_configService.ShowGhosts.Value)
+    private void UpdateGhostsVisibility(GhostData ghostData)
+    {
+        if (ghostData == null)
         {
-            e.GhostData.Renderer.Enable();
+            return;
         }
-        else
+
+        ghostData.Visuals.gameObject.SetActive(_configService.ShowGhosts.Value);
+
+        if (!_configService.ShowGhosts.Value)
         {
-            e.GhostData.Renderer.Disable();
+            return;
         }
+
+        ConfigEntry<bool> configEntry = ghostData.Type switch
+        {
+            GhostType.Global => _configService.ShowGlobalPersonalBest,
+            GhostType.Daily => _configService.ShowDailyPersonalBest,
+            GhostType.Weekly => _configService.ShowWeeklyPersonalBest,
+            GhostType.Monthly => _configService.ShowMonthlyPersonalBest,
+            GhostType.Quarterly => _configService.ShowQuarterlyPersonalBest,
+            GhostType.Yearly => _configService.ShowYearlyPersonalBest,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        ghostData.Visuals.gameObject.SetActive(configEntry.Value);
     }
 
     private void OnUpdate()
@@ -49,30 +117,78 @@ public class GhostVisibilityService : IEagerService
 
     private void HandleToggleTransparency()
     {
+        HandleShowGhosts();
+        HandleShowGlobal();
+        HandleShowYearly();
+        HandleShowQuarterly();
+        HandleShowMonthly();
+        HandleShowWeekly();
+        HandleShowDaily();
+    }
+
+    private void HandleShowGhosts()
+    {
         if (!Input.GetKeyDown(_configService.ToggleShowGhosts.Value))
+        {
             return;
+        }
 
         _configService.ShowGhosts.Value = !_configService.ShowGhosts.Value;
+        _messengerService.Log(_configService.ShowGhosts.Value ? "Showing Ghosts" : "Hiding Ghosts");
+    }
 
-        foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
+    private void HandleShowing(ConfigEntry<KeyCode> keyEntry, ConfigEntry<bool> toggleEntry, GhostType ghostType)
+    {
+        if (!Input.GetKeyDown(keyEntry.Value))
         {
-            if (_configService.ShowGhosts.Value)
-            {
-                ghostData.Renderer.Enable();
-            }
-            else
-            {
-                ghostData.Renderer.Disable();
-            }
+            return;
         }
 
-        if (_configService.ShowGhosts.Value)
-        {
-            _messengerService.Log("Showing Ghosts");
-        }
-        else
-        {
-            _messengerService.Log("Hiding Ghosts");
-        }
+        toggleEntry.Value = !toggleEntry.Value;
+        _messengerService.Log(toggleEntry.Value
+            ? $"Showing {ghostType} Personal Best"
+            : $"Hiding {ghostType} Personal Best");
+    }
+
+    private void HandleShowGlobal()
+    {
+        HandleShowing(_configService.ToggleShowGlobalPersonalBest,
+            _configService.ShowGlobalPersonalBest,
+            GhostType.Global);
+    }
+
+    private void HandleShowYearly()
+    {
+        HandleShowing(_configService.ToggleShowYearlyPersonalBest,
+            _configService.ShowYearlyPersonalBest,
+            GhostType.Yearly);
+    }
+
+    private void HandleShowQuarterly()
+    {
+        HandleShowing(_configService.ToggleShowQuarterlyPersonalBest,
+            _configService.ShowQuarterlyPersonalBest,
+            GhostType.Quarterly);
+    }
+
+    private void HandleShowMonthly()
+    {
+        HandleShowing(_configService.ToggleShowMonthlyPersonalBest,
+            _configService.ShowMonthlyPersonalBest,
+            GhostType.Monthly);
+    }
+
+    private void HandleShowWeekly()
+    {
+        HandleShowing(_configService.ToggleShowWeeklyPersonalBest,
+            _configService.ShowWeeklyPersonalBest,
+            GhostType.Weekly);
+    }
+
+    private void HandleShowDaily()
+    {
+        HandleShowing(_configService.ToggleShowDailyPersonalBest,
+            _configService.ShowDailyPersonalBest,
+            GhostType.Daily);
     }
 }

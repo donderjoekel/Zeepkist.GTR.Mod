@@ -11,8 +11,14 @@ public class GhostData
         Object.DontDestroyOnLoad(GameObject.transform.root.gameObject);
     }
 
-    public void Initialize(IGhost ghost)
+    public void Initialize(GhostType type)
     {
+        Type = type;
+    }
+
+    public void Initialize(GhostType type, IGhost ghost)
+    {
+        Initialize(type);
         Ghost = ghost;
     }
 
@@ -22,6 +28,7 @@ public class GhostData
     }
 
     public IGhost Ghost { get; private set; }
+    public GhostType Type { get; private set; }
     public GameObject GameObject => Visuals.GhostModel.gameObject;
     public GhostVisuals Visuals { get; private set; }
     public GhostRenderer Renderer { get; private set; }
