@@ -31,11 +31,24 @@ public class DiscordService : IEagerService
         configService.ButtonLinkDiscord.SettingChanged += OnLinkDiscord;
         configService.ButtonUnlinkDiscord.SettingChanged += OnUnlinkDiscord;
 
-        _discordClient = new Wrapper.Discord(1106610501674348554, (ulong)CreateFlags.NoRequireDiscord);
+        try
+        {
+            _discordClient = new Wrapper.Discord(1106610501674348554, (ulong)CreateFlags.NoRequireDiscord);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to create discord client");
+        }
     }
 
     private void OnLinkDiscord(object sender, EventArgs e)
     {
+        if (_discordClient == null)
+        {
+            _messengerService.LogError("Unable to detect discord");
+            return;
+        }
+
         if (_isLinking)
             return;
 
@@ -44,6 +57,12 @@ public class DiscordService : IEagerService
 
     private void OnUnlinkDiscord(object sender, EventArgs e)
     {
+        if (_discordClient == null)
+        {
+            _messengerService.LogError("Unable to detect discord");
+            return;
+        }
+
         _userService.UpdateDiscord(-1).Forget();
     }
 
