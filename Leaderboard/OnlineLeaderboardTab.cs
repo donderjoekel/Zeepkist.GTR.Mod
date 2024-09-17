@@ -25,7 +25,6 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         { 7, 0.01 }
     };
 
-    private double? _levelPoints;
     private int _totalUsers;
     private CancellationTokenSource _cts;
 
@@ -67,7 +66,6 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
             return;
         }
 
-        _levelPoints = result.Value.LevelPoints == 0 ? null : result.Value.LevelPoints;
         _totalUsers = result.Value.TotalUsers;
         ClearItems();
         AddItems(result.Value.Records);
@@ -90,7 +88,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         double c = index < 8 ? Fibbonus[index] : 0;
         double points = placementPoints * (1 + a / b) + c;
 
-        gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
+        gui.pointsWon.gameObject.SetActive(true);
         gui.pointsWon.text = $"(+{(int)Math.Round(points)})";
     }
 }
