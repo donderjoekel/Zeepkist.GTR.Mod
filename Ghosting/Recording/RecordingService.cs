@@ -217,7 +217,7 @@ public class RecordingService : IEagerService
 
             if (_configService.ShowRecordSubmitMessage.Value)
             {
-                _messengerService.Log("Record submitted");
+                _messengerService.LogSuccess("Run submitted");
             }
         }
         catch (Exception e)
