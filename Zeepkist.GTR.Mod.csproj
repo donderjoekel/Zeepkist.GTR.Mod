@@ -2,12 +2,12 @@
 
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
-        <AssemblyName>TNRD.Zeepkist.GTR.Mod</AssemblyName>
-        <Version>0.33.0</Version>
+        <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
+        <Version>0.35.3</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
-        <RootNamespace>TNRD.Zeepkist.GTR.Mod</RootNamespace>
+        <RootNamespace>TNRD.Zeepkist.GTR</RootNamespace>
         <Product>Zeepkist GTR</Product>
     </PropertyGroup>
 
@@ -24,12 +24,26 @@
         <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.4.21"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0"/>
-        <PackageReference Include="Costura.Fody" Version="5.7.0">
+        <PackageReference Include="EasyCompressor" Version="2.0.2"/>
+        <PackageReference Include="EasyCompressor.LZMA" Version="2.0.2"/>
+        <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
+        <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
+        <PackageReference Include="JsonApiSerializer" Version="2.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1"/>
+        <PackageReference Include="protobuf-net" Version="3.2.30"/>
+        <PackageReference Include="RestEase" Version="1.6.4"/>
+        <PackageReference Include="RestEase.SourceGenerator" Version="1.6.4">
             <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Zeepkist.GameLibs" Version="15.999.76" />
-        <PackageReference Include="ZeepSDK" Version="1.29.3" />
+        <PackageReference Include="Serilog" Version="4.0.1"/>
+        <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0"/>
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageReference Include="Serilog.Sinks.OpenObserve-KKP" Version="1.0.4"/>
+        <PackageReference Include="ZeepSDK" Version="1.36.8"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -37,13 +51,51 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Reference Include="System.Memory">
+            <Aliases>MemoryAlias</Aliases>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj"/>
-        <ProjectReference Include="..\Zeepkist.GTR.UnitySDK\Zeepkist.GTR.UnitySDK.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
         <None Update="discord_game_sdk.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
+
+    <Target Name="PDB" AfterTargets="PostBuildEvent">
+        <Message Text="Generating PDB" Importance="high"/>
+        <Exec Command="&quot;C:\Program Files\Unity\Hub\Editor\2021.3.10f1\Editor\Data\MonoBleedingEdge\bin\mono.exe&quot; &quot;C:\Program Files\Unity\Hub\Editor\2021.3.10f1\Editor\Data\MonoBleedingEdge\lib\mono\4.5\pdb2mdb.exe&quot; $(TargetPath)"/>
+    </Target>
+
+    <Target Name="Package" AfterTargets="PostBuildEvent">
+        <Message Text="Packaging Plugin" Importance="high"/>
+        <ItemGroup>
+            <OutputFiles Include="$(TargetDir)net.tnrd*" Exclude="$(TargetDir)net.tnrd*.zip"/>
+            <OutputFiles Include="$(TargetDir)discord_game_sdk.dll"/>
+            <OutputFiles Include="$(TargetDir)Microsoft.*.dll"/>
+            <OutputFiles Include="$(TargetDir)Serilog*.dll"/>
+            <OutputFiles Include="$(TargetDir)RestEase*.dll"/>
+            <OutputFiles Include="$(TargetDir)System*.dll"/>
+            <OutputFiles Include="$(TargetDir)Polly*.dll"/>
+            <OutputFiles Include="$(TargetDir)protobuf*.dll"/>
+            <OutputFiles Include="$(TargetDir)SevenZip.dll"/>
+            <OutputFiles Include="$(TargetDir)EasyCompressor*.dll"/>
+            <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
+            <OutputFiles Include="$(TargetDir)appsettings.json"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>
+        <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>
+    </Target>
+
+    <Target Name="Compress" AfterTargets="PostBuildEvent">
+        <Message Text="Compressing Plugin" Importance="high"/>
+        <Exec Command="&quot;C:\Program Files\7-Zip\7z.exe&quot; a -tzip $(TargetDir)$(AssemblyName)-$(Version).zip $(TargetDir)Package\*"/>
+    </Target>
 </Project>
