@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using BepInEx.Configuration;
 using Microsoft.Extensions.Logging;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Configuration;
@@ -82,49 +83,37 @@ public class RecordHolderService : IEagerService
         RecordHolderUi.Create(_recordHolders);
     }
 
+    private void CheckKeyDown(ConfigEntry<KeyCode> keyConfig, ConfigEntry<bool> showConfig, string positive,
+        string negative)
+    {
+        if (Input.GetKeyDown(keyConfig.Value))
+        {
+            showConfig.Value = !showConfig.Value;
+            _messengerService.Log(showConfig.Value ? positive : negative);
+        }
+    }
+
     private void OnUpdate()
     {
-        if (Input.GetKeyDown(_configService.ToggleShowRecordHolder.Value))
-        {
-            _configService.ShowRecordHolder.Value = !_configService.ShowRecordHolder.Value;
+        CheckKeyDown(_configService.ToggleShowRecordHolder, _configService.ShowRecordHolder,
+            "Showing Combined Record Holder",
+            "Hiding Combined Record Holder");
 
-            if (_configService.ShowRecordHolder.Value)
-            {
-                _messengerService.Log("Showing Record Holder");
-            }
-            else
-            {
-                _messengerService.Log("Hiding Record Holder");
-            }
-        }
+        CheckKeyDown(_configService.ToggleShowWorldRecordHolder, _configService.ShowWorldRecordHolder,
+            "Showing World Record Holder",
+            "Hiding World Record Holder");
 
-        if (Input.GetKeyDown(_configService.ToggleShowWorldRecordOnHolder.Value))
-        {
-            _configService.ShowWorldRecordOnHolder.Value = !_configService.ShowWorldRecordOnHolder.Value;
+        CheckKeyDown(_configService.ToggleShowPersonalBestHolder, _configService.ShowPersonalBestHolder,
+            "Showing Personal Best Holder",
+            "Hiding Personal Best Holder");
 
-            if (_configService.ShowWorldRecordOnHolder.Value)
-            {
-                _messengerService.Log("Showing World Record Holder");
-            }
-            else
-            {
-                _messengerService.Log("Hiding World Record Holder");
-            }
-        }
+        CheckKeyDown(_configService.ToggleShowWorldRecordOnHolder, _configService.ShowWorldRecordOnHolder,
+            "Showing World Record On Combined",
+            "Hiding World Record On Combined");
 
-        if (Input.GetKeyDown(_configService.ToggleShowPersonalBestOnHolder.Value))
-        {
-            _configService.ShowPersonalBestOnHolder.Value = !_configService.ShowPersonalBestOnHolder.Value;
-
-            if (_configService.ShowPersonalBestOnHolder.Value)
-            {
-                _messengerService.Log("Showing Personal Best Holder");
-            }
-            else
-            {
-                _messengerService.Log("Hiding Personal Best Holder");
-            }
-        }
+        CheckKeyDown(_configService.ToggleShowPersonalBestOnHolder, _configService.ShowPersonalBestOnHolder,
+            "Showing Personal Best On Combined",
+            "Hiding Personal Best On Combined");
 
         if (_recordHolders == null)
             return;
