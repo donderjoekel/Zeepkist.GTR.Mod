@@ -34,7 +34,7 @@ public class PersonalBestHolderUi : MonoBehaviour
         }
         else
         {
-            _positionText.text = string.Empty; // TODO: Set rank
+            _positionText.text = personalBestHolder.Rank <= 0 ? string.Empty : personalBestHolder.Rank.ToString();
             _playerNameText.text = SteamClient.Name;
             _timeText.text = personalBestHolder.Time <= 0 ? "--:--.---" : personalBestHolder.Time.GetFormattedTime();
         }
