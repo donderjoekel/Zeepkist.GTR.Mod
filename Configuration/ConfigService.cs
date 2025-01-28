@@ -40,12 +40,16 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowRecordHolder { get; private set; }
     public ConfigEntry<bool> ShowWorldRecordOnHolder { get; private set; }
     public ConfigEntry<bool> ShowPersonalBestOnHolder { get; private set; }
+    public ConfigEntry<bool> ShowWorldRecordHolder { get; private set; }
+    public ConfigEntry<bool> ShowPersonalBestHolder { get; private set; }
 
     public ConfigEntry<float> RecordHolderSwitchTime { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleShowRecordHolder { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowWorldRecordOnHolder { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowPersonalBestOnHolder { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowWorldRecordHolder { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowPersonalBestHolder { get; private set; }
 
     public ConfigEntry<bool> ButtonLinkDiscord { get; private set; }
     public ConfigEntry<bool> ButtonUnlinkDiscord { get; private set; }
@@ -227,6 +231,16 @@ public class ConfigService : IEagerService
             "3. Show Personal Best On Holder",
             true,
             "Should the personal best be shown on the record holder");
+        ShowWorldRecordHolder = config.Bind(
+            "3.1 Record Holder - Visibility",
+            "4. Show World Record Holder",
+            false,
+            "Should the individual world record holder be shown");
+        ShowPersonalBestHolder = config.Bind(
+            "3.1 Record Holder - Visibility",
+            "5. Show Personal Best Holder",
+            false,
+            "Should the individual personal best holder be shown");
 
         ToggleShowRecordHolder = config.Bind(
             "3.2 Record Holder - Keys",
@@ -243,6 +257,16 @@ public class ConfigService : IEagerService
             "3. Toggle Show Personal Best On Holder",
             KeyCode.None,
             "Toggles if the personal best should be shown on the record holder");
+        ToggleShowWorldRecordHolder = config.Bind(
+            "3.2 Record Holder - Keys",
+            "4. Toggle Show World Record Holder",
+            KeyCode.None,
+            "Toggles if the individual world record holder should be shown");
+        ToggleShowPersonalBestHolder = config.Bind(
+            "3.2 Record Holder - Keys",
+            "5. Toggle Show Personal Best Holder",
+            KeyCode.None,
+            "Toggles if the individual personal best holder should be shown");
     }
 
     private void ConfigDiscord(ConfigFile config)

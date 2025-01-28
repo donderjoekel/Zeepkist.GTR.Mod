@@ -1,58 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BepInEx.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
+using ZeepSDK.UI;
 
 namespace TNRD.Zeepkist.GTR.UI;
 
 public class RecordHolderUi : MonoBehaviour
 {
-    private static RecordHolderUi _instance;
-    private static WorldRecordHolderUi _worldRecordHolderUi;
-    private static PersonalBestHolderUi _personalBestHolderUi;
+    private record Wrapper(RectTransform RectTransform, RecordHolderUi Ui);
+
+    private static RecordHolderUi _combinedInstance;
+    private static RecordHolderUi _worldRecordInstance;
+    private static RecordHolderUi _personalBestInstance;
+    private static WorldRecordHolderUi _combinedWorldRecordHolderUi;
+    private static WorldRecordHolderUi _singleWorldRecordHolderUi;
+    private static PersonalBestHolderUi _combinedPersonalBestHolderUi;
+    private static PersonalBestHolderUi _singlePersonalBestHolderUi;
 
     public static void EnsureExists()
     {
-        GetInstance();
+        GetCombinedInstance();
     }
 
     public static void Create(RecordHolders recordHolders)
     {
-        GetInstance().SetRecordHolders(recordHolders);
-        GetInstance().ToggleDisplay();
+        ConfigService configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
+        GetCombinedInstance().Initialize(configService.ShowRecordHolder, _combinedWorldRecordHolderUi,
+            _combinedPersonalBestHolderUi);
+        GetCombinedInstance().SetRecordHolders(recordHolders);
+        GetCombinedInstance().ToggleDisplay();
+        GetWorldRecordInstance().Initialize(configService.ShowWorldRecordHolder, _singleWorldRecordHolderUi, null);
+        GetWorldRecordInstance().SetRecordHolders(recordHolders);
+        GetCombinedInstance().ToggleDisplay();
+        GetPersonalBestInstance()
+            .Initialize(configService.ShowPersonalBestHolder, null, _singlePersonalBestHolderUi);
+        GetPersonalBestInstance().SetRecordHolders(recordHolders);
+        GetPersonalBestInstance().ToggleDisplay();
     }
 
     public static void SwitchToNext()
     {
-        GetInstance().ToggleDisplay();
+        GetCombinedInstance().ToggleDisplay();
     }
 
     public static void Disable()
     {
-        GetInstance().gameObject.SetActive(false);
+        GetCombinedInstance().gameObject.SetActive(false);
     }
 
-    private static RecordHolderUi GetInstance()
+    private static Wrapper CreateWrapper(string name)
     {
-        if (_instance != null)
-            return _instance;
-
-        OnlineGameplayUI onlineGameplayUi = FindObjectOfType<OnlineGameplayUI>(true);
-        if (onlineGameplayUi == null)
-            return null;
-
-        RectTransform[] rectTransforms = onlineGameplayUi.GetComponentsInChildren<RectTransform>(true);
-
-        RectTransform template
-            = rectTransforms.FirstOrDefault(x => string.Equals(x.name, "WR", StringComparison.OrdinalIgnoreCase));
-
+        RectTransform template = GetTemplate();
         if (template == null)
             return null;
 
-        GameObject recordHolders = new("RecordHolders", typeof(RectTransform));
+        GameObject recordHolders = new(name, typeof(RectTransform));
         RectTransform instance = recordHolders.GetComponent<RectTransform>();
         instance.SetParent(template.parent);
         instance.anchorMin = new Vector2(0.82f, 0.2f);
@@ -62,24 +69,86 @@ public class RecordHolderUi : MonoBehaviour
         instance.anchoredPosition = Vector2.zero;
         instance.anchoredPosition3D = Vector3.zero;
         instance.sizeDelta = Vector2.zero;
+        UIApi.AddToConfigurator(instance);
 
-        _instance = instance.gameObject.AddComponent<RecordHolderUi>();
+        return new Wrapper(instance, instance.gameObject.AddComponent<RecordHolderUi>());
+    }
 
+    private static RectTransform GetTemplate()
+    {
+        OnlineGameplayUI onlineGameplayUi = FindObjectOfType<OnlineGameplayUI>(true);
+        if (onlineGameplayUi == null)
+            return null;
+
+        RectTransform[] rectTransforms = onlineGameplayUi.GetComponentsInChildren<RectTransform>(true);
+        return rectTransforms.FirstOrDefault(x => string.Equals(x.name, "WR", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static RecordHolderUi GetCombinedInstance()
+    {
+        if (_combinedInstance != null)
+            return _combinedInstance;
+
+        Wrapper wrapper = CreateWrapper("CombinedHolder");
+        if (wrapper == null)
+            return null;
+
+        _combinedInstance = wrapper.Ui;
+        _combinedWorldRecordHolderUi = CreateWorldRecordHolderUi(wrapper.RectTransform);
+        _combinedPersonalBestHolderUi = CreatePersonalBestHolderUi(wrapper.RectTransform);
+        return _combinedInstance;
+    }
+
+    private static RecordHolderUi GetWorldRecordInstance()
+    {
+        if (_worldRecordInstance != null)
+            return _worldRecordInstance;
+
+        Wrapper wrapper = CreateWrapper("WorldRecordHolder");
+        if (wrapper == null)
+            return null;
+
+        _worldRecordInstance = wrapper.Ui;
+        _singleWorldRecordHolderUi = CreateWorldRecordHolderUi(wrapper.RectTransform);
+        return _worldRecordInstance;
+    }
+
+    private static RecordHolderUi GetPersonalBestInstance()
+    {
+        if (_personalBestInstance != null)
+            return _personalBestInstance;
+
+        Wrapper wrapper = CreateWrapper("PersonalBestHolder");
+        if (wrapper == null)
+            return null;
+
+        _personalBestInstance = wrapper.Ui;
+        _singlePersonalBestHolderUi = CreatePersonalBestHolderUi(wrapper.RectTransform);
+        return _personalBestInstance;
+    }
+
+    private static WorldRecordHolderUi CreateWorldRecordHolderUi(RectTransform instance)
+    {
+        RectTransform template = GetTemplate();
         RectTransform worldRecordInstance = CreateInstance(template, instance);
         worldRecordInstance.gameObject.SetActive(false);
         worldRecordInstance.anchorMin = Vector2.zero;
         worldRecordInstance.anchorMax = Vector2.one;
-        _worldRecordHolderUi = worldRecordInstance.gameObject.AddComponent<WorldRecordHolderUi>();
-        _worldRecordHolderUi.InitializeUi();
+        WorldRecordHolderUi ui = worldRecordInstance.gameObject.AddComponent<WorldRecordHolderUi>();
+        ui.InitializeUi();
+        return ui;
+    }
 
+    private static PersonalBestHolderUi CreatePersonalBestHolderUi(RectTransform instance)
+    {
+        RectTransform template = GetTemplate();
         RectTransform personalBestInstance = CreateInstance(template, instance);
         personalBestInstance.gameObject.SetActive(false);
         personalBestInstance.anchorMin = Vector2.zero;
         personalBestInstance.anchorMax = Vector2.one;
-        _personalBestHolderUi = personalBestInstance.gameObject.AddComponent<PersonalBestHolderUi>();
-        _personalBestHolderUi.InitializeUi();
-
-        return _instance;
+        PersonalBestHolderUi ui = personalBestInstance.gameObject.AddComponent<PersonalBestHolderUi>();
+        ui.InitializeUi();
+        return ui;
     }
 
     private static RectTransform CreateInstance(RectTransform template, Transform parent)
@@ -90,7 +159,11 @@ public class RecordHolderUi : MonoBehaviour
         return instance;
     }
 
-    private readonly List<ToggleAction> _toggleActions = new();
+    private readonly List<ToggleAction> _toggleActions = [];
+
+    private ConfigEntry<bool> _showConfig;
+    private WorldRecordHolderUi _worldRecordHolderUi;
+    private PersonalBestHolderUi _personalBestHolderUi;
 
     private RecordHolders _recordHolders;
     private ConfigService _configService;
@@ -130,24 +203,58 @@ public class RecordHolderUi : MonoBehaviour
         ToggleDisplay();
     }
 
+    private void Initialize(ConfigEntry<bool> showConfig, WorldRecordHolderUi worldRecordHolderUi,
+        PersonalBestHolderUi personalBestHolderUi)
+    {
+        _showConfig = showConfig;
+        _worldRecordHolderUi = worldRecordHolderUi;
+        _personalBestHolderUi = personalBestHolderUi;
+    }
+    
     private void SetRecordHolders(RecordHolders recordHolders)
     {
         _recordHolders = recordHolders;
-        _worldRecordHolderUi.SetWorldRecordHolder(_recordHolders.WorldRecord);
-        _personalBestHolderUi.SetPersonalBestHolder(_recordHolders.PersonalBest);
+        if (_worldRecordHolderUi != null)
+            _worldRecordHolderUi.SetWorldRecordHolder(_recordHolders.WorldRecord);
+        if (_personalBestHolderUi != null)
+            _personalBestHolderUi.SetPersonalBestHolder(_recordHolders.PersonalBest);
         UpdateDisplayActions();
     }
 
     private void UpdateDisplayActions()
     {
-        gameObject.SetActive(ConfigService.ShowRecordHolder.Value);
-        _worldRecordHolderUi.gameObject.SetActive(false);
-        _personalBestHolderUi.gameObject.SetActive(false);
-        _toggleActions.Clear();
-        if (ConfigService.ShowWorldRecordOnHolder.Value)
-            _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject, _personalBestHolderUi.gameObject));
-        if (ConfigService.ShowPersonalBestOnHolder.Value)
-            _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject, _worldRecordHolderUi.gameObject));
+        gameObject.SetActive(_showConfig.Value);
+
+        if (_personalBestHolderUi == null || _worldRecordHolderUi == null)
+        {
+            if (_personalBestHolderUi != null)
+            {
+                _personalBestHolderUi.gameObject.SetActive(true);
+            }
+
+            if (_worldRecordHolderUi != null)
+            {
+                _worldRecordHolderUi.gameObject.SetActive(true);
+            }
+        }
+        else
+        {
+            _worldRecordHolderUi.gameObject.SetActive(false);
+            _personalBestHolderUi.gameObject.SetActive(false);
+            _toggleActions.Clear();
+
+            if (ConfigService.ShowWorldRecordOnHolder.Value)
+            {
+                _toggleActions.Add(new ToggleAction(_worldRecordHolderUi.gameObject,
+                    _personalBestHolderUi.gameObject));
+            }
+
+            if (ConfigService.ShowPersonalBestOnHolder.Value)
+            {
+                _toggleActions.Add(new ToggleAction(_personalBestHolderUi.gameObject,
+                    _worldRecordHolderUi.gameObject));
+            }
+        }
     }
 
     private void ToggleDisplay()

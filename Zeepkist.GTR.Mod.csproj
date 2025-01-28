@@ -3,12 +3,13 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>0.35.3</Version>
+        <Version>0.35.7</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
         <RootNamespace>TNRD.Zeepkist.GTR</RootNamespace>
         <Product>Zeepkist GTR</Product>
+        <DebugType>full</DebugType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

@@ -13,17 +13,17 @@ public class RecordHolderGraphqlService
 {
     private const string Query
         = """
-          query GetRecordHolders($steamId: BigFloat, $hash: String) {
+          query GetRecordHolders($hash: String) {
             allPersonalBestGlobals(
               filter: {
                 levelByIdLevel: { hash: { equalTo: $hash } }
-                userByIdUser: { steamId: { equalTo: $steamId } }
               }
             ) {
               nodes {
                 recordByIdRecord {
                   time
                   userByIdUser {
+                    steamId
                     steamName
                   }
                 }
@@ -64,7 +64,6 @@ public class RecordHolderGraphqlService
             Query,
             new
             {
-                steamId = steamId.ToString(),
                 hash = levelHash
             });
 
@@ -75,7 +74,7 @@ public class RecordHolderGraphqlService
 
         try
         {
-            return Result.Ok(MapToRecordHolders(result.Value));
+            return Result.Ok(MapToRecordHolders(result.Value, steamId.ToString()));
         }
         catch (Exception e)
         {
@@ -83,10 +82,24 @@ public class RecordHolderGraphqlService
         }
     }
 
-    private static RecordHolders MapToRecordHolders(Root root)
+    private static RecordHolders MapToRecordHolders(Root root, string steamId)
     {
         Node worldRecordNode = root.Data.AllWorldRecordGlobals.Nodes.FirstOrDefault();
-        Node personalBestNode = root.Data.AllPersonalBestGlobals.Nodes.FirstOrDefault();
+
+        Node personalBestNode = root.Data.AllPersonalBestGlobals.Nodes
+            .FirstOrDefault(
+                x => string.Equals(
+                    x.RecordByIdRecord.UserByIdUser.SteamId,
+                    steamId,
+                    StringComparison.Ordinal));
+
+        int rank = personalBestNode == null
+            ? -1
+            : root.Data.AllPersonalBestGlobals.Nodes
+                  .OrderBy(x => x.RecordByIdRecord.Time)
+                  .ToList()
+                  .IndexOf(personalBestNode) +
+              1;
 
         return new RecordHolders
         {
@@ -97,6 +110,7 @@ public class RecordHolderGraphqlService
             },
             PersonalBest = new PersonalBestHolder
             {
+                Rank = rank,
                 Time = personalBestNode?.RecordByIdRecord.Time ?? -1
             }
         };

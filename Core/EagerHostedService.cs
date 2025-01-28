@@ -20,16 +20,12 @@ public class EagerHostedService : IHostedService
         IEnumerable<IEagerService> eagerServices)
     {
         _logger = logger;
-        _eagerServices = eagerServices;
+        _eagerServices = eagerServices.ToList();
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Found {Count} eager services", _eagerServices.Count());
-        foreach (IEagerService eagerService in _eagerServices)
-        {
-            _logger.LogInformation("Found eager service '{Service}'", eagerService.GetType().Name);
-        }
 
         return Task.CompletedTask;
     }

@@ -27,6 +27,7 @@ using TNRD.Zeepkist.GTR.Screenshots;
 using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.Users;
 using TNRD.Zeepkist.GTR.Utilities;
+using TNRD.Zeepkist.GTR.Voting;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Storage;
 
@@ -92,6 +93,7 @@ namespace TNRD.Zeepkist.GTR
                         services.AddEagerService<RecordHolderService>();
                         services.AddEagerService<DiscordService>();
                         services.AddEagerService<UnhandledExceptionLoggerService>();
+                        services.AddEagerService<VotingService>();
                         services.AddSingleton<AssetService>();
                         services.AddSingleton<GhostRepository>();
                         services.AddSingleton<GhostReaderFactory>();
