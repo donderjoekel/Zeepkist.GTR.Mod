@@ -45,7 +45,14 @@ public class RecordHolderUi : MonoBehaviour
 
     public static void SwitchToNext()
     {
-        GetCombinedInstance().ToggleDisplay();
+        RecordHolderUi instance = GetCombinedInstance();
+        if (instance == null)
+        {
+            // This should not happen???
+            return;
+        }
+
+        instance.ToggleDisplay();
     }
 
     public static void Disable()
