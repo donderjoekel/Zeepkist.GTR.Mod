@@ -58,10 +58,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Zeepkist.GTR.Mod.UI\Zeepkist.GTR.Mod.UI.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <None Update="discord_game_sdk.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
