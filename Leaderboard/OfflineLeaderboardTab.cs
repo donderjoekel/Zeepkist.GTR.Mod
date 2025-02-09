@@ -4,11 +4,11 @@ using System.Threading;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Messaging;
 using UnityEngine.Events;
-using Color = UnityEngine.Color;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Leaderboard.Pages;
 using ZeepSDK.Level;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
@@ -127,11 +127,13 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab<LeaderboardR
         gui.favoriteButton.gameObject.SetActive(true);
         gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.SteamId);
         gui.RedrawFavoriteImage();
-        gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
         if (PlayerManager.Instance.steamAchiever && PlayerManager.Instance.steamAchiever.GetPlayerSteamID().ToString() == item.SteamId)
-            gui.player_name.color = PlayerManager.Instance.GetChatColor();
+        {
+            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
+            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+        }
         else
-            gui.player_name.color = Color.white;
+            gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
         gui.time.text = item.Time.GetFormattedTime();
 
         int placementPoints = Math.Max(0, Count - index);

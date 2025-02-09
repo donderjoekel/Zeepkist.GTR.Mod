@@ -6,7 +6,7 @@ using ZeepkistClient;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Level;
-using Color = UnityEngine.Color;
+using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
@@ -83,13 +83,20 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(false);
-        gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
+        UnityEngine.ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
+
         if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.SteamId)
-            gui.player_name.color = ZeepkistNetwork.LocalPlayer.chatColor;
+        {
+            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(ZeepkistNetwork.LocalPlayer.chatColor);
+            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+        }
         else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.SteamId)
-            gui.player_name.color = gui.thePlayer.chatColor;
+        {
+            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(gui.thePlayer.chatColor);
+            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+        }
         else
-            gui.player_name.color = Color.white;
+            gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
         
         gui.time.text = item.Time.GetFormattedTime();
 
