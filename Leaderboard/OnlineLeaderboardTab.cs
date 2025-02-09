@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using TNRD.Zeepkist.GTR.Messaging;
+using ZeepkistClient;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Level;
+using Color = UnityEngine.Color;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
@@ -75,11 +77,20 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
     protected override void OnDrawItem(GUI_OnlineLeaderboardPosition gui, LeaderboardRecord item, int index)
     {
+        ZeepkistNetwork.TryGetPlayer( Convert.ToUInt64(item.SteamId), out gui.thePlayer);
+        
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(false);
         gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
+        if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.SteamId)
+            gui.player_name.color = ZeepkistNetwork.LocalPlayer.chatColor;
+        else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.SteamId)
+            gui.player_name.color = gui.thePlayer.chatColor;
+        else
+            gui.player_name.color = Color.white;
+        
         gui.time.text = item.Time.GetFormattedTime();
 
         int placementPoints = Math.Max(0, Count - index);
