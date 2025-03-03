@@ -2,6 +2,7 @@
 using System.Net.Http;
 using Newtonsoft.Json;
 using TNRD.Zeepkist.GTR.Api;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
 using TNRD.Zeepkist.GTR.Json;
@@ -27,17 +28,19 @@ public class GhostRepository
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
+    private readonly ConfigService _configService;
 
     public GhostRepository(
         GraphQLApiHttpClient client,
         IModStorage modStorage,
         GhostReaderFactory ghostReaderFactory,
-        HttpClient httpClient)
+        HttpClient httpClient, ConfigService configService)
     {
         _client = client;
         _modStorage = modStorage;
         _ghostReaderFactory = ghostReaderFactory;
         _httpClient = httpClient;
+        _configService = configService;
     }
 
     public async UniTask<Result<IGhost>> GetGhost(int recordId)
@@ -78,7 +81,7 @@ public class GhostRepository
 
         try
         {
-            response = await _httpClient.GetAsync(ghostUrl);
+            response = await _httpClient.GetAsync(TransformGhostUrl(ghostUrl));
         }
         catch (Exception e)
         {
@@ -110,5 +113,16 @@ public class GhostRepository
         byte[] buffer = _modStorage.ReadBlob("ghosts/" + recordId);
         ghost = _ghostReaderFactory.GetReader(buffer).Read(buffer);
         return ghost != null;
+    }
+
+    private string TransformGhostUrl(string input)
+    {
+        if (input.StartsWith("http"))
+            return input;
+        string output = _configService.CdnUrl.Value;
+        if (!input.StartsWith('/'))
+            output += '/';
+        output += input;
+        return output;
     }
 }

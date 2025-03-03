@@ -26,7 +26,7 @@ public class GraphQLApiHttpClient
         ILogger<GraphQLApiHttpClient> logger)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri(configService.GraphQlApiUrl.Value);
+        _httpClient.BaseAddress = new Uri(configService.GraphQlUrl.Value);
         _logger = logger;
         _settings = new JsonSerializerSettings
         {

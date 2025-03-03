@@ -12,37 +12,7 @@ namespace TNRD.Zeepkist.GTR.UI;
 public class RecordHolderGraphqlService
 {
     private const string Query
-        = """
-          query GetRecordHolders($hash: String) {
-            allPersonalBestGlobals(
-              filter: {
-                levelByIdLevel: { hash: { equalTo: $hash } }
-              }
-            ) {
-              nodes {
-                recordByIdRecord {
-                  time
-                  userByIdUser {
-                    steamId
-                    steamName
-                  }
-                }
-              }
-            }
-            allWorldRecordGlobals(
-              filter: { levelByIdLevel: { hash: { equalTo: $hash } } }
-            ) {
-              nodes {
-                recordByIdRecord {
-                  time
-                  userByIdUser {
-                    steamName
-                  }
-                }
-              }
-            }
-          }
-          """;
+        = "query GetRecordHolders($hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{recordByIdRecord{time userByIdUser{steamId steamName}}}}allWorldRecordGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{recordByIdRecord{time userByIdUser{steamName}}}}}";
 
     private readonly GraphQLApiHttpClient _client;
     private readonly ILogger<RecordHolderGraphqlService> _logger;

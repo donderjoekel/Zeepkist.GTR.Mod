@@ -9,8 +9,6 @@ public class RecordPostResource
     public List<float> Splits { get; set; } = null!;
     public List<float> Speeds { get; set; } = null!;
     public string GhostData { get; set; } = null!;
-    public string ScreenshotData { get; set; } = null!;
-    public bool IsValid { get; set; }
     public string GameVersion { get; set; } = null!;
     public string ModVersion { get; set; } = null!;
 }

@@ -23,7 +23,6 @@ using TNRD.Zeepkist.GTR.Logging;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
-using TNRD.Zeepkist.GTR.Screenshots;
 using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.Users;
 using TNRD.Zeepkist.GTR.Utilities;
@@ -102,7 +101,6 @@ namespace TNRD.Zeepkist.GTR
                         services.AddSingleton<OnlineLeaderboardTab>();
                         services.AddSingleton<OfflineLeaderboardTab>();
                         services.AddSingleton<MessengerService>();
-                        services.AddSingleton<ScreenshotService>();
                         services.AddSingleton<OnlineGhostGraphqlService>();
                         services.AddSingleton<OfflineGhostGraphqlService>();
                         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
@@ -125,37 +123,12 @@ namespace TNRD.Zeepkist.GTR
 
                 // Plugin startup logic
                 Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-
-                ServicePointManager.ServerCertificateValidationCallback += ValidateCertificate;
             }
             catch (Exception e)
             {
                 Logger.LogError("Failed to start plugin");
                 Logger.LogError(e);
             }
-        }
-
-        private bool ValidateCertificate(
-            object sender,
-            X509Certificate certificate,
-            X509Chain chain,
-            SslPolicyErrors sslPolicyErrors)
-        {
-            if (sslPolicyErrors == SslPolicyErrors.None)
-            {
-                return true;
-            }
-
-            if (sender is not HttpWebRequest request)
-                return false;
-
-            return request.RequestUri.ToString().StartsWith(
-                       "https://cdn.zeepkist-gtr.com",
-                       StringComparison.OrdinalIgnoreCase)
-                   &&
-                   certificate.Subject.StartsWith(
-                       "CN=*.eu-central-1.wasabisys.com",
-                       StringComparison.OrdinalIgnoreCase);
         }
 
         private async UniTaskVoid StopHost()

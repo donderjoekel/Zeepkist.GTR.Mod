@@ -32,7 +32,7 @@ public class ApiHttpClient
     {
         _httpClient = httpClient;
         _logger = logger;
-        _httpClient.BaseAddress = new Uri(configService.ApiUrl.Value);
+        _httpClient.BaseAddress = new Uri(configService.BackendUrl.Value);
 
         AsyncRetryPolicy<HttpResponseMessage> failurePolicy = Policy
             .Handle<Exception>()

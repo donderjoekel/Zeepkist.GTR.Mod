@@ -9,7 +9,6 @@ using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
-using TNRD.Zeepkist.GTR.Screenshots;
 using ZeepkistClient;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Level;
@@ -22,7 +21,6 @@ public class RecordingService : IEagerService
     private readonly MessengerService _messengerService;
     private readonly ILogger<RecordingService> _logger;
     private readonly GhostRecorderFactory _ghostRecorderFactory;
-    private readonly ScreenshotService _screenshotService;
     private readonly ApiHttpClient _apiHttpClient;
     private readonly ConfigService _configService;
 
@@ -36,14 +34,12 @@ public class RecordingService : IEagerService
         MessengerService messengerService,
         ILogger<RecordingService> logger,
         GhostRecorderFactory ghostRecorderFactory,
-        ScreenshotService screenshotService,
         ApiHttpClient apiHttpClient,
         ConfigService configService)
     {
         _messengerService = messengerService;
         _logger = logger;
         _ghostRecorderFactory = ghostRecorderFactory;
-        _screenshotService = screenshotService;
         _apiHttpClient = apiHttpClient;
         _configService = configService;
 
@@ -101,16 +97,6 @@ public class RecordingService : IEagerService
     {
         ghostRecorder.Stop();
 
-        _logger.LogInformation("Waiting for screenshot");
-        string screenshotData = await _screenshotService.TakeScreenshot(_cancellationTokenSource.Token);
-
-        if (screenshotData == null)
-        {
-            _messengerService.LogError("Unable to take screenshot, discarding record");
-            _logger.LogWarning("Screenshot was cancelled");
-            return;
-        }
-
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.CurrentHash;
 
@@ -126,8 +112,7 @@ public class RecordingService : IEagerService
         List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
         float time = result.time;
 
-        if (splits.Count != PlayerManager.Instance.currentMaster.racePoints &&
-            !_configService.SubmitAnyPercentRecords.Value)
+        if (splits.Count != PlayerManager.Instance.currentMaster.racePoints)
         {
             _logger.LogInformation("Discarding any % record");
             return;
@@ -140,7 +125,7 @@ public class RecordingService : IEagerService
             _logger.LogWarning("Something went wrong here");
         }
 
-        await Submit(hash, time, splits, speeds, ghostData, screenshotData);
+        await Submit(hash, time, splits, speeds, ghostData);
     }
 
     private string ProcessGhostRecorder(GhostRecorder ghostRecorder)
@@ -175,8 +160,7 @@ public class RecordingService : IEagerService
         float time,
         List<float> splits,
         List<float> speeds,
-        string ghostData,
-        string screenshotData)
+        string ghostData)
     {
         _logger.LogInformation("Creating resource");
         RecordPostResource resource = new()
@@ -186,8 +170,6 @@ public class RecordingService : IEagerService
             Splits = splits.ToList(),
             Speeds = speeds.ToList(),
             GhostData = ghostData,
-            ScreenshotData = screenshotData,
-            IsValid = splits.Count == PlayerManager.Instance.currentMaster.racePoints,
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
         };
