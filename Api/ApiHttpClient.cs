@@ -18,12 +18,13 @@ public class ApiHttpClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ApiHttpClient> _logger;
-    private readonly AsyncPolicy<HttpResponseMessage> _policy;
+    private readonly AsyncPolicy<HttpResponseMessage> _wrappedPolicy;
+    private readonly AsyncPolicy<HttpResponseMessage> _failurePolicy;
 
     private string _accessToken;
     private string _refreshToken;
-    private DateTimeOffset _accessTokenExpiry;
-    private DateTimeOffset _refreshTokenExpiry;
+    private DateTimeOffset _accessTokenExpiry = DateTimeOffset.MinValue;
+    private DateTimeOffset _refreshTokenExpiry = DateTimeOffset.MinValue;
 
     private bool NeedsLogin => string.IsNullOrEmpty(_accessToken) || DateTimeOffset.UtcNow > _refreshTokenExpiry;
     private bool NeedsRefresh => DateTimeOffset.UtcNow > _accessTokenExpiry;
@@ -34,7 +35,7 @@ public class ApiHttpClient
         _logger = logger;
         _httpClient.BaseAddress = new Uri(configService.BackendUrl.Value);
 
-        AsyncRetryPolicy<HttpResponseMessage> failurePolicy = Policy
+        _failurePolicy = Policy
             .Handle<Exception>()
             .OrResult<HttpResponseMessage>(x => !x.IsSuccessStatusCode)
             .WaitAndRetryAsync(
@@ -49,7 +50,7 @@ public class ApiHttpClient
             .HandleResult<HttpResponseMessage>(x => x.StatusCode == HttpStatusCode.Unauthorized)
             .RetryAsync(3, HandleUnauthorizedRequest);
 
-        _policy = Policy.WrapAsync(failurePolicy, unauthorizedPolicy);
+        _wrappedPolicy = Policy.WrapAsync(_failurePolicy, unauthorizedPolicy);
     }
 
     private async Task HandleUnauthorizedRequest(DelegateResult<HttpResponseMessage> response, int retryCount)
@@ -85,7 +86,28 @@ public class ApiHttpClient
 
     public async UniTask<HttpResponseMessage> PostAsync(string url, object data)
     {
-        return await _policy.ExecuteAsync(
+        if (NeedsLogin)
+        {
+            if (!await Login())
+            {
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    ReasonPhrase = "Failed to authenticate (Login)"
+                };
+            }
+        }
+        else if (NeedsRefresh)
+        {
+            if (!await Refresh())
+            {
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    ReasonPhrase = "Failed to authenticate (Refresh)"
+                };
+            }
+        }
+
+        return await _wrappedPolicy.ExecuteAsync(
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, url);
@@ -120,7 +142,7 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId
         };
 
-        HttpResponseMessage response = await _policy.ExecuteAsync(
+        HttpResponseMessage response = await _failurePolicy.ExecuteAsync(
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, "Authentication/login");
@@ -141,7 +163,7 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId
         };
 
-        HttpResponseMessage response = await _policy.ExecuteAsync(() =>
+        HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
         {
             HttpRequestMessage request = new(HttpMethod.Post, "Authentication/refresh");
             string json = JsonConvert.SerializeObject(data);
