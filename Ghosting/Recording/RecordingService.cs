@@ -119,7 +119,7 @@ public class RecordingService : IEagerService
         }
 
         _logger.LogInformation("Processing ghost data");
-        string ghostData = ProcessGhostRecorder(ghostRecorder);
+        string ghostData = await ProcessGhostRecorder(ghostRecorder);
         if (string.IsNullOrEmpty(ghostData))
         {
             _logger.LogWarning("Something went wrong here");
@@ -128,14 +128,14 @@ public class RecordingService : IEagerService
         await Submit(hash, time, splits, speeds, ghostData);
     }
 
-    private string ProcessGhostRecorder(GhostRecorder ghostRecorder)
+    private async UniTask<string> ProcessGhostRecorder(GhostRecorder ghostRecorder)
     {
         try
         {
             _logger.LogInformation("Creating stream");
             using MemoryStream stream = new();
             _logger.LogInformation("Writing to stream");
-            if (!ghostRecorder.Write(stream))
+            if (!await ghostRecorder.Write(stream))
             {
                 _logger.LogError("Failed to write to stream, returning empty string");
                 return string.Empty;

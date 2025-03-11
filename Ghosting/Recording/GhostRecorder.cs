@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using EasyCompressor;
 using Microsoft.Extensions.Logging;
 using ProtoBuf;
@@ -12,6 +13,7 @@ using TNRD.Zeepkist.GTR.PlayerLoop;
 using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
 using ZeepkistNetworking;
+using ZeepSDK.External.Cysharp.Threading.Tasks;
 using Vector3 = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3;
 using Vector3Int = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3Int;
 
@@ -133,13 +135,13 @@ public partial class GhostRecorder
         return wheelState;
     }
 
-    public bool Write(Stream stream)
+    public async UniTask<bool> Write(Stream stream)
     {
         Ghost ghost;
 
         try
         {
-            ghost = CreateGhost();
+            ghost = await CreateGhost();
         }
         catch (Exception e)
         {
@@ -149,11 +151,14 @@ public partial class GhostRecorder
 
         try
         {
-            using MemoryStream memoryStream = new();
-            Serializer.Serialize(memoryStream, ghost);
-            memoryStream.Close();
-            byte[] buffer = memoryStream.ToArray();
-            Encode(buffer, stream);
+            await Task.Run(() =>
+            {
+                using MemoryStream memoryStream = new();
+                Serializer.Serialize(memoryStream, ghost);
+                memoryStream.Close();
+                byte[] buffer = memoryStream.ToArray();
+                Encode(buffer, stream);
+            });
         }
         catch (Exception e)
         {
@@ -164,7 +169,7 @@ public partial class GhostRecorder
         return true;
     }
 
-    private Ghost CreateGhost()
+    private async UniTask<Ghost> CreateGhost()
     {
         GameSettingsScriptableObject gameSettings = PlayerManager.Instance.instellingen.GlobalSettings;
 
@@ -195,45 +200,50 @@ public partial class GhostRecorder
             Zeepkist = ids.zeepkist,
         };
 
-        List<DeltaFrame> deltaFrames = new();
-
-        Frame previousFrame = null;
-        foreach (Frame frame in _frames)
+        List<DeltaFrame> deltaFrames = await Task.Run(() =>
         {
-            if (ghost.InitialFrame == null)
+            List<DeltaFrame> deltaFrames = new();
+
+            Frame previousFrame = null;
+            foreach (Frame frame in _frames)
             {
-                ghost.InitialFrame = new InitialFrame(
-                    new Vector3(frame.Position.x, frame.Position.y, frame.Position.z),
-                    new Vector3(frame.Rotation.x, frame.Rotation.y, frame.Rotation.z),
-                    ClampToByte(frame.Speed),
-                    RemapToByte(frame.Steering, -1, 1),
-                    (Data.InputFlags)(byte)CreateInputFlags(frame),
-                    (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
-            }
-            else
-            {
-                const int positionMultiplier = 100_000;
-                const int rotationMultiplier = 100;
-                UnityEngine.Vector3 deltaPosition = frame.Position - previousFrame.Position;
-                DeltaFrame deltaFrame = new(
-                    frame.Time,
-                    new Vector3Int(
-                        Mathf.RoundToInt(deltaPosition.x * positionMultiplier),
-                        Mathf.RoundToInt(deltaPosition.y * positionMultiplier),
-                        Mathf.RoundToInt(deltaPosition.z * positionMultiplier)),
-                    new Vector3Int(
-                        Mathf.RoundToInt(frame.Rotation.x * rotationMultiplier),
-                        Mathf.RoundToInt(frame.Rotation.y * rotationMultiplier),
-                        Mathf.RoundToInt(frame.Rotation.z * rotationMultiplier)),
-                    ClampToByte(frame.Speed),
-                    RemapToByte(frame.Steering, -1, 1),
-                    (Data.InputFlags)(byte)CreateInputFlags(frame),
-                    (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
-                deltaFrames.Add(deltaFrame);
+                if (ghost.InitialFrame == null)
+                {
+                    ghost.InitialFrame = new InitialFrame(
+                        new Vector3(frame.Position.x, frame.Position.y, frame.Position.z),
+                        new Vector3(frame.Rotation.x, frame.Rotation.y, frame.Rotation.z),
+                        ClampToByte(frame.Speed),
+                        RemapToByte(frame.Steering, -1, 1),
+                        (Data.InputFlags)(byte)CreateInputFlags(frame),
+                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
+                }
+                else
+                {
+                    const int positionMultiplier = 100_000;
+                    const int rotationMultiplier = 100;
+                    UnityEngine.Vector3 deltaPosition = frame.Position - previousFrame.Position;
+                    DeltaFrame deltaFrame = new(
+                        frame.Time,
+                        new Vector3Int(
+                            Mathf.RoundToInt(deltaPosition.x * positionMultiplier),
+                            Mathf.RoundToInt(deltaPosition.y * positionMultiplier),
+                            Mathf.RoundToInt(deltaPosition.z * positionMultiplier)),
+                        new Vector3Int(
+                            Mathf.RoundToInt(frame.Rotation.x * rotationMultiplier),
+                            Mathf.RoundToInt(frame.Rotation.y * rotationMultiplier),
+                            Mathf.RoundToInt(frame.Rotation.z * rotationMultiplier)),
+                        ClampToByte(frame.Speed),
+                        RemapToByte(frame.Steering, -1, 1),
+                        (Data.InputFlags)(byte)CreateInputFlags(frame),
+                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
+                    deltaFrames.Add(deltaFrame);
+                }
+
+                previousFrame = frame;
             }
 
-            previousFrame = frame;
-        }
+            return deltaFrames;
+        });
 
         ghost.DeltaFrames = deltaFrames;
         return ghost;
