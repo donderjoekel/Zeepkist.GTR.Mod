@@ -1,8 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -59,13 +56,6 @@ namespace TNRD.Zeepkist.GTR
                     configuration.Enrich.FromLogContext();
                     configuration.Enrich.FromGlobalLogContext();
                     configuration.WriteTo.BepInEx(Logger, restrictedToMinimumLevel: LogEventLevel.Information);
-                    configuration.WriteTo.OpenObserve(
-                        context.Configuration["Logger:Url"],
-                        context.Configuration["Logger:Organization"],
-                        context.Configuration["Logger:Login"],
-                        context.Configuration["Logger:Token"],
-                        context.Configuration["Logger:Stream"],
-                        restrictedToMinimumLevel: LogEventLevel.Warning);
                 });
                 builder.ConfigureServices(
                     services =>
