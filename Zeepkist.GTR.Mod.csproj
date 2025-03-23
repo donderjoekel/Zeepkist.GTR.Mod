@@ -30,6 +30,7 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="JsonApiSerializer" Version="2.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.8"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1"/>
@@ -43,7 +44,10 @@
         <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0"/>
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
-        <PackageReference Include="ZeepSDK" Version="1.36.8"/>
+        <PackageReference Include="StrawberryShake.Server" Version="14.3.0"/>
+        <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0"/>
+        <PackageReference Include="Zeepkist.GameLibs" Version="16.73.1720"/>
+        <PackageReference Include="ZeepSDK" Version="1.42.2"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -61,6 +65,25 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
+
+    <ItemGroup>
+        <GraphQL Update="GraphQL\GetPersonalBests.graphql">
+            <Generator>MSBuild:GenerateGraphQLCode</Generator>
+        </GraphQL>
+        <GraphQL Include="schema.extensions.graphql">
+            <Generator>MSBuild:GenerateGraphQLCode</Generator>
+        </GraphQL>
+        <GraphQL Include="schema.graphql">
+            <Generator>MSBuild:GenerateGraphQLCode</Generator>
+        </GraphQL>
+    </ItemGroup>
+
+    <Target Name="Modify GraphQL Client" AfterTargets="StrawberryShake_GenerateCode" BeforeTargets="BeforeCompile">
+        <ItemGroup>
+            <GeneratedFiles Include="obj\Debug\net472\berry\GtrClient.Client.cs"/>
+        </ItemGroup>
+        <Exec Command="powershell -ExecutionPolicy Unrestricted -File $(ProjectDir)ModifyGraphQLClient.ps1 @(GeneratedFiles->'%(FullPath)')"/>
+    </Target>
 
     <Target Name="PDB" AfterTargets="PostBuildEvent">
         <Message Text="Generating PDB" Importance="high"/>
@@ -81,6 +104,8 @@
             <OutputFiles Include="$(TargetDir)SevenZip.dll"/>
             <OutputFiles Include="$(TargetDir)EasyCompressor*.dll"/>
             <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
+            <OutputFiles Include="$(TargetDir)Strawberry*.dll"/>
+            <OutputFiles Include="$(TargetDir)HotChocolate*.dll"/>
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>

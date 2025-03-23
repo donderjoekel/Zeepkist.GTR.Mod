@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Caching.Memory;
+using StrawberryShake;
 using TNRD.Zeepkist.GTR.Api;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -9,112 +11,119 @@ namespace TNRD.Zeepkist.GTR.Leaderboard;
 
 public class LeaderboardGraphqlService
 {
-    private const string Query
-        = "query personalbests($hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{userByIdUser{steamName steamId}recordByIdRecord{time}}}allLevelPoints(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{points}}allUsers{totalCount}}";
-
+    private readonly IGtrClient _gtrClient;
+    private readonly IMemoryCache _cache;
     private readonly GraphQLApiHttpClient _client;
 
-    public LeaderboardGraphqlService(GraphQLApiHttpClient client)
+    public LeaderboardGraphqlService(IGtrClient gtrClient, IMemoryCache cache, GraphQLApiHttpClient client)
     {
+        _gtrClient = gtrClient;
+        _cache = cache;
         _client = client;
     }
 
-    public async UniTask<Result<LeaderboardRecords>> GetLeaderboardRecords(string levelHash,
-        CancellationToken ct = default)
+    public async UniTask<Result<int>> GetPersonalBestCount(string levelHash, CancellationToken ct = default)
     {
-        Result<Root> result = await _client.PostAsync<Root>(Query, new { hash = levelHash }, ct);
-        if (ct.IsCancellationRequested)
-            return Result.Ok();
-
-        if (result.IsFailed)
+        try
         {
-            return result.ToResult();
+            IOperationResult<IGetPersonalBestCountResult> result =
+                await _gtrClient.GetPersonalBestCount.ExecuteAsync(levelHash, ct);
+            try
+            {
+                result.EnsureNoErrors();
+            }
+            catch (Exception e)
+            {
+                return Result.Fail(new ExceptionalError(e));
+            }
+
+            int? totalCount = result.Data?.AllPersonalBestGlobals?.TotalCount;
+            return Result.Ok(totalCount ?? 0);
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+    }
+
+    public async UniTask<Result<int>> GetTotalUserCount(CancellationToken ct = default)
+    {
+        if (_cache.TryGetValue(CreateKey(), out int cachedCount))
+            return cachedCount;
+
+        IOperationResult<IGetTotalUserCountResult> result = await _gtrClient.GetTotalUserCount.ExecuteAsync(ct);
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
         }
 
-        return Result.Ok(Map(result.Value.Data));
-    }
-
-    private static LeaderboardRecords Map(Data data)
-    {
-        return new LeaderboardRecords
+        int? totalUserCount = result.Data?.AllUsers?.TotalCount;
+        if (totalUserCount.HasValue)
         {
-            Records = Map(data.AllPersonalBestGlobals),
-            LevelPoints = Map(data.AllLevelPoints),
-            TotalUsers = Map(data.AllUsers)
-        };
-    }
+            _cache.Set(CreateKey(), totalUserCount.Value, TimeSpan.FromMinutes(30));
+            return totalUserCount.Value;
+        }
 
-    private static int Map(AllUsers allUsers)
-    {
-        return allUsers.TotalCount;
-    }
+        _cache.Set(CreateKey(), 0, TimeSpan.FromSeconds(30));
+        return 0;
 
-    private static double Map(AllLevelPoints allLevelPoints)
-    {
-        return allLevelPoints.Nodes.FirstOrDefault()?.Points ?? 0;
-    }
-
-    private static List<LeaderboardRecord> Map(AllPersonalBestGlobals globals)
-    {
-        return globals.Nodes.Select(Map).ToList();
-    }
-
-    private static LeaderboardRecord Map(Node node)
-    {
-        return new LeaderboardRecord
+        string CreateKey()
         {
-            SteamName = node.UserByIdUser.SteamName,
-            SteamId = node.UserByIdUser.SteamId,
-            Time = node.RecordByIdRecord.Time
-        };
+            return "TotalUserCount";
+        }
     }
 
-    private class Root
+    public async UniTask<Result<int?>> GetLevelPoints(string levelHash, CancellationToken ct = default)
     {
-        public Data Data { get; set; }
+        if (_cache.TryGetValue(CreateKey(), out int? cachedPoints))
+            return cachedPoints;
+
+        IOperationResult<IGetLevelPointsResult> result = await _gtrClient.GetLevelPoints.ExecuteAsync(levelHash, ct);
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        int? points = result.Data?.AllLevelPoints?.Nodes.FirstOrDefault()?.Points;
+
+        if (points.HasValue)
+        {
+            _cache.Set(CreateKey(), points.Value, TimeSpan.FromMinutes(5));
+            return points.Value;
+        }
+
+        _cache.Set<int?>(CreateKey(), null, TimeSpan.FromMinutes(1));
+        return null;
+
+        string CreateKey()
+        {
+            return $"LevelPoints-{levelHash}";
+        }
     }
 
-    private class Data
+    public async UniTask<Result<IGetPersonalBestsResult>> GetLeaderboardRecords(string levelHash, int page = 0,
+        CancellationToken ct = default)
     {
-        public AllPersonalBestGlobals AllPersonalBestGlobals { get; set; }
-        public AllLevelPoints AllLevelPoints { get; set; }
-        public AllUsers AllUsers { get; set; }
-    }
+        IOperationResult<IGetPersonalBestsResult> result =
+            await _gtrClient.GetPersonalBests.ExecuteAsync(levelHash, 16, page * 16, ct);
 
-    private class AllPersonalBestGlobals
-    {
-        public List<Node> Nodes { get; set; }
-    }
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
 
-    private class Node
-    {
-        public UserByIdUser UserByIdUser { get; set; }
-        public RecordByIdRecord RecordByIdRecord { get; set; }
-    }
-
-    private class UserByIdUser
-    {
-        public string SteamName { get; set; }
-        public string SteamId { get; set; }
-    }
-
-    private class RecordByIdRecord
-    {
-        public double Time { get; set; }
-    }
-
-    private class AllLevelPoints
-    {
-        public List<LevelPointNode> Nodes { get; set; }
-    }
-
-    private class LevelPointNode
-    {
-        public int Points { get; set; }
-    }
-
-    private class AllUsers
-    {
-        public int TotalCount { get; set; }
+        return Result.Ok(result.Data);
     }
 }

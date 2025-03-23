@@ -1,0 +1,21 @@
+query GetPersonalBests(
+  $hash: String
+  $first: Int = null
+  $offset: Int = null
+) {
+  allPersonalBestGlobals(
+    filter: { levelByIdLevel: { hash: { equalTo: $hash } } }
+    first: $first
+    offset: $offset
+  ) {
+    nodes {
+      userByIdUser {
+        steamName
+        steamId
+      }
+      recordByIdRecord {
+        time
+      }
+    }
+  }
+}

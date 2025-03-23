@@ -2,18 +2,22 @@
 using System.Collections.Generic;
 using System.Threading;
 using TNRD.Zeepkist.GTR.Messaging;
+using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
+using ZeepSDK.Leaderboard.Pages;
 using ZeepSDK.Level;
-using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
-public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRecord>
+public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 {
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
+    private readonly List<IGetPersonalBests_AllPersonalBestGlobals_Nodes> _items = [];
+
+    private CancellationTokenSource _cancellationTokenSource;
 
     private static readonly Dictionary<int, double> Fibbonus = new()
     {
@@ -28,7 +32,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
     };
 
     private int _totalUsers;
-    private CancellationTokenSource _cts;
+    private int _personalBests;
 
     public OnlineLeaderboardTab(LeaderboardGraphqlService graphqlService, MessengerService messengerService)
     {
@@ -43,65 +47,125 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab<LeaderboardRec
 
     protected override void OnEnable()
     {
-        _cts?.Cancel();
-        _cts = new CancellationTokenSource();
-        LoadRecords(_cts.Token).Forget();
+        InitializeAsync().Forget();
     }
 
     protected override void OnDisable()
     {
     }
 
-    private async UniTaskVoid LoadRecords(CancellationToken ct = default)
+    protected override void OnDraw()
     {
-        ClearItems();
+        for (int i = 0; i < Instance.leaderboard_tab_positions.Count; i++)
+        {
+            GUI_OnlineLeaderboardPosition gui = Instance.leaderboard_tab_positions[i];
+            if (i >= _items.Count)
+            {
+                continue;
+            }
+
+            gui.gameObject.SetActive(true);
+            IGetPersonalBests_AllPersonalBestGlobals_Nodes item = _items[i];
+            int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
+            OnDrawItem(gui, item, index);
+        }
+    }
+
+    protected override void OnPageChanged(int previous, int current)
+    {
+        LoadRecords(current);
+    }
+
+    private async UniTaskVoid InitializeAsync()
+    {
+        Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(LevelApi.CurrentHash);
+        if (personalBestCount.IsFailed)
+        {
+            Logger.LogError("Failed to get count");
+            // TODO: Handle
+            return;
+        }
+
+        _personalBests = personalBestCount.Value;
+        MaxPages = _personalBests / Instance.leaderboard_tab_positions.Count;
+        UpdatePageNumber();
+
+        LoadRecords(CurrentPage);
+    }
+
+    private void LoadRecords(int page)
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = new CancellationTokenSource();
+        LoadRecords(page, _cancellationTokenSource.Token).Forget();
+    }
+
+    private async UniTaskVoid LoadRecords(int page, CancellationToken ct)
+    {
+        _items.Clear();
         Draw();
-        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, ct);
+
+        UniTask<Result<IGetPersonalBestsResult>> recordsTask =
+            _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, page, ct);
+        UniTask<Result<int>> userCountTask = _graphqlService.GetTotalUserCount(ct);
+
+        (Result<IGetPersonalBestsResult> recordsResult, Result<int> userCountResult) =
+            await UniTask.WhenAll(recordsTask, userCountTask);
 
         if (ct.IsCancellationRequested)
             return;
-        
-        if (result.IsFailed)
+
+        if (recordsResult.IsFailed)
         {
-            Logger.LogError("Failed to load GTR records: " + result);
+            Logger.LogError("Failed to load GTR records: " + recordsResult);
             _messengerService.LogError("Failed to load GTR records");
             return;
         }
 
-        _totalUsers = result.Value.TotalUsers;
-        ClearItems();
-        AddItems(result.Value.Records);
-        SortItems((x, y) => x.Time.CompareTo(y.Time));
+        if (recordsResult.IsFailed)
+        {
+            Logger.LogError("Failed to get user count: " + recordsResult);
+            _messengerService.LogError("Failed to load GTR records");
+            return;
+        }
+
+        _totalUsers = userCountResult.Value;
+        _items.Clear();
+        _items.AddRange(recordsResult.Value.AllPersonalBestGlobals!.Nodes);
+        _items.Sort((x, y) => x.RecordByIdRecord.Time.CompareTo(y.RecordByIdRecord.Time));
         Draw();
     }
 
-    protected override void OnDrawItem(GUI_OnlineLeaderboardPosition gui, LeaderboardRecord item, int index)
+    private void OnDrawItem(GUI_OnlineLeaderboardPosition gui,
+        IGetPersonalBests_AllPersonalBestGlobals_Nodes item, int index)
     {
-        ZeepkistNetwork.TryGetPlayer( Convert.ToUInt64(item.SteamId), out gui.thePlayer);
-        
+        ZeepkistNetwork.TryGetPlayer(Convert.ToUInt64(item.UserByIdUser.SteamId), out gui.thePlayer);
+
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(false);
-        UnityEngine.ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
+        ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
 
-        if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.SteamId)
+        if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.UserByIdUser.SteamId)
         {
-            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(ZeepkistNetwork.LocalPlayer.chatColor);
-            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+            string playerColor = ColorUtility.ToHtmlStringRGB(ZeepkistNetwork.LocalPlayer.chatColor);
+            gui.player_name.text =
+                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
         }
-        else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.SteamId)
+        else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.UserByIdUser.SteamId)
         {
-            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(gui.thePlayer.chatColor);
-            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+            string playerColor = ColorUtility.ToHtmlStringRGB(gui.thePlayer.chatColor);
+            gui.player_name.text =
+                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
         }
         else
-            gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
-        
-        gui.time.text = item.Time.GetFormattedTime();
+            gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
 
-        int placementPoints = Math.Max(0, Count - index);
-        double a = 1d / (_totalUsers / (double)Count);
+        gui.time.text = item.RecordByIdRecord.Time.GetFormattedTime();
+
+        int placementPoints = Math.Max(0, _personalBests - index);
+        double a = 1d / (_totalUsers / (double)_personalBests);
         int b = index + 1;
         double c = index < 8 ? Fibbonus[index] : 0;
         double points = placementPoints * (1 + a / b) + c;

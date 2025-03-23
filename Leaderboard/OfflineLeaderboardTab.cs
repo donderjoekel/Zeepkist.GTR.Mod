@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.Threading;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Messaging;
+using UnityEngine;
 using UnityEngine.Events;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Leaderboard.Pages;
 using ZeepSDK.Level;
-using ZeepSDK.Utilities;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
-public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab<LeaderboardRecord>
+public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
 {
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
     private readonly OfflineGhostsService _offlineGhostsService;
     private readonly UnityEvent[] _originalEvents = new UnityEvent[16];
+    private readonly List<IGetPersonalBests_AllPersonalBestGlobals_Nodes> _items = [];
 
     private static readonly Dictionary<int, double> Fibbonus = new()
     {
@@ -31,9 +32,9 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab<LeaderboardR
         { 7, 0.01 }
     };
 
-    private double? _levelPoints;
     private int _totalUsers;
-    private CancellationTokenSource _cts;
+    private int _personalBests;
+    private CancellationTokenSource _cancellationTokenSource;
 
     public OfflineLeaderboardTab(
         LeaderboardGraphqlService graphqlService,
@@ -61,9 +62,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab<LeaderboardR
             instance.favoriteButton.onClick.AddListener(() => OnFavoriteButtonClicked(index));
         }
 
-        _cts?.Cancel();
-        _cts = new CancellationTokenSource();
-        LoadRecords(_cts.Token).Forget();
+        InitializeAsync().Forget();
     }
 
     protected override void OnDisable()
@@ -74,75 +73,136 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab<LeaderboardR
         }
     }
 
+    protected override void OnDraw()
+    {
+        for (int i = 0; i < Instance.leaderboard_tab_positions.Count; i++)
+        {
+            GUI_OnlineLeaderboardPosition gui = Instance.leaderboard_tab_positions[i];
+            if (i >= _items.Count)
+            {
+                continue;
+            }
+
+            gui.gameObject.SetActive(true);
+            IGetPersonalBests_AllPersonalBestGlobals_Nodes item = _items[i];
+            int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
+            OnDrawItem(gui, item, index);
+        }
+    }
+
+    protected override void OnPageChanged(int previous, int current)
+    {
+        LoadRecords(current);
+    }
+
     private void OnFavoriteButtonClicked(int i)
     {
-        int j = CurrentPage * 16 + i;
-
         GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[i];
         instance.isFavorite = !instance.isFavorite;
 
-        LeaderboardRecord node = ElementAt(j);
+        IGetPersonalBests_AllPersonalBestGlobals_Nodes node = _items[i];
 
         if (instance.isFavorite)
         {
-            _offlineGhostsService.AddAdditionalGhost(node.SteamId);
+            _offlineGhostsService.AddAdditionalGhost(node.UserByIdUser.SteamId);
         }
         else
         {
-            _offlineGhostsService.RemoveAdditionalGhost(node.SteamId);
+            _offlineGhostsService.RemoveAdditionalGhost(node.UserByIdUser.SteamId);
         }
 
         instance.RedrawFavoriteImage();
     }
 
-    private async UniTaskVoid LoadRecords(CancellationToken ct = default)
+    private async UniTaskVoid InitializeAsync()
     {
-        ClearItems();
+        Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(LevelApi.CurrentHash);
+        if (personalBestCount.IsFailed)
+        {
+            Logger.LogError("Failed to get count");
+            // TODO: Handle
+            return;
+        }
+
+        _personalBests = personalBestCount.Value;
+        MaxPages = _personalBests / Instance.leaderboard_tab_positions.Count;
+        UpdatePageNumber();
+
+        LoadRecords(CurrentPage);
+    }
+
+    private void LoadRecords(int page)
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = new CancellationTokenSource();
+        LoadRecords(page, _cancellationTokenSource.Token).Forget();
+    }
+
+    private async UniTaskVoid LoadRecords(int page, CancellationToken ct)
+    {
+        _items.Clear();
         Draw();
-        Result<LeaderboardRecords> result = await _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, ct);
+
+        UniTask<Result<IGetPersonalBestsResult>> recordsTask =
+            _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, page, ct);
+        UniTask<Result<int>> userCountTask = _graphqlService.GetTotalUserCount(ct);
+
+        (Result<IGetPersonalBestsResult> recordsResult, Result<int> userCountResult) =
+            await UniTask.WhenAll(recordsTask, userCountTask);
+        
 
         if (ct.IsCancellationRequested)
             return;
 
-        if (result.IsFailed)
+        if (recordsResult.IsFailed)
         {
-            Logger.LogError("Failed to load GTR records: " + result);
+            Logger.LogError("Failed to load GTR records: " + recordsResult);
             _messengerService.LogError("Failed to load GTR records");
             return;
         }
 
-        _levelPoints = result.Value.LevelPoints == 0 ? null : result.Value.LevelPoints;
-        _totalUsers = result.Value.TotalUsers;
-        ClearItems();
-        AddItems(result.Value.Records);
-        SortItems((x, y) => x.Time.CompareTo(y.Time));
+        if (userCountResult.IsFailed)
+        {
+            Logger.LogError("Failed to load GTR records: " + userCountResult);
+            _messengerService.LogError("Failed to load GTR records");
+            return;
+        }
+
+        _totalUsers = userCountResult.Value;
+        _items.Clear();
+        _items.AddRange(recordsResult.Value.AllPersonalBestGlobals.Nodes);
+        _items.Sort((x, y) => x.RecordByIdRecord.Time.CompareTo(y.RecordByIdRecord.Time));
         Draw();
     }
 
-    protected override void OnDrawItem(GUI_OnlineLeaderboardPosition gui, LeaderboardRecord item, int index)
+    protected void OnDrawItem(GUI_OnlineLeaderboardPosition gui,
+        IGetPersonalBests_AllPersonalBestGlobals_Nodes item, int index)
     {
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(true);
-        gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.SteamId);
+        gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.UserByIdUser.SteamId);
         gui.RedrawFavoriteImage();
-        if (PlayerManager.Instance.steamAchiever && PlayerManager.Instance.steamAchiever.GetPlayerSteamID().ToString() == item.SteamId)
+        if (PlayerManager.Instance.steamAchiever &&
+            PlayerManager.Instance.steamAchiever.GetPlayerSteamID().ToString() == item.UserByIdUser.SteamId)
         {
-            string playerColor = UnityEngine.ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
-            gui.player_name.text = $"<color=#{playerColor}><link=\"{item.SteamId}\">{item.SteamName}</link></color>";
+            string playerColor = ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
+            gui.player_name.text =
+                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
         }
         else
-            gui.player_name.text = $"<link=\"{item.SteamId}\">{item.SteamName}</link>";
-        gui.time.text = item.Time.GetFormattedTime();
+            gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
 
-        int placementPoints = Math.Max(0, Count - index);
-        double a = 1d / (_totalUsers / (double)Count);
+        gui.time.text = item.RecordByIdRecord.Time.GetFormattedTime();
+
+        int placementPoints = Math.Max(0, _personalBests - index);
+        double a = 1d / (_totalUsers / (double)_personalBests);
         int b = index + 1;
         double c = index < 8 ? Fibbonus[index] : 0;
         double points = placementPoints * (1 + a / b) + c;
 
-        gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
+        gui.pointsWon.gameObject.SetActive(true);
         gui.pointsWon.text = $"(+{(int)Math.Round(points)})";
     }
 }
