@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using TNRD.Zeepkist.GTR.Utilities;
 using TNRD.Zeepkist.GTR.Voting;
+using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
 
 namespace TNRD.Zeepkist.GTR.Commands.Voting;
@@ -20,6 +22,9 @@ public class DoubleDownvoteCommand : ILocalChatCommand
 
     public void Handle(string arguments)
     {
-        _votingService.DoubleDownvote();
+        if (!string.IsNullOrEmpty(arguments))
+            ChatApi.SendMessage(Command + " " + arguments);
+        else
+            _votingService.DoubleDownvote();
     }
 }
