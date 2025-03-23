@@ -27,19 +27,20 @@ public class RecordHolderUi : MonoBehaviour
         GetCombinedInstance();
     }
 
-    public static void Create(RecordHolders recordHolders)
+    public static void Create(IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes worldRecordHolder,
+        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder)
     {
         ConfigService configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
         GetCombinedInstance().Initialize(configService.ShowRecordHolder, _combinedWorldRecordHolderUi,
             _combinedPersonalBestHolderUi);
-        GetCombinedInstance().SetRecordHolders(recordHolders);
+        GetCombinedInstance().SetRecordHolders(worldRecordHolder, personalBestHolder);
         GetCombinedInstance().ToggleDisplay();
         GetWorldRecordInstance().Initialize(configService.ShowWorldRecordHolder, _singleWorldRecordHolderUi, null);
-        GetWorldRecordInstance().SetRecordHolders(recordHolders);
+        GetWorldRecordInstance().SetRecordHolders(worldRecordHolder, null);
         GetCombinedInstance().ToggleDisplay();
         GetPersonalBestInstance()
             .Initialize(configService.ShowPersonalBestHolder, null, _singlePersonalBestHolderUi);
-        GetPersonalBestInstance().SetRecordHolders(recordHolders);
+        GetPersonalBestInstance().SetRecordHolders(null, personalBestHolder);
         GetPersonalBestInstance().ToggleDisplay();
     }
 
@@ -172,7 +173,8 @@ public class RecordHolderUi : MonoBehaviour
     private WorldRecordHolderUi _worldRecordHolderUi;
     private PersonalBestHolderUi _personalBestHolderUi;
 
-    private RecordHolders _recordHolders;
+    private IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes _worldRecordHolder;
+    private IGetPersonalBest_AllPersonalBestGlobals_Nodes _personalBestHolder;
     private ConfigService _configService;
 
     private ConfigService ConfigService =>
@@ -217,14 +219,16 @@ public class RecordHolderUi : MonoBehaviour
         _worldRecordHolderUi = worldRecordHolderUi;
         _personalBestHolderUi = personalBestHolderUi;
     }
-    
-    private void SetRecordHolders(RecordHolders recordHolders)
+
+    private void SetRecordHolders(IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes worldRecordHolder,
+        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder)
     {
-        _recordHolders = recordHolders;
+        _worldRecordHolder = worldRecordHolder;
+        _personalBestHolder = personalBestHolder;
         if (_worldRecordHolderUi != null)
-            _worldRecordHolderUi.SetWorldRecordHolder(_recordHolders.WorldRecord);
+            _worldRecordHolderUi.SetWorldRecordHolder(_worldRecordHolder);
         if (_personalBestHolderUi != null)
-            _personalBestHolderUi.SetPersonalBestHolder(_recordHolders.PersonalBest);
+            _personalBestHolderUi.SetPersonalBestHolder(_personalBestHolder);
         UpdateDisplayActions();
     }
 

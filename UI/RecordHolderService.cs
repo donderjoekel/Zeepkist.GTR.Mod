@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using System.Threading.Tasks;
 using BepInEx.Configuration;
 using Microsoft.Extensions.Logging;
 using Steamworks;
@@ -23,7 +24,8 @@ public class RecordHolderService : IEagerService
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
-    private RecordHolders _recordHolders;
+    private IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes _worldRecordHolder;
+    private IGetPersonalBest_AllPersonalBestGlobals_Nodes _personalBestHolder;
 
     private float _timer;
 
@@ -64,23 +66,40 @@ public class RecordHolderService : IEagerService
         if (string.IsNullOrEmpty(LevelApi.CurrentHash))
         {
             _logger.LogError("Unable to get level hash");
-            _recordHolders = null;
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
             return;
         }
-        
-        Result<RecordHolders> result
-            = await _recordHolderGraphqlService.GetRecordHolders(LevelApi.CurrentHash, SteamClient.SteamId.Value);
 
-        if (result.IsFailed)
+        UniTask<Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>> worldRecordTask =
+            _recordHolderGraphqlService.GetWorldRecordHolder(LevelApi.CurrentHash, ct);
+        UniTask<Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes>> personalBestTask =
+            _recordHolderGraphqlService.GetPersonalBestHolder(LevelApi.CurrentHash, SteamClient.SteamId.Value, ct);
+
+        (Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes> worldRecordResult,
+                Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes> personalBestResult) =
+            await UniTask.WhenAll(worldRecordTask, personalBestTask);
+
+        if (worldRecordResult.IsFailed)
         {
-            _logger.LogError("Failed to get record holders: {Result}", result);
-            _recordHolders = null;
+            _logger.LogError("Failed to get world record holder: {Result}", worldRecordResult);
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
             return;
         }
 
-        _recordHolders = result.Value;
+        if (personalBestResult.IsFailed)
+        {
+            _logger.LogError("Failed to get personal best holder: {Result}", personalBestResult);
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
+            return;
+        }
+
+        _worldRecordHolder = worldRecordResult.Value;
+        _personalBestHolder = personalBestResult.Value;
         _timer = _configService.RecordHolderSwitchTime.Value;
-        RecordHolderUi.Create(_recordHolders);
+        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder);
     }
 
     private void CheckKeyDown(ConfigEntry<KeyCode> keyConfig, ConfigEntry<bool> showConfig, string positive,
@@ -115,7 +134,7 @@ public class RecordHolderService : IEagerService
             "Showing Personal Best On Combined",
             "Hiding Personal Best On Combined");
 
-        if (_recordHolders == null)
+        if (_worldRecordHolder == null || _personalBestHolder == null)
             return;
 
         _timer -= Time.deltaTime;
@@ -129,13 +148,15 @@ public class RecordHolderService : IEagerService
 
     private void OnQuit()
     {
-        _recordHolders = null;
+        _worldRecordHolder = null;
+        _personalBestHolder = null;
         RecordHolderUi.Disable();
     }
 
     private void OnDisconnectedFromGame()
     {
-        _recordHolders = null;
+        _worldRecordHolder = null;
+        _personalBestHolder = null;
         RecordHolderUi.Disable();
     }
 }

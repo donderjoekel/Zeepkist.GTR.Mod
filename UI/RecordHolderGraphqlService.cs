@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using TNRD.Zeepkist.GTR.Api;
+using StrawberryShake;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -11,123 +13,54 @@ namespace TNRD.Zeepkist.GTR.UI;
 
 public class RecordHolderGraphqlService
 {
-    private const string Query
-        = "query GetRecordHolders($hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{recordByIdRecord{time userByIdUser{steamId steamName}}}}allWorldRecordGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}}){nodes{recordByIdRecord{time userByIdUser{steamName}}}}}";
-
-    private readonly GraphQLApiHttpClient _client;
     private readonly ILogger<RecordHolderGraphqlService> _logger;
+    private readonly IGtrClient _gtrClient;
 
-    public RecordHolderGraphqlService(GraphQLApiHttpClient client, ILogger<RecordHolderGraphqlService> logger)
+    public RecordHolderGraphqlService(ILogger<RecordHolderGraphqlService> logger, IGtrClient gtrClient)
     {
-        _client = client;
         _logger = logger;
+        _gtrClient = gtrClient;
     }
 
-    public async UniTask<Result<RecordHolders>> GetRecordHolders(string levelHash, ulong steamId)
+    public async UniTask<Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>> GetWorldRecordHolder(
+        string levelHash,
+        CancellationToken ct)
     {
-        _logger.LogInformation(
-            "Getting record holders for level {LevelHash} and steam id {SteamId}",
-            levelHash,
-            steamId);
-
-        Result<Root> result = await _client.PostAsync<Root>(
-            Query,
-            new
-            {
-                hash = levelHash
-            });
-
-        if (result.IsFailed)
-        {
-            return result.ToResult();
-        }
+        IOperationResult<IGetWorldRecordHolderResult> result =
+            await _gtrClient.GetWorldRecordHolder.ExecuteAsync(levelHash, ct);
 
         try
         {
-            return Result.Ok(MapToRecordHolders(result.Value, steamId.ToString()));
+            result.EnsureNoErrors();
         }
         catch (Exception e)
         {
             return Result.Fail(new ExceptionalError(e));
         }
+
+        IReadOnlyList<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>
+            nodes = result.Data.AllWorldRecordGlobals.Nodes;
+
+        return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
 
-    private static RecordHolders MapToRecordHolders(Root root, string steamId)
+    public async UniTask<Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes>> GetPersonalBestHolder(string levelHash,
+        ulong steamId, CancellationToken ct)
     {
-        Node worldRecordNode = root.Data.AllWorldRecordGlobals.Nodes.FirstOrDefault();
+        IOperationResult<IGetPersonalBestResult> result =
+            await _gtrClient.GetPersonalBest.ExecuteAsync(levelHash, steamId.ToString(), ct);
 
-        Node personalBestNode = root.Data.AllPersonalBestGlobals.Nodes
-            .FirstOrDefault(
-                x => string.Equals(
-                    x.RecordByIdRecord.UserByIdUser.SteamId,
-                    steamId,
-                    StringComparison.Ordinal));
-
-        int rank = personalBestNode == null
-            ? -1
-            : root.Data.AllPersonalBestGlobals.Nodes
-                  .OrderBy(x => x.RecordByIdRecord.Time)
-                  .ToList()
-                  .IndexOf(personalBestNode) +
-              1;
-
-        return new RecordHolders
+        try
         {
-            WorldRecord = new WorldRecordHolder
-            {
-                Time = worldRecordNode?.RecordByIdRecord.Time ?? -1,
-                SteamName = worldRecordNode?.RecordByIdRecord.UserByIdUser.SteamName
-            },
-            PersonalBest = new PersonalBestHolder
-            {
-                Rank = rank,
-                Time = personalBestNode?.RecordByIdRecord.Time ?? -1
-            }
-        };
-    }
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
 
-    [UsedImplicitly]
-    private class Root
-    {
-        public Data Data { get; set; }
-    }
+        IReadOnlyList<IGetPersonalBest_AllPersonalBestGlobals_Nodes> nodes = result.Data.AllPersonalBestGlobals.Nodes;
 
-    [UsedImplicitly]
-    private class Data
-    {
-        public AllPersonalBestGlobals AllPersonalBestGlobals { get; set; }
-        public AllWorldRecordGlobals AllWorldRecordGlobals { get; set; }
-    }
-
-    [UsedImplicitly]
-    private class AllPersonalBestGlobals
-    {
-        public List<Node> Nodes { get; set; }
-    }
-
-    [UsedImplicitly]
-    private class AllWorldRecordGlobals
-    {
-        public List<Node> Nodes { get; set; }
-    }
-
-    [UsedImplicitly]
-    private class Node
-    {
-        public RecordByIdRecord RecordByIdRecord { get; set; }
-    }
-
-    [UsedImplicitly]
-    private class RecordByIdRecord
-    {
-        public double Time { get; set; }
-        public UserByIdUser UserByIdUser { get; set; }
-    }
-
-    [UsedImplicitly]
-    private class UserByIdUser
-    {
-        public string SteamId { get; set; }
-        public string SteamName { get; set; }
+        return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
 }
