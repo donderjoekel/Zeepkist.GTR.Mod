@@ -28,19 +28,19 @@ public class RecordHolderUi : MonoBehaviour
     }
 
     public static void Create(IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes worldRecordHolder,
-        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder)
+        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder, int personalBestRank)
     {
         ConfigService configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
         GetCombinedInstance().Initialize(configService.ShowRecordHolder, _combinedWorldRecordHolderUi,
             _combinedPersonalBestHolderUi);
-        GetCombinedInstance().SetRecordHolders(worldRecordHolder, personalBestHolder);
+        GetCombinedInstance().SetRecordHolders(worldRecordHolder, personalBestHolder, personalBestRank);
         GetCombinedInstance().ToggleDisplay();
         GetWorldRecordInstance().Initialize(configService.ShowWorldRecordHolder, _singleWorldRecordHolderUi, null);
-        GetWorldRecordInstance().SetRecordHolders(worldRecordHolder, null);
+        GetWorldRecordInstance().SetRecordHolders(worldRecordHolder, null, personalBestRank);
         GetCombinedInstance().ToggleDisplay();
         GetPersonalBestInstance()
             .Initialize(configService.ShowPersonalBestHolder, null, _singlePersonalBestHolderUi);
-        GetPersonalBestInstance().SetRecordHolders(null, personalBestHolder);
+        GetPersonalBestInstance().SetRecordHolders(null, personalBestHolder, personalBestRank);
         GetPersonalBestInstance().ToggleDisplay();
     }
 
@@ -221,14 +221,14 @@ public class RecordHolderUi : MonoBehaviour
     }
 
     private void SetRecordHolders(IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes worldRecordHolder,
-        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder)
+        IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder, int personalBestRank)
     {
         _worldRecordHolder = worldRecordHolder;
         _personalBestHolder = personalBestHolder;
         if (_worldRecordHolderUi != null)
             _worldRecordHolderUi.SetWorldRecordHolder(_worldRecordHolder);
         if (_personalBestHolderUi != null)
-            _personalBestHolderUi.SetPersonalBestHolder(_personalBestHolder);
+            _personalBestHolderUi.SetPersonalBestHolder(_personalBestHolder, personalBestRank);
         UpdateDisplayActions();
     }
 

@@ -80,6 +80,13 @@ public class RecordHolderService : IEagerService
                 Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes> personalBestResult) =
             await UniTask.WhenAll(worldRecordTask, personalBestTask);
 
+        if (ct.IsCancellationRequested)
+        {
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
+            return;
+        }
+
         if (worldRecordResult.IsFailed)
         {
             _logger.LogError("Failed to get world record holder: {Result}", worldRecordResult);
@@ -98,8 +105,28 @@ public class RecordHolderService : IEagerService
 
         _worldRecordHolder = worldRecordResult.Value;
         _personalBestHolder = personalBestResult.Value;
+
+        Result<int> rankResult =
+            await _recordHolderGraphqlService.GetRank(LevelApi.CurrentHash, _personalBestHolder.RecordByIdRecord.Time,
+                ct);
+
+        if (ct.IsCancellationRequested)
+        {
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
+            return;
+        }
+
+        if (rankResult.IsFailed)
+        {
+            _logger.LogError("Failed to get rank: {Result}", rankResult);
+            _worldRecordHolder = null;
+            _personalBestHolder = null;
+            return;
+        }
+
         _timer = _configService.RecordHolderSwitchTime.Value;
-        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder);
+        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder, rankResult.Value);
     }
 
     private void CheckKeyDown(ConfigEntry<KeyCode> keyConfig, ConfigEntry<bool> showConfig, string positive,

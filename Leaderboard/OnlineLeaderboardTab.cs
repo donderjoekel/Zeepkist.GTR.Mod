@@ -15,7 +15,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 {
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
-    private readonly List<IGetPersonalBests_AllPersonalBestGlobals_Nodes> _items = [];
+    private readonly List<IGetPersonalBests_AllRecords_Nodes> _items = [];
 
     private CancellationTokenSource _cancellationTokenSource;
 
@@ -65,7 +65,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
             }
 
             gui.gameObject.SetActive(true);
-            IGetPersonalBests_AllPersonalBestGlobals_Nodes item = _items[i];
+            IGetPersonalBests_AllRecords_Nodes item = _items[i];
             int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
             OnDrawItem(gui, item, index);
         }
@@ -131,13 +131,11 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 
         _totalUsers = userCountResult.Value;
         _items.Clear();
-        _items.AddRange(recordsResult.Value.AllPersonalBestGlobals!.Nodes);
-        _items.Sort((x, y) => x.RecordByIdRecord.Time.CompareTo(y.RecordByIdRecord.Time));
+        _items.AddRange(recordsResult.Value.AllRecords!.Nodes);
         Draw();
     }
 
-    private void OnDrawItem(GUI_OnlineLeaderboardPosition gui,
-        IGetPersonalBests_AllPersonalBestGlobals_Nodes item, int index)
+    private void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_AllRecords_Nodes item, int index)
     {
         ZeepkistNetwork.TryGetPlayer(Convert.ToUInt64(item.UserByIdUser.SteamId), out gui.thePlayer);
 
@@ -162,7 +160,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
         else
             gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
 
-        gui.time.text = item.RecordByIdRecord.Time.GetFormattedTime();
+        gui.time.text = item.Time.GetFormattedTime();
 
         int placementPoints = Math.Max(0, _personalBests - index);
         double a = 1d / (_totalUsers / (double)_personalBests);

@@ -18,7 +18,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
     private readonly MessengerService _messengerService;
     private readonly OfflineGhostsService _offlineGhostsService;
     private readonly UnityEvent[] _originalEvents = new UnityEvent[16];
-    private readonly List<IGetPersonalBests_AllPersonalBestGlobals_Nodes> _items = [];
+    private readonly List<IGetPersonalBests_AllRecords_Nodes> _items = [];
 
     private static readonly Dictionary<int, double> Fibbonus = new()
     {
@@ -84,7 +84,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
             }
 
             gui.gameObject.SetActive(true);
-            IGetPersonalBests_AllPersonalBestGlobals_Nodes item = _items[i];
+            IGetPersonalBests_AllRecords_Nodes item = _items[i];
             int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
             OnDrawItem(gui, item, index);
         }
@@ -100,7 +100,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[i];
         instance.isFavorite = !instance.isFavorite;
 
-        IGetPersonalBests_AllPersonalBestGlobals_Nodes node = _items[i];
+        IGetPersonalBests_AllRecords_Nodes node = _items[i];
 
         if (instance.isFavorite)
         {
@@ -170,13 +170,11 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
 
         _totalUsers = userCountResult.Value;
         _items.Clear();
-        _items.AddRange(recordsResult.Value.AllPersonalBestGlobals.Nodes);
-        _items.Sort((x, y) => x.RecordByIdRecord.Time.CompareTo(y.RecordByIdRecord.Time));
+        _items.AddRange(recordsResult.Value.AllRecords.Nodes);
         Draw();
     }
 
-    protected void OnDrawItem(GUI_OnlineLeaderboardPosition gui,
-        IGetPersonalBests_AllPersonalBestGlobals_Nodes item, int index)
+    protected void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_AllRecords_Nodes item, int index)
     {
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
@@ -194,7 +192,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         else
             gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
 
-        gui.time.text = item.RecordByIdRecord.Time.GetFormattedTime();
+        gui.time.text = item.Time.GetFormattedTime();
 
         int placementPoints = Math.Max(0, _personalBests - index);
         double a = 1d / (_totalUsers / (double)_personalBests);
