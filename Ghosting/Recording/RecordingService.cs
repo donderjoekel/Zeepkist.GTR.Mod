@@ -199,7 +199,7 @@ public class RecordingService : IEagerService
 
             if (_configService.ShowRecordSubmitMessage.Value)
             {
-                _messengerService.LogSuccess("Run submitted");
+                _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
             }
         }
         catch (Exception e)

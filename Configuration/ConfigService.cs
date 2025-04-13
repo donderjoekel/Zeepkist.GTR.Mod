@@ -9,6 +9,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> SubmitRecords { get; private set; }
     public ConfigEntry<bool> SubmitAnyPercentRecords { get; private set; }
     public ConfigEntry<bool> ShowRecordSubmitMessage { get; private set; }
+    public ConfigEntry<float> ShowRecordSubmitMessageDuration { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableRecords { get; private set; }
     public ConfigEntry<KeyCode> ToggleSubmitAnyPercentRecords { get; private set; }
@@ -74,6 +75,11 @@ public class ConfigService : IEagerService
             "3. Show Record Submit Message",
             true,
             "Should the record submit message be shown");
+        ShowRecordSubmitMessageDuration = config.Bind(
+            "1. Records - General",
+            "4. Show Record Submit Message Duration",
+            2.5f,
+            "The duration in seconds that the record submit message should be shown for");
 
         ToggleEnableRecords = config.Bind(
             "1.1 Records - Keys",
