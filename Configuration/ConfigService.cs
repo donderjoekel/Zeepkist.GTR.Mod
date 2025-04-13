@@ -20,22 +20,12 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostNames { get; private set; }
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowGlobalPersonalBest { get; private set; }
-    public ConfigEntry<bool> ShowYearlyPersonalBest { get; private set; }
-    public ConfigEntry<bool> ShowQuarterlyPersonalBest { get; private set; }
-    public ConfigEntry<bool> ShowMonthlyPersonalBest { get; private set; }
-    public ConfigEntry<bool> ShowWeeklyPersonalBest { get; private set; }
-    public ConfigEntry<bool> ShowDailyPersonalBest { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhostNames { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhostTransparent { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGlobalPersonalBest { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowYearlyPersonalBest { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowQuarterlyPersonalBest { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowMonthlyPersonalBest { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowWeeklyPersonalBest { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowDailyPersonalBest { get; private set; }
 
     public ConfigEntry<bool> ShowRecordHolder { get; private set; }
     public ConfigEntry<bool> ShowWorldRecordOnHolder { get; private set; }
@@ -131,31 +121,6 @@ public class ConfigService : IEagerService
             "4. Show Global Personal Best",
             true,
             "Should the global personal best be shown");
-        ShowYearlyPersonalBest = config.Bind(
-            "2.1 Ghosts - Visibility",
-            "5. Show Yearly Personal Best",
-            true,
-            "Should the yearly personal best be shown");
-        ShowQuarterlyPersonalBest = config.Bind(
-            "2.1 Ghosts - Visibility",
-            "6. Show Quarterly Personal Best",
-            true,
-            "Should the quarterly personal best be shown");
-        ShowMonthlyPersonalBest = config.Bind(
-            "2.1 Ghosts - Visibility",
-            "7. Show Monthly Personal Best",
-            true,
-            "Should the monthly personal best be shown");
-        ShowWeeklyPersonalBest = config.Bind(
-            "2.1 Ghosts - Visibility",
-            "8. Show Weekly Personal Best",
-            true,
-            "Should the weekly personal best be shown");
-        ShowDailyPersonalBest = config.Bind(
-            "2.1 Ghosts - Visibility",
-            "9. Show Daily Personal Best",
-            true,
-            "Should the daily personal best be shown");
 
         ToggleEnableGhosts = config.Bind(
             "2.2 Ghosts - Keys",
@@ -182,31 +147,6 @@ public class ConfigService : IEagerService
             "5. Toggle Show Global Personal Best",
             KeyCode.None,
             "Toggles if the global personal best should be shown");
-        ToggleShowYearlyPersonalBest = config.Bind(
-            "2.2 Ghosts - Keys",
-            "6. Toggle Show Yearly Personal Best",
-            KeyCode.None,
-            "Toggles if the yearly personal best should be shown");
-        ToggleShowQuarterlyPersonalBest = config.Bind(
-            "2.2 Ghosts - Keys",
-            "7. Toggle Show Quarterly Personal Best",
-            KeyCode.None,
-            "Toggles if the quarterly personal best should be shown");
-        ToggleShowMonthlyPersonalBest = config.Bind(
-            "2.2 Ghosts - Keys",
-            "8. Toggle Show Monthly Personal Best",
-            KeyCode.None,
-            "Toggles if the monthly personal best should be shown");
-        ToggleShowWeeklyPersonalBest = config.Bind(
-            "2.2 Ghosts - Keys",
-            "9. Toggle Show Weekly Personal Best",
-            KeyCode.None,
-            "Toggles if the weekly personal best should be shown");
-        ToggleShowDailyPersonalBest = config.Bind(
-            "2.2 Ghosts - Keys",
-            "10. Toggle Show Daily Personal Best",
-            KeyCode.None,
-            "Toggles if the daily personal best should be shown");
     }
 
     private void ConfigRecordHolder(ConfigFile config)

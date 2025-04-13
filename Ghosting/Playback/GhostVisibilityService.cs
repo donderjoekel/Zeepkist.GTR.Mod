@@ -32,11 +32,6 @@ public class GhostVisibilityService : IEagerService
 
         _configService.ShowGhosts.SettingChanged += OnShowGhostsChanged;
         _configService.ShowGlobalPersonalBest.SettingChanged += OnShowGlobalChanged;
-        _configService.ShowYearlyPersonalBest.SettingChanged += OnShowYearlyChanged;
-        _configService.ShowQuarterlyPersonalBest.SettingChanged += OnShowQuarterlyChanged;
-        _configService.ShowMonthlyPersonalBest.SettingChanged += OnShowMonthlyChanged;
-        _configService.ShowWeeklyPersonalBest.SettingChanged += OnShowWeeklyChanged;
-        _configService.ShowDailyPersonalBest.SettingChanged += OnShowDailyChanged;
     }
 
     private void OnShowGhostsChanged(object sender, EventArgs e)
@@ -50,31 +45,6 @@ public class GhostVisibilityService : IEagerService
     private void OnShowGlobalChanged(object sender, EventArgs e)
     {
         UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Global));
-    }
-
-    private void OnShowYearlyChanged(object sender, EventArgs e)
-    {
-        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Yearly));
-    }
-
-    private void OnShowQuarterlyChanged(object sender, EventArgs e)
-    {
-        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Quarterly));
-    }
-
-    private void OnShowMonthlyChanged(object sender, EventArgs e)
-    {
-        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Monthly));
-    }
-
-    private void OnShowWeeklyChanged(object sender, EventArgs e)
-    {
-        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Weekly));
-    }
-
-    private void OnShowDailyChanged(object sender, EventArgs e)
-    {
-        UpdateGhostsVisibility(_ghostPlayer.ActiveGhosts.FirstOrDefault(x => x.Type == GhostType.Daily));
     }
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
@@ -99,11 +69,6 @@ public class GhostVisibilityService : IEagerService
         ConfigEntry<bool> configEntry = ghostData.Type switch
         {
             GhostType.Global => _configService.ShowGlobalPersonalBest,
-            GhostType.Daily => _configService.ShowDailyPersonalBest,
-            GhostType.Weekly => _configService.ShowWeeklyPersonalBest,
-            GhostType.Monthly => _configService.ShowMonthlyPersonalBest,
-            GhostType.Quarterly => _configService.ShowQuarterlyPersonalBest,
-            GhostType.Yearly => _configService.ShowYearlyPersonalBest,
             _ => throw new ArgumentOutOfRangeException()
         };
 
@@ -119,11 +84,6 @@ public class GhostVisibilityService : IEagerService
     {
         HandleShowGhosts();
         HandleShowGlobal();
-        HandleShowYearly();
-        HandleShowQuarterly();
-        HandleShowMonthly();
-        HandleShowWeekly();
-        HandleShowDaily();
     }
 
     private void HandleShowGhosts()
@@ -155,40 +115,5 @@ public class GhostVisibilityService : IEagerService
         HandleShowing(_configService.ToggleShowGlobalPersonalBest,
             _configService.ShowGlobalPersonalBest,
             GhostType.Global);
-    }
-
-    private void HandleShowYearly()
-    {
-        HandleShowing(_configService.ToggleShowYearlyPersonalBest,
-            _configService.ShowYearlyPersonalBest,
-            GhostType.Yearly);
-    }
-
-    private void HandleShowQuarterly()
-    {
-        HandleShowing(_configService.ToggleShowQuarterlyPersonalBest,
-            _configService.ShowQuarterlyPersonalBest,
-            GhostType.Quarterly);
-    }
-
-    private void HandleShowMonthly()
-    {
-        HandleShowing(_configService.ToggleShowMonthlyPersonalBest,
-            _configService.ShowMonthlyPersonalBest,
-            GhostType.Monthly);
-    }
-
-    private void HandleShowWeekly()
-    {
-        HandleShowing(_configService.ToggleShowWeeklyPersonalBest,
-            _configService.ShowWeeklyPersonalBest,
-            GhostType.Weekly);
-    }
-
-    private void HandleShowDaily()
-    {
-        HandleShowing(_configService.ToggleShowDailyPersonalBest,
-            _configService.ShowDailyPersonalBest,
-            GhostType.Daily);
     }
 }
