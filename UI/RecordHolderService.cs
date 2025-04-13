@@ -44,8 +44,15 @@ public class RecordHolderService : IEagerService
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
         RacingApi.Quit += OnQuit;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
+        RacingApi.LevelLoaded += OnLevelLoaded;
 
         playerLoopService.SubscribeUpdate(OnUpdate);
+    }
+
+    private void OnLevelLoaded()
+    {
+        RecordHolderUi.EnsureExists();
+        RecordHolderUi.Create(null, null, 0);
     }
 
     private void OnPlayerSpawned()
@@ -106,27 +113,34 @@ public class RecordHolderService : IEagerService
         _worldRecordHolder = worldRecordResult.Value;
         _personalBestHolder = personalBestResult.Value;
 
-        Result<int> rankResult =
-            await _recordHolderGraphqlService.GetRank(LevelApi.CurrentHash, _personalBestHolder.RecordByIdRecord.Time,
-                ct);
-
-        if (ct.IsCancellationRequested)
+        int personalBestRank = 0;
+        if (_personalBestHolder != null && _personalBestHolder.RecordByIdRecord != null)
         {
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
-            return;
-        }
+            Result<int> rankResult =
+                await _recordHolderGraphqlService.GetRank(LevelApi.CurrentHash,
+                    _personalBestHolder.RecordByIdRecord.Time,
+                    ct);
 
-        if (rankResult.IsFailed)
-        {
-            _logger.LogError("Failed to get rank: {Result}", rankResult);
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
-            return;
+            if (ct.IsCancellationRequested)
+            {
+                _worldRecordHolder = null;
+                _personalBestHolder = null;
+                return;
+            }
+
+            if (rankResult.IsFailed)
+            {
+                _logger.LogError("Failed to get rank: {Result}", rankResult);
+                _worldRecordHolder = null;
+                _personalBestHolder = null;
+                return;
+            }
+
+            personalBestRank = rankResult.Value;
         }
 
         _timer = _configService.RecordHolderSwitchTime.Value;
-        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder, rankResult.Value);
+        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder, personalBestRank);
     }
 
     private void CheckKeyDown(ConfigEntry<KeyCode> keyConfig, ConfigEntry<bool> showConfig, string positive,
@@ -160,9 +174,6 @@ public class RecordHolderService : IEagerService
         CheckKeyDown(_configService.ToggleShowPersonalBestOnHolder, _configService.ShowPersonalBestOnHolder,
             "Showing Personal Best On Combined",
             "Hiding Personal Best On Combined");
-
-        if (_worldRecordHolder == null || _personalBestHolder == null)
-            return;
 
         _timer -= Time.deltaTime;
 
