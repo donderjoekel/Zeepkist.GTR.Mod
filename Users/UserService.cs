@@ -24,7 +24,7 @@ public class UserService
             Name = SteamClient.Name
         };
 
-        HttpResponseMessage response = await _apiHttpClient.PostAsync("User/update/name", resource);
+        HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateSteamName", resource);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -39,7 +39,7 @@ public class UserService
             Id = id
         };
 
-        HttpResponseMessage response = await _apiHttpClient.PostAsync("User/update/discord", resource);
+        HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateDiscordId", resource);
 
         if (response.IsSuccessStatusCode)
         {

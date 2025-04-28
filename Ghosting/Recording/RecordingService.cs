@@ -167,8 +167,8 @@ public class RecordingService : IEagerService
         {
             Level = hash,
             Time = time,
-            Splits = splits.ToList(),
-            Speeds = speeds.ToList(),
+            Splits = [.. splits],
+            Speeds = [.. speeds],
             GhostData = ghostData,
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
@@ -184,7 +184,7 @@ public class RecordingService : IEagerService
                 return;
             }
 
-            HttpResponseMessage response = await _apiHttpClient.PostAsync("records/submit", resource);
+            HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
 
             try
             {
