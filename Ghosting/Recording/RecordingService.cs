@@ -167,8 +167,8 @@ public class RecordingService : IEagerService
         {
             Level = hash,
             Time = time,
-            Splits = [.. splits],
-            Speeds = [.. speeds],
+            Splits = splits.ToList(),
+            Speeds = speeds.ToList(),
             GhostData = ghostData,
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
