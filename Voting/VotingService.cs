@@ -93,7 +93,7 @@ public class VotingService : IEagerService
         }
 
         HttpResponseMessage response =
-            await _apiHttpClient.PostAsync($"voting/{path}", new VoteResource { Level = currentHash });
+            await _apiHttpClient.PostAsync($"vote/{path}", new VoteResource { Level = currentHash });
 
         try
         {

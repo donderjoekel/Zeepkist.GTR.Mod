@@ -145,7 +145,7 @@ public class ApiHttpClient
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(
             () =>
             {
-                HttpRequestMessage request = new(HttpMethod.Post, "Authentication/login");
+                HttpRequestMessage request = new(HttpMethod.Post, "auth/login");
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
@@ -165,7 +165,7 @@ public class ApiHttpClient
 
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
         {
-            HttpRequestMessage request = new(HttpMethod.Post, "Authentication/refresh");
+            HttpRequestMessage request = new(HttpMethod.Post, "auth/refresh");
             string json = JsonConvert.SerializeObject(data);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
             return _httpClient.SendAsync(request);
