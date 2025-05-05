@@ -4,7 +4,7 @@
   "extensions": {
     "strawberryShake": {
       "name": "GtrClient",
-      "url": "https://graphql.zeepki.st",
+      "url": "https://graphql-beta.zeepki.st",
       "records": {
         "inputs": false,
         "entities": false
