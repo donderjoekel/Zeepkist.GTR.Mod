@@ -1,6 +1,6 @@
 query GetPersonalBestCount($hash: String) {
-    allPersonalBestGlobals(
-        filter: { levelByIdLevel: { hash: { equalTo: $hash } } }
+    personalBestGlobals(
+        filter: { level: { hash: { equalTo: $hash } } }
     ) {
         totalCount
     }
