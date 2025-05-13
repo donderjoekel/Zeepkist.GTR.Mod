@@ -1,5 +1,5 @@
 ﻿query GetLevelPoints($hash: String) {
-    allLevelPoints(filter: { levelByIdLevel: { hash: { equalTo: $hash } } }) {
+    levelPoints(filter: { level: { hash: { equalTo: $hash } } }) {
         nodes {
             points
         }

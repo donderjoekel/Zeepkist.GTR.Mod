@@ -1,9 +1,9 @@
 ﻿query GetPlayerRankOnLevel($hash: String!, $time: Float!) {
-    allRecords(
+    records(
         filter: {
-            personalBestGlobalsByIdRecordListExist: true
+            personalBestGlobalsExist: true
             time: { lessThan: $time }
-            levelByIdLevel: { hash: { equalTo: $hash } }
+            level: { hash: { equalTo: $hash } }
         }
         orderBy: TIME_ASC
     ) {

@@ -1,5 +1,5 @@
 ﻿query GetTotalUserCount {
-    allUsers {
+    users {
         totalCount
     }
 }
