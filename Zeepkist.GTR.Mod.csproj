@@ -44,7 +44,6 @@
         <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0"/>
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
-        <PackageReference Include="StrawberryShake.Server" Version="14.3.0"/>
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.1.1762" />
         <PackageReference Include="ZeepSDK" Version="1.43.0" />
@@ -65,25 +64,6 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-
-    <ItemGroup>
-        <GraphQL Update="GraphQL\GetPersonalBests.graphql">
-            <Generator>MSBuild:GenerateGraphQLCode</Generator>
-        </GraphQL>
-        <GraphQL Include="schema.extensions.graphql">
-            <Generator>MSBuild:GenerateGraphQLCode</Generator>
-        </GraphQL>
-        <GraphQL Include="schema.graphql">
-            <Generator>MSBuild:GenerateGraphQLCode</Generator>
-        </GraphQL>
-    </ItemGroup>
-
-    <Target Name="Modify GraphQL Client" AfterTargets="StrawberryShake_GenerateCode" BeforeTargets="BeforeCompile">
-        <ItemGroup>
-            <GeneratedFiles Include="obj\Debug\net472\berry\GtrClient.Client.cs"/>
-        </ItemGroup>
-        <Exec Command="powershell -ExecutionPolicy Unrestricted -File $(ProjectDir)ModifyGraphQLClient.ps1 @(GeneratedFiles->'%(FullPath)')"/>
-    </Target>
 
     <Target Name="PDB" AfterTargets="PostBuildEvent">
         <Message Text="Generating PDB" Importance="high"/>

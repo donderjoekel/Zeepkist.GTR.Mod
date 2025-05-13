@@ -1,0 +1,9 @@
+fragment GhostRecordFrag on Record {
+  id
+  user {
+    steamName
+  }
+  recordMedia {
+    ghostUrl
+  }
+}

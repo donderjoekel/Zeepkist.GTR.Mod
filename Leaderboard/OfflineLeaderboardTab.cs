@@ -18,7 +18,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
     private readonly MessengerService _messengerService;
     private readonly OfflineGhostsService _offlineGhostsService;
     private readonly UnityEvent[] _originalEvents = new UnityEvent[16];
-    private readonly List<IGetPersonalBests_AllRecords_Nodes> _items = [];
+    private readonly List<IGetPersonalBests_Records_Nodes> _items = [];
 
     private static readonly Dictionary<int, double> Fibbonus = new()
     {
@@ -84,7 +84,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
             }
 
             gui.gameObject.SetActive(true);
-            IGetPersonalBests_AllRecords_Nodes item = _items[i];
+            IGetPersonalBests_Records_Nodes item = _items[i];
             int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
             OnDrawItem(gui, item, index);
         }
@@ -100,15 +100,15 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         GUI_OnlineLeaderboardPosition instance = Instance.leaderboard_tab_positions[i];
         instance.isFavorite = !instance.isFavorite;
 
-        IGetPersonalBests_AllRecords_Nodes node = _items[i];
+        IGetPersonalBests_Records_Nodes node = _items[i];
 
         if (instance.isFavorite)
         {
-            _offlineGhostsService.AddAdditionalGhost(node.UserByIdUser.SteamId);
+            _offlineGhostsService.AddAdditionalGhost(node.User.SteamId);
         }
         else
         {
-            _offlineGhostsService.RemoveAdditionalGhost(node.UserByIdUser.SteamId);
+            _offlineGhostsService.RemoveAdditionalGhost(node.User.SteamId);
         }
 
         instance.RedrawFavoriteImage();
@@ -170,27 +170,27 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
 
         _totalUsers = userCountResult.Value;
         _items.Clear();
-        _items.AddRange(recordsResult.Value.AllRecords.Nodes);
+        _items.AddRange(recordsResult.Value.Records.Nodes);
         Draw();
     }
 
-    protected void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_AllRecords_Nodes item, int index)
+    protected void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_Records_Nodes item, int index)
     {
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(true);
-        gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.UserByIdUser.SteamId);
+        gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.User.SteamId);
         gui.RedrawFavoriteImage();
         if (PlayerManager.Instance.steamAchiever &&
-            PlayerManager.Instance.steamAchiever.GetPlayerSteamID().ToString() == item.UserByIdUser.SteamId)
+            PlayerManager.Instance.steamAchiever.GetPlayerSteamID().ToString() == item.User.SteamId)
         {
             string playerColor = ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
             gui.player_name.text =
-                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
+                $"<color=#{playerColor}><link=\"{item.User.SteamId}\">{item.User.SteamName}</link></color>";
         }
         else
-            gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
+            gui.player_name.text = $"<link=\"{item.User.SteamId}\">{item.User.SteamName}</link>";
 
         gui.time.text = item.Time.GetFormattedTime();
 

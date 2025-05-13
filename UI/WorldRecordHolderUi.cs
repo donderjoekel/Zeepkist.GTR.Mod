@@ -41,7 +41,7 @@ public class WorldRecordHolderUi : MonoBehaviour
         _headerText.text = "World Record";
     }
 
-    public void SetWorldRecordHolder(IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes worldRecordHolder)
+    public void SetWorldRecordHolder(IGetWorldRecordHolder_WorldRecordGlobals_Nodes worldRecordHolder)
     {
         if (worldRecordHolder == null)
         {
@@ -50,8 +50,8 @@ public class WorldRecordHolderUi : MonoBehaviour
         }
         else
         {
-            string steamName = worldRecordHolder.RecordByIdRecord.UserByIdUser.SteamName;
-            double time = worldRecordHolder.RecordByIdRecord.Time;
+            string steamName = worldRecordHolder.Record.User.SteamName;
+            double time = worldRecordHolder.Record.Time;
             _playerNameText.text = string.IsNullOrEmpty(steamName) ? "Be the first!" : steamName;
             _timeText.text = time <= 0 ? "--:--.---" : time.GetFormattedTime();
         }

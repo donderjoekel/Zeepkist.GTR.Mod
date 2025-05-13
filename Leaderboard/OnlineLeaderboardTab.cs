@@ -15,7 +15,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 {
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
-    private readonly List<IGetPersonalBests_AllRecords_Nodes> _items = [];
+    private readonly List<IGetPersonalBests_Records_Nodes> _items = [];
 
     private CancellationTokenSource _cancellationTokenSource;
 
@@ -65,7 +65,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
             }
 
             gui.gameObject.SetActive(true);
-            IGetPersonalBests_AllRecords_Nodes item = _items[i];
+            IGetPersonalBests_Records_Nodes item = _items[i];
             int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
             OnDrawItem(gui, item, index);
         }
@@ -131,13 +131,13 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 
         _totalUsers = userCountResult.Value;
         _items.Clear();
-        _items.AddRange(recordsResult.Value.AllRecords!.Nodes);
+        _items.AddRange(recordsResult.Value.Records!.Nodes);
         Draw();
     }
 
-    private void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_AllRecords_Nodes item, int index)
+    private void OnDrawItem(GUI_OnlineLeaderboardPosition gui, IGetPersonalBests_Records_Nodes item, int index)
     {
-        ZeepkistNetwork.TryGetPlayer(Convert.ToUInt64(item.UserByIdUser.SteamId), out gui.thePlayer);
+        ZeepkistNetwork.TryGetPlayer(Convert.ToUInt64(item.User.SteamId), out gui.thePlayer);
 
         gui.position.gameObject.SetActive(true);
         gui.position.text = (index + 1).ToString();
@@ -145,20 +145,20 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
         gui.favoriteButton.gameObject.SetActive(false);
         ColorUtility.ToHtmlStringRGB(PlayerManager.Instance.GetChatColor());
 
-        if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.UserByIdUser.SteamId)
+        if (ZeepkistNetwork.LocalPlayer.SteamID.ToString() == item.User.SteamId)
         {
             string playerColor = ColorUtility.ToHtmlStringRGB(ZeepkistNetwork.LocalPlayer.chatColor);
             gui.player_name.text =
-                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
+                $"<color=#{playerColor}><link=\"{item.User.SteamId}\">{item.User.SteamName}</link></color>";
         }
-        else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.UserByIdUser.SteamId)
+        else if (gui.thePlayer != null && gui.thePlayer.SteamID.ToString() == item.User.SteamId)
         {
             string playerColor = ColorUtility.ToHtmlStringRGB(gui.thePlayer.chatColor);
             gui.player_name.text =
-                $"<color=#{playerColor}><link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link></color>";
+                $"<color=#{playerColor}><link=\"{item.User.SteamId}\">{item.User.SteamName}</link></color>";
         }
         else
-            gui.player_name.text = $"<link=\"{item.UserByIdUser.SteamId}\">{item.UserByIdUser.SteamName}</link>";
+            gui.player_name.text = $"<link=\"{item.User.SteamId}\">{item.User.SteamName}</link>";
 
         gui.time.text = item.Time.GetFormattedTime();
 

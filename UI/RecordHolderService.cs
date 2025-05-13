@@ -24,8 +24,8 @@ public class RecordHolderService : IEagerService
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
-    private IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes _worldRecordHolder;
-    private IGetPersonalBest_AllPersonalBestGlobals_Nodes _personalBestHolder;
+    private IGetWorldRecordHolder_WorldRecordGlobals_Nodes _worldRecordHolder;
+    private IGetPersonalBest_PersonalBestGlobals_Nodes _personalBestHolder;
 
     private float _timer;
 
@@ -78,13 +78,13 @@ public class RecordHolderService : IEagerService
             return;
         }
 
-        UniTask<Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>> worldRecordTask =
+        UniTask<Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>> worldRecordTask =
             _recordHolderGraphqlService.GetWorldRecordHolder(LevelApi.CurrentHash, ct);
-        UniTask<Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes>> personalBestTask =
+        UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> personalBestTask =
             _recordHolderGraphqlService.GetPersonalBestHolder(LevelApi.CurrentHash, SteamClient.SteamId.Value, ct);
 
-        (Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes> worldRecordResult,
-                Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes> personalBestResult) =
+        (Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes> worldRecordResult,
+                Result<IGetPersonalBest_PersonalBestGlobals_Nodes> personalBestResult) =
             await UniTask.WhenAll(worldRecordTask, personalBestTask);
 
         if (ct.IsCancellationRequested)
@@ -114,11 +114,11 @@ public class RecordHolderService : IEagerService
         _personalBestHolder = personalBestResult.Value;
 
         int personalBestRank = 0;
-        if (_personalBestHolder != null && _personalBestHolder.RecordByIdRecord != null)
+        if (_personalBestHolder != null && _personalBestHolder.Record != null)
         {
             Result<int> rankResult =
                 await _recordHolderGraphqlService.GetRank(LevelApi.CurrentHash,
-                    _personalBestHolder.RecordByIdRecord.Time,
+                    _personalBestHolder.Record.Time,
                     ct);
 
             if (ct.IsCancellationRequested)

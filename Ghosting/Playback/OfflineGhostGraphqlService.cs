@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using TNRD.Zeepkist.GTR.Api;
+using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -10,30 +11,28 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
 {
-    private const string Query
-        = "fragment frag on Record{id userByIdUser{steamName}recordMediasByIdRecord{nodes{ghostUrl}}}query GetAdditionalGhosts($ids:[BigFloat!],$hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{in:$ids}}}){nodes{recordByIdRecord{...frag}}}}";
-
-    public OfflineGhostGraphqlService(GraphQLApiHttpClient client, ConfigService configService)
-        : base(client, configService)
+    public OfflineGhostGraphqlService(ConfigService configService, IGtrClient gtrClient)
+        : base(configService, gtrClient)
     {
     }
 
-    public async UniTask<Result<List<PersonalBest>>> GetAdditionalGhosts(List<string> steamIds, string levelHash)
+    public async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>> GetAdditionalGhosts(
+        List<string> steamIds, string levelHash)
     {
-        Result<Root> result = await Client.PostAsync<Root>(
-            Query,
-            new
-            {
-                ids = steamIds.ToArray(),
-                hash = levelHash
-            });
+        IOperationResult<IGetAdditionalGhostsResult> result =
+            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash);
 
-        if (result.IsFailed)
+        try
         {
-            return result.ToResult();
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
         }
 
-        return Result.Ok(Map(result.Value));
+        IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes> nodes = result.Data.PersonalBestGlobals.Nodes;
+        return Result.Ok(nodes);
     }
 
     private static List<PersonalBest> Map(Root root)

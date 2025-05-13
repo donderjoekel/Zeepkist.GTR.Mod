@@ -22,7 +22,7 @@ public class RecordHolderGraphqlService
         _gtrClient = gtrClient;
     }
 
-    public async UniTask<Result<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>> GetWorldRecordHolder(
+    public async UniTask<Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>> GetWorldRecordHolder(
         string levelHash,
         CancellationToken ct)
     {
@@ -38,13 +38,13 @@ public class RecordHolderGraphqlService
             return Result.Fail(new ExceptionalError(e));
         }
 
-        IReadOnlyList<IGetWorldRecordHolder_AllWorldRecordGlobals_Nodes>
-            nodes = result.Data.AllWorldRecordGlobals.Nodes;
+        IReadOnlyList<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>
+            nodes = result.Data.WorldRecordGlobals.Nodes;
 
         return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
 
-    public async UniTask<Result<IGetPersonalBest_AllPersonalBestGlobals_Nodes>> GetPersonalBestHolder(string levelHash,
+    public async UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> GetPersonalBestHolder(string levelHash,
         ulong steamId, CancellationToken ct)
     {
         IOperationResult<IGetPersonalBestResult> result =
@@ -59,7 +59,7 @@ public class RecordHolderGraphqlService
             return Result.Fail(new ExceptionalError(e));
         }
 
-        IReadOnlyList<IGetPersonalBest_AllPersonalBestGlobals_Nodes> nodes = result.Data.AllPersonalBestGlobals.Nodes;
+        IReadOnlyList<IGetPersonalBest_PersonalBestGlobals_Nodes> nodes = result.Data.PersonalBestGlobals.Nodes;
 
         return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
@@ -78,6 +78,6 @@ public class RecordHolderGraphqlService
             return Result.Fail(new ExceptionalError(e));
         }
 
-        return Result.Ok(result.Data!.AllRecords!.TotalCount + 1);
+        return Result.Ok(result.Data!.Records!.TotalCount + 1);
     }
 }

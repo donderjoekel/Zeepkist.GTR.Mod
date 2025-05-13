@@ -105,16 +105,17 @@ public class OfflineGhostsService : IEagerService
 
     private async UniTaskVoid LoadGhostsAsync(CancellationToken ct)
     {
-        (Result<List<OnlineGhostGraphqlService.PersonalBest>> pbResult,
-            Result<List<OnlineGhostGraphqlService.PersonalBest>> additionalResult) = await UniTask.WhenAll(
-            LoadPersonalBestsAsync(ct),
-            LoadAdditionalGhostsAsync(ct));
+        (Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> pbResult,
+                Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> additionalResult) =
+            await UniTask.WhenAll(
+                LoadPersonalBestsAsync(ct),
+                LoadAdditionalGhostsAsync(ct));
 
-        List<OnlineGhostGraphqlService.PersonalBest> personalBests = new();
+        List<IGhostRecordFrag> personalBests = new();
 
         if (pbResult.IsSuccess)
         {
-            personalBests.AddRange(pbResult.Value);
+            personalBests.AddRange(pbResult.Value.Select(x => x.Record));
         }
         else
         {
@@ -123,7 +124,7 @@ public class OfflineGhostsService : IEagerService
 
         if (additionalResult.IsSuccess)
         {
-            personalBests.AddRange(additionalResult.Value);
+            personalBests.AddRange(additionalResult.Value.Select(x => x.Record));
         }
         else
         {
@@ -140,23 +141,24 @@ public class OfflineGhostsService : IEagerService
             }
         }
 
-        foreach (OnlineGhostGraphqlService.PersonalBest personalBest in personalBests)
+        foreach (IGhostRecordFrag personalBest in personalBests)
         {
-            Result<IGhost> ghost = await _ghostRepository.GetGhost(personalBest.Id, personalBest.GhostUrl);
+            Result<IGhost> ghost = await _ghostRepository.GetGhost(personalBest.Id, personalBest.RecordMedia.GhostUrl);
             if (ghost.IsFailed)
             {
                 _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
                 continue;
             }
 
-            _ghostPlayer.AddGhost(personalBest.Type, personalBest.Id, personalBest.SteamName, ghost.Value);
+            _ghostPlayer.AddGhost(GhostType.Global, personalBest.Id, personalBest.User.SteamName, ghost.Value);
         }
     }
 
-    private async UniTask<Result<List<OnlineGhostGraphqlService.PersonalBest>>> LoadPersonalBestsAsync(
+    private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
+        LoadPersonalBestsAsync(
         CancellationToken ct)
     {
-        Result<List<OnlineGhostGraphqlService.PersonalBest>> result
+        Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result
             = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)
@@ -168,10 +170,11 @@ public class OfflineGhostsService : IEagerService
         return result;
     }
 
-    private async UniTask<Result<List<OnlineGhostGraphqlService.PersonalBest>>> LoadAdditionalGhostsAsync(
+    private async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>>
+        LoadAdditionalGhostsAsync(
         CancellationToken ct)
     {
-        Result<List<OnlineGhostGraphqlService.PersonalBest>> result
+        Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> result
             = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)

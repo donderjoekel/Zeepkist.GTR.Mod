@@ -106,8 +106,8 @@ public class OnlineGhostsService : IEagerService
     {
         _logger.LogInformation("Loading personal best...");
 
-        Result<List<OnlineGhostGraphqlService.PersonalBest>> result
-            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
+        Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
+            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
 
         if (ct.IsCancellationRequested)
             return;
@@ -118,28 +118,35 @@ public class OnlineGhostsService : IEagerService
             return;
         }
 
-        List<OnlineGhostGraphqlService.PersonalBest> personalBests = result.Value;
+        IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes> personalBests = result.Value;
 
         IReadOnlyList<int> loadedGhostIds = _ghostPlayer.GetLoadedGhostIds();
 
         foreach (int loadedGhostId in loadedGhostIds)
         {
-            if (personalBests.All(x => x.Id != loadedGhostId))
+            if (personalBests.All(x => x.Record.Id != loadedGhostId))
             {
                 _ghostPlayer.RemoveGhost(loadedGhostId);
             }
         }
 
-        foreach (OnlineGhostGraphqlService.PersonalBest personalBest in personalBests)
+        foreach (IGetPersonalBestGhosts_PersonalBestGlobals_Nodes personalBest in personalBests)
         {
-            Result<IGhost> ghost = await _ghostRepository.GetGhost(personalBest.Id, personalBest.GhostUrl);
+            Result<IGhost> ghost = await _ghostRepository.GetGhost(
+                personalBest.Record.Id,
+                personalBest.Record.RecordMedia.GhostUrl);
+
             if (ghost.IsFailed)
             {
                 _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
                 continue;
             }
 
-            _ghostPlayer.AddGhost(personalBest.Type, personalBest.Id, personalBest.SteamName, ghost.Value);
+            _ghostPlayer.AddGhost(
+                GhostType.Global,
+                personalBest.Record.Id,
+                personalBest.Record.User.SteamName,
+                ghost.Value);
         }
     }
 }

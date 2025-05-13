@@ -37,7 +37,7 @@ public class LeaderboardGraphqlService
                 return Result.Fail(new ExceptionalError(e));
             }
 
-            int? totalCount = result.Data?.AllPersonalBestGlobals?.TotalCount;
+            int? totalCount = result.Data?.PersonalBestGlobals?.TotalCount;
             return Result.Ok(totalCount ?? 0);
         }
         catch (Exception e)
@@ -61,7 +61,7 @@ public class LeaderboardGraphqlService
             return Result.Fail(new ExceptionalError(e));
         }
 
-        int? totalUserCount = result.Data?.AllUsers?.TotalCount;
+        int? totalUserCount = result.Data?.Users?.TotalCount;
         if (totalUserCount.HasValue)
         {
             _cache.Set(CreateKey(), totalUserCount.Value, TimeSpan.FromMinutes(30));
@@ -92,7 +92,7 @@ public class LeaderboardGraphqlService
             return Result.Fail(new ExceptionalError(e));
         }
 
-        int? points = result.Data?.AllLevelPoints?.Nodes.FirstOrDefault()?.Points;
+        int? points = result.Data?.LevelPoints?.Nodes.FirstOrDefault()?.Points;
 
         if (points.HasValue)
         {

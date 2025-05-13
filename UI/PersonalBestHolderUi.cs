@@ -24,7 +24,7 @@ public class PersonalBestHolderUi : MonoBehaviour
         _timeText = texts.First(x => string.Equals(x.name, "Time", StringComparison.OrdinalIgnoreCase));
     }
 
-    public void SetPersonalBestHolder(IGetPersonalBest_AllPersonalBestGlobals_Nodes personalBestHolder,
+    public void SetPersonalBestHolder(IGetPersonalBest_PersonalBestGlobals_Nodes personalBestHolder,
         int personalBestRank)
     {
         if (personalBestHolder == null)
@@ -36,7 +36,7 @@ public class PersonalBestHolderUi : MonoBehaviour
         else
         {
             _positionText.text = personalBestRank.ToString();
-            double time = personalBestHolder.RecordByIdRecord.Time;
+            double time = personalBestHolder.Record.Time;
             _playerNameText.text = SteamClient.Name;
             _timeText.text = time <= 0 ? "--:--.---" : time.GetFormattedTime();
         }

@@ -1,0 +1,14 @@
+query GetPersonalBestGhosts($steamId: BigFloat, $hash: String) {
+  personalBestGlobals(
+    filter: {
+      level: { hash: { equalTo: $hash } }
+      user: { steamId: { equalTo: $steamId } }
+    }
+  ) {
+    nodes {
+      record {
+        ...GhostRecordFrag
+      }
+    }
+  }
+}

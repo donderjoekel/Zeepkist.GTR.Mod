@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using JetBrains.Annotations;
 using Steamworks;
-using TNRD.Zeepkist.GTR.Api;
+using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -14,49 +14,34 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class OnlineGhostGraphqlService
 {
-    private const string Query
-        = "fragment frag on Record{id userByIdUser{steamName}recordMediasByIdRecord{nodes{ghostUrl}}}query personalbests($steamId:BigFloat$hash:String){allPersonalBestGlobals(filter:{levelByIdLevel:{hash:{equalTo:$hash}}userByIdUser:{steamId:{equalTo:$steamId}}}){nodes{recordByIdRecord{...frag}}}}";
-
-    private readonly GraphQLApiHttpClient _client;
     private readonly ConfigService _configService;
+    private readonly IGtrClient _gtrClient;
 
-    protected GraphQLApiHttpClient Client => _client;
+    public IGtrClient GtrClient => _gtrClient;
 
-    public OnlineGhostGraphqlService(GraphQLApiHttpClient client, ConfigService configService)
+    public OnlineGhostGraphqlService(ConfigService configService, IGtrClient gtrClient)
     {
-        _client = client;
         _configService = configService;
+        _gtrClient = gtrClient;
     }
 
-    public async UniTask<Result<List<PersonalBest>>> GetPersonalBests(string levelHash)
+    public async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>> GetPersonalBests(
+        string levelHash)
     {
-        Result<Root> result = await _client.PostAsync<Root>(
-            Query,
-            new
-            {
-                steamId = SteamClient.SteamId.ToString(),
-                hash = levelHash
-            });
+        IOperationResult<IGetPersonalBestGhostsResult> result =
+            await _gtrClient.GetPersonalBestGhosts.ExecuteAsync(SteamClient.SteamId.ToString(), levelHash);
 
-
-        if (result.IsFailed)
+        try
         {
-            return result.ToResult();
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
         }
 
-        return Result.Ok(GetUniquePersonalBests(Map(result.Value)));
-    }
-
-    private List<PersonalBest> GetUniquePersonalBests(PersonalBests personalBests)
-    {
-        List<PersonalBest> uniquePersonalBests = [];
-
-        if (personalBests.Global != null && _configService.ShowGlobalPersonalBest.Value)
-        {
-            uniquePersonalBests.Add(personalBests.Global with { Type = GhostType.Global });
-        }
-
-        return uniquePersonalBests;
+        IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes> nodes = result.Data.PersonalBestGlobals.Nodes;
+        return Result.Ok(nodes);
     }
 
     private class PersonalBests
