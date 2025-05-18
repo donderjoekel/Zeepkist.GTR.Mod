@@ -1,4 +1,4 @@
-﻿query GetPersonalBest($hash: String, $steamId: BigFloat) {
+﻿query GetPersonalBest($hash: String, $steamId: BigInt) {
     personalBestGlobals(
         filter: {
             level: { hash: { equalTo: $hash } }

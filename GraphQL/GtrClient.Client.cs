@@ -54,7 +54,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer, global::StrawberryShake.Serialization.ByteArraySerializer>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer, global::StrawberryShake.Serialization.TimeSpanSerializer>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer, global::StrawberryShake.Serialization.JsonSerializer>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer>(services, new global::StrawberryShake.Serialization.StringSerializer("BigFloat"));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer>(services, new global::StrawberryShake.Serialization.StringSerializer("BigInt"));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializerResolver>(services, sp => new global::StrawberryShake.Serialization.SerializerResolver(global::System.Linq.Enumerable.Concat(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.Serialization.ISerializer>>(parentServices), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.Serialization.ISerializer>>(sp))));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetAdditionalGhostsResultFactory>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(sp));
@@ -3020,7 +3020,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigFloat!], $hash: String) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
@@ -3093,10 +3093,8 @@ namespace TNRD.Zeepkist.GTR
             0x42,
             0x69,
             0x67,
-            0x46,
-            0x6c,
-            0x6f,
-            0x61,
+            0x49,
+            0x6e,
             0x74,
             0x21,
             0x5d,
@@ -3409,7 +3407,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "34d3bfe929488cf7863f6b4b8532f964");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "fa68c6efdf192bbdd762b07bd2887a07");
 
         public override global::System.String ToString()
         {
@@ -3424,7 +3422,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigFloat!], $hash: String) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
@@ -3454,12 +3452,12 @@ namespace TNRD.Zeepkist.GTR
     public partial class GetAdditionalGhostsQuery : global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery
     {
         private readonly global::StrawberryShake.IOperationExecutor<IGetAdditionalGhostsResult> _operationExecutor;
-        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigFloatFormatter;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigIntFormatter;
         private readonly global::StrawberryShake.Serialization.IInputValueFormatter _stringFormatter;
         public GetAdditionalGhostsQuery(global::StrawberryShake.IOperationExecutor<IGetAdditionalGhostsResult> operationExecutor, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             _operationExecutor = operationExecutor ?? throw new global::System.ArgumentNullException(nameof(operationExecutor));
-            _bigFloatFormatter = serializerResolver.GetInputValueFormatter("BigFloat");
+            _bigIntFormatter = serializerResolver.GetInputValueFormatter("BigInt");
             _stringFormatter = serializerResolver.GetInputValueFormatter("String");
         }
 
@@ -3506,7 +3504,7 @@ namespace TNRD.Zeepkist.GTR
                         throw new global::System.ArgumentNullException(nameof(value_elm));
                     }
 
-                    value_list.Add(_bigFloatFormatter.Format(value_elm));
+                    value_list.Add(_bigIntFormatter.Format(value_elm));
                 }
 
                 return value_list;
@@ -3534,7 +3532,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigFloat!], $hash: String) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
@@ -3841,7 +3839,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigFloat) {
+    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -3916,10 +3914,8 @@ namespace TNRD.Zeepkist.GTR
             0x42,
             0x69,
             0x67,
-            0x46,
-            0x6c,
-            0x6f,
-            0x61,
+            0x49,
+            0x6e,
             0x74,
             0x29,
             0x20,
@@ -4101,7 +4097,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "c36ba879e2e1a4242b96e147866d8365");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "1b61d5faa346832d89e8e2de69d63d4c");
 
         public override global::System.String ToString()
         {
@@ -4116,7 +4112,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigFloat) {
+    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -4135,12 +4131,12 @@ namespace TNRD.Zeepkist.GTR
     {
         private readonly global::StrawberryShake.IOperationExecutor<IGetPersonalBestResult> _operationExecutor;
         private readonly global::StrawberryShake.Serialization.IInputValueFormatter _stringFormatter;
-        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigFloatFormatter;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigIntFormatter;
         public GetPersonalBestQuery(global::StrawberryShake.IOperationExecutor<IGetPersonalBestResult> operationExecutor, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             _operationExecutor = operationExecutor ?? throw new global::System.ArgumentNullException(nameof(operationExecutor));
             _stringFormatter = serializerResolver.GetInputValueFormatter("String");
-            _bigFloatFormatter = serializerResolver.GetInputValueFormatter("BigFloat");
+            _bigIntFormatter = serializerResolver.GetInputValueFormatter("BigInt");
         }
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPersonalBestResult);
@@ -4190,7 +4186,7 @@ namespace TNRD.Zeepkist.GTR
             }
             else
             {
-                return _bigFloatFormatter.Format(value);
+                return _bigIntFormatter.Format(value);
             }
         }
 
@@ -4203,7 +4199,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigFloat) {
+    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -4486,7 +4482,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigFloat, $hash: String) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -4564,10 +4560,8 @@ namespace TNRD.Zeepkist.GTR
             0x42,
             0x69,
             0x67,
-            0x46,
-            0x6c,
-            0x6f,
-            0x61,
+            0x49,
+            0x6e,
             0x74,
             0x2c,
             0x20,
@@ -4887,7 +4881,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "026548466ce76ee48c19f076529b8ae5");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "a3deea5a27d8571b5bdea0a035490226");
 
         public override global::System.String ToString()
         {
@@ -4902,7 +4896,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigFloat, $hash: String) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -4932,12 +4926,12 @@ namespace TNRD.Zeepkist.GTR
     public partial class GetPersonalBestGhostsQuery : global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery
     {
         private readonly global::StrawberryShake.IOperationExecutor<IGetPersonalBestGhostsResult> _operationExecutor;
-        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigFloatFormatter;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _bigIntFormatter;
         private readonly global::StrawberryShake.Serialization.IInputValueFormatter _stringFormatter;
         public GetPersonalBestGhostsQuery(global::StrawberryShake.IOperationExecutor<IGetPersonalBestGhostsResult> operationExecutor, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             _operationExecutor = operationExecutor ?? throw new global::System.ArgumentNullException(nameof(operationExecutor));
-            _bigFloatFormatter = serializerResolver.GetInputValueFormatter("BigFloat");
+            _bigIntFormatter = serializerResolver.GetInputValueFormatter("BigInt");
             _stringFormatter = serializerResolver.GetInputValueFormatter("String");
         }
 
@@ -4976,7 +4970,7 @@ namespace TNRD.Zeepkist.GTR
             }
             else
             {
-                return _bigFloatFormatter.Format(value);
+                return _bigIntFormatter.Format(value);
             }
         }
 
@@ -5001,7 +4995,7 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigFloat, $hash: String) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
     ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
@@ -7421,13 +7415,13 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAdditionalGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>
     {
-        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigFloatParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
         public GetAdditionalGhostsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
-            _bigFloatParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigFloat") ?? throw new global::System.ArgumentException("No serializer for type `BigFloat` found.");
+            _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
         }
@@ -7698,13 +7692,13 @@ namespace TNRD.Zeepkist.GTR.State
     public partial class GetPersonalBestBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>
     {
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
-        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigFloatParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
         public GetPersonalBestBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
-            _bigFloatParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigFloat") ?? throw new global::System.ArgumentException("No serializer for type `BigFloat` found.");
+            _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
             _floatParser = serializerResolver.GetLeafValueParser<global::System.Double, global::System.Double>("Float") ?? throw new global::System.ArgumentException("No serializer for type `Float` found.");
         }
 
@@ -7874,13 +7868,13 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>
     {
-        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigFloatParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
         public GetPersonalBestGhostsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
-            _bigFloatParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigFloat") ?? throw new global::System.ArgumentException("No serializer for type `BigFloat` found.");
+            _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
         }
@@ -8055,14 +8049,14 @@ namespace TNRD.Zeepkist.GTR.State
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
-        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigFloatParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         public GetPersonalBestsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
             _floatParser = serializerResolver.GetLeafValueParser<global::System.Double, global::System.Double>("Float") ?? throw new global::System.ArgumentException("No serializer for type `Float` found.");
-            _bigFloatParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigFloat") ?? throw new global::System.ArgumentException("No serializer for type `BigFloat` found.");
+            _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
         }
 
         protected override global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult> ResultDataFactory { get; }

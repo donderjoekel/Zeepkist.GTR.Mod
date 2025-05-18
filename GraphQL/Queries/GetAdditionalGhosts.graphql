@@ -1,4 +1,4 @@
-query GetAdditionalGhosts($ids: [BigFloat!], $hash: String) {
+query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
   personalBestGlobals(
     filter: {
       level: { hash: { equalTo: $hash } }

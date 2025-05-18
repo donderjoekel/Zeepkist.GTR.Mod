@@ -1,4 +1,4 @@
-query GetPersonalBestGhosts($steamId: BigFloat, $hash: String) {
+query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
   personalBestGlobals(
     filter: {
       level: { hash: { equalTo: $hash } }
