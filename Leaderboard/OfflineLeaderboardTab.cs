@@ -197,7 +197,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
         if (_levelPoints.HasValue)
         {
-            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.95, index))})";
+            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.995, index))})";
         }
     }
 }
