@@ -189,6 +189,8 @@ public class OfflineGhostsService : IEagerService
     public void AddAdditionalGhost(string steamId)
     {
         _additionalGhosts.Add(steamId);
+        _ghostPlayer.ClearGhosts();
+        LoadGhosts();
     }
 
     public bool ContainsAdditionalGhost(string steamId)
@@ -199,5 +201,7 @@ public class OfflineGhostsService : IEagerService
     public void RemoveAdditionalGhost(string steamId)
     {
         _additionalGhosts.Remove(steamId);
+        _ghostPlayer.ClearGhosts();
+        LoadGhosts();
     }
 }

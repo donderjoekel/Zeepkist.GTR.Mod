@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>0.39.1</Version>
+        <Version>0.39.3</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -45,8 +45,8 @@
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.1.1762" />
-        <PackageReference Include="ZeepSDK" Version="1.43.0" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
+        <PackageReference Include="ZeepSDK" Version="1.44.3"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -65,12 +65,12 @@
         </None>
     </ItemGroup>
 
-    <Target Name="PDB" AfterTargets="PostBuildEvent">
+    <Target Name="PDB">
         <Message Text="Generating PDB" Importance="high"/>
         <Exec Command="&quot;C:\Program Files\Unity\Hub\Editor\2021.3.10f1\Editor\Data\MonoBleedingEdge\bin\mono.exe&quot; &quot;C:\Program Files\Unity\Hub\Editor\2021.3.10f1\Editor\Data\MonoBleedingEdge\lib\mono\4.5\pdb2mdb.exe&quot; $(TargetPath)"/>
     </Target>
 
-    <Target Name="Package" AfterTargets="PostBuildEvent">
+    <Target Name="Package">
         <Message Text="Packaging Plugin" Importance="high"/>
         <ItemGroup>
             <OutputFiles Include="$(TargetDir)net.tnrd*" Exclude="$(TargetDir)net.tnrd*.zip"/>
@@ -91,8 +91,12 @@
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>
     </Target>
 
-    <Target Name="Compress" AfterTargets="PostBuildEvent">
+    <Target Name="Compress">
         <Message Text="Compressing Plugin" Importance="high"/>
         <Exec Command="&quot;C:\Program Files\7-Zip\7z.exe&quot; a -tzip $(TargetDir)$(AssemblyName)-$(Version).zip $(TargetDir)Package\*"/>
+    </Target>
+
+    <Target Name="PublishPlugin">
+        <CallTarget Targets="PDB;Package;Compress"/>
     </Target>
 </Project>

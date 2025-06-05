@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Messaging;
+using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
 using UnityEngine.Events;
+using ZeepSDK.Extensions;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Leaderboard.Pages;
@@ -20,20 +22,8 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
     private readonly UnityEvent[] _originalEvents = new UnityEvent[16];
     private readonly List<IGetPersonalBests_Records_Nodes> _items = [];
 
-    private static readonly Dictionary<int, double> Fibbonus = new()
-    {
-        { 0, 0.21 },
-        { 1, 0.13 },
-        { 2, 0.08 },
-        { 3, 0.05 },
-        { 4, 0.03 },
-        { 5, 0.02 },
-        { 6, 0.01 },
-        { 7, 0.01 }
-    };
-
-    private int _totalUsers;
     private int _personalBests;
+    private int? _levelPoints;
     private CancellationTokenSource _cancellationTokenSource;
 
     public OfflineLeaderboardTab(
@@ -116,11 +106,23 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
 
     private async UniTaskVoid InitializeAsync()
     {
+        Result<int?> levelPointsResult = await _graphqlService.GetLevelPoints(LevelApi.CurrentHash);
+        if (levelPointsResult.IsFailed)
+        {
+            Logger.LogError("Failed to get level points");
+            levelPointsResult.NotifyErrors();
+            _levelPoints = null;
+        }
+        else
+        {
+            _levelPoints = levelPointsResult.Value;
+        }
+        
         Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(LevelApi.CurrentHash);
         if (personalBestCount.IsFailed)
         {
             Logger.LogError("Failed to get count");
-            // TODO: Handle
+            personalBestCount.NotifyErrors();
             return;
         }
 
@@ -168,7 +170,6 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
             return;
         }
 
-        _totalUsers = userCountResult.Value;
         _items.Clear();
         _items.AddRange(recordsResult.Value.Records.Nodes);
         Draw();
@@ -193,14 +194,10 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
             gui.player_name.text = $"<link=\"{item.User.SteamId}\">{item.User.SteamName}</link>";
 
         gui.time.text = item.Time.GetFormattedTime();
-
-        int placementPoints = Math.Max(0, _personalBests - index);
-        double a = 1d / (_totalUsers / (double)_personalBests);
-        int b = index + 1;
-        double c = index < 8 ? Fibbonus[index] : 0;
-        double points = placementPoints * (1 + a / b) + c;
-
-        gui.pointsWon.gameObject.SetActive(true);
-        gui.pointsWon.text = $"(+{(int)Math.Round(points)})";
+        gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
+        if (_levelPoints.HasValue)
+        {
+            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.95, index))})";
+        }
     }
 }

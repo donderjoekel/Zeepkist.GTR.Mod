@@ -1,7 +1,7 @@
-﻿using System;
+﻿using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TNRD.Zeepkist.GTR.Extensions;
+using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.Utilities;
 using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
@@ -20,12 +20,12 @@ public class WorldRecordCommand : ILocalChatCommand
         "Shows the world record for the current level\n" +
         "Optionally you can pass year, quarter, month, week, or day (or the first letter of the word) as an argument to get it for that timeframe";
 
-    private readonly WorldRecordCommandGraphQlService _service;
+    private readonly RecordHolderGraphqlService _recordHolderGraphqlService;
     private readonly ILogger<WorldRecordCommand> _logger;
 
     public WorldRecordCommand()
     {
-        _service = ServiceHelper.Instance.GetRequiredService<WorldRecordCommandGraphQlService>();
+        _recordHolderGraphqlService = ServiceHelper.Instance.GetRequiredService<RecordHolderGraphqlService>();
         _logger = ServiceHelper.Instance.GetRequiredService<ILogger<WorldRecordCommand>>();
     }
 
@@ -36,7 +36,8 @@ public class WorldRecordCommand : ILocalChatCommand
 
     private async UniTaskVoid HandleAsync(string arguments)
     {
-        Result<WorldRecords> result = await _service.GetWorldRecord(LevelApi.CurrentHash);
+        Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes> result =
+            await _recordHolderGraphqlService.GetWorldRecordHolder(LevelApi.CurrentHash, CancellationToken.None);
 
         if (result.IsFailed)
         {
@@ -45,48 +46,16 @@ public class WorldRecordCommand : ILocalChatCommand
             return;
         }
 
-        WorldRecords worldRecords = result.Value;
-        if (worldRecords.Global == null)
+        IGetWorldRecordHolder_WorldRecordGlobals_Nodes nodes = result.Value;
+
+        if (nodes.Record == null)
         {
             ChatApi.AddLocalMessage("[GTR]No world records set yet");
             return;
         }
 
-        if (string.IsNullOrEmpty(arguments))
-        {
-            ChatApi.SendMessage(
-                "World record: " + worldRecords.Global.Time.GetFormattedTime() + " by " +
-                worldRecords.Global.SteamName);
-        }
-        else if (arguments.EqualsAny(StringComparison.OrdinalIgnoreCase, "year", "y"))
-        {
-            ChatApi.SendMessage(
-                "World record (Year): " + worldRecords.Yearly.Time.GetFormattedTime() + " by " +
-                worldRecords.Yearly.SteamName);
-        }
-        else if (arguments.EqualsAny(StringComparison.OrdinalIgnoreCase, "quarter", "q"))
-        {
-            ChatApi.SendMessage(
-                "World record (Quarter): " + worldRecords.Quarterly.Time.GetFormattedTime() + " by " +
-                worldRecords.Quarterly.SteamName);
-        }
-        else if (arguments.EqualsAny(StringComparison.OrdinalIgnoreCase, "month", "m"))
-        {
-            ChatApi.SendMessage(
-                "World record (Month): " + worldRecords.Monthly.Time.GetFormattedTime() + " by " +
-                worldRecords.Monthly.SteamName);
-        }
-        else if (arguments.EqualsAny(StringComparison.OrdinalIgnoreCase, "week", "w"))
-        {
-            ChatApi.SendMessage(
-                "World record (Week): " + worldRecords.Weekly.Time.GetFormattedTime() + " by " +
-                worldRecords.Weekly.SteamName);
-        }
-        else if (arguments.EqualsAny(StringComparison.OrdinalIgnoreCase, "day", "d"))
-        {
-            ChatApi.SendMessage(
-                "World record (Day): " + worldRecords.Daily.Time.GetFormattedTime() + " by " +
-                worldRecords.Daily.SteamName);
-        }
+        ChatApi.SendMessage(
+            "World record: " + nodes.Record.Time.GetFormattedTime() + " by " +
+            nodes.Record.User!.SteamName);
     }
 }

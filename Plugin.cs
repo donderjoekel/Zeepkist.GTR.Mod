@@ -31,7 +31,7 @@ using ZeepSDK.Storage;
 namespace TNRD.Zeepkist.GTR;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency("ZeepSDK", "1.44.2")]
+[BepInDependency("ZeepSDK", "1.44.3")]
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
@@ -110,7 +110,6 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton<OfflineGhostGraphqlService>();
         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
         services.AddSingleton<RecordHolderGraphqlService>();
-        services.AddSingleton<WorldRecordCommandGraphQlService>();
         services.AddSingleton<ServiceHelper>();
         services.AddSingleton<UserService>();
         services.AddTransient<GhostRecorder>();

@@ -55,10 +55,12 @@ public partial class GhostPlayer : IEagerService
     private static void GetGhost(GhostData ghostData)
     {
         ghostData.GameObject.SetActive(true);
+        ghostData.Visuals.gameObject.SetActive(true);
     }
 
     private static void ReleaseGhost(GhostData ghostData)
     {
+        ghostData.Visuals.gameObject.SetActive(false);
         ghostData.GameObject.SetActive(false);
     }
 
