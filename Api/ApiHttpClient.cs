@@ -139,7 +139,7 @@ public class ApiHttpClient
         {
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             AuthenticationTicket = CreateAuthenticationTicket(),
-            SteamId = SteamClient.SteamId
+            SteamId = SteamClient.SteamId.ToString()
         };
 
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(
@@ -160,7 +160,7 @@ public class ApiHttpClient
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             LoginToken = _accessToken,
             RefreshToken = _refreshToken,
-            SteamId = SteamClient.SteamId
+            SteamId = SteamClient.SteamId.ToString()
         };
 
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
