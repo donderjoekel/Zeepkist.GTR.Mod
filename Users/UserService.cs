@@ -36,7 +36,7 @@ public class UserService
     {
         UpdateDiscordResource resource = new()
         {
-            Id = id
+            Id = id.ToString()
         };
 
         HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateDiscordId", resource);
@@ -65,6 +65,6 @@ public class UserService
 
     private class UpdateDiscordResource
     {
-        public decimal Id { get; set; }
+        public string Id { get; set; }
     }
 }
