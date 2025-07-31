@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 using TNRD.Zeepkist.GTR.Utilities;
 using TNRD.Zeepkist.GTR.Voting;
 using ZeepSDK.Chat;
@@ -6,15 +7,15 @@ using ZeepSDK.ChatCommands;
 
 namespace TNRD.Zeepkist.GTR.Commands.Voting;
 
-public class DownvoteCommand : ILocalChatCommand
+public class NeutralVoteAltCommand : ILocalChatCommand
 {
     private readonly VotingService _votingService;
 
     public string Prefix => string.Empty;
-    public string Command => "-";
-    public string Description => "Submits a downvote for the current map";
+    public string Command => "+-";
+    public string Description => "Submits a neutral vote for the current map";
 
-    public DownvoteCommand()
+    public NeutralVoteAltCommand()
     {
         _votingService = ServiceHelper.Instance.GetRequiredService<VotingService>();
     }
@@ -24,6 +25,6 @@ public class DownvoteCommand : ILocalChatCommand
         if (!string.IsNullOrEmpty(arguments))
             ChatApi.SendMessage(Command + " " + arguments);
         else
-            _votingService.Downvote();
+            _votingService.NeutralVote();
     }
 }

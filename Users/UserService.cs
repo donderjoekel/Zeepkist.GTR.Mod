@@ -17,21 +17,6 @@ public class UserService
         _messengerService = messengerService;
     }
 
-    public async UniTaskVoid UpdateName()
-    {
-        UpdateNameResource resource = new()
-        {
-            Name = SteamClient.Name
-        };
-
-        HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateSteamName", resource);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _messengerService.LogWarning("Failed to update name");
-        }
-    }
-
     public async UniTaskVoid UpdateDiscord(decimal id)
     {
         UpdateDiscordResource resource = new()
@@ -56,11 +41,6 @@ public class UserService
         {
             _messengerService.LogWarning("Failed to update discord");
         }
-    }
-
-    private class UpdateNameResource
-    {
-        public string Name { get; set; } = null!;
     }
 
     private class UpdateDiscordResource

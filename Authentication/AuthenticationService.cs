@@ -45,7 +45,6 @@ public class AuthenticationService : IEagerService
         if (await _apiHttpClient.Login())
         {
             _messengerService.LogSuccess("Logged in!");
-            _userService.UpdateName().Forget();
         }
         else
         {

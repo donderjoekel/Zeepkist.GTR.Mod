@@ -168,7 +168,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
         gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
         if (_levelPoints.HasValue)
         {
-            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.995, index))})";
+            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.985, index))})";
         }
     }
 }

@@ -12,7 +12,7 @@ public class UpvoteCommand : ILocalChatCommand
 
     public string Prefix => string.Empty;
     public string Command => "+";
-    public string Description => "Upvotes the current map";
+    public string Description => "Submits an upvote for the current map";
 
     public UpvoteCommand()
     {
