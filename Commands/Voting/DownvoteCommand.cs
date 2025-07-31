@@ -12,7 +12,7 @@ public class DownvoteCommand : ILocalChatCommand
 
     public string Prefix => string.Empty;
     public string Command => "-";
-    public string Description => "Downvotes the current map";
+    public string Description => "Submits a downvote for the current map";
 
     public DownvoteCommand()
     {

@@ -13,7 +13,7 @@ public class DoubleDownvoteCommand : ILocalChatCommand
 
     public string Prefix => string.Empty;
     public string Command => "--";
-    public string Description => "Double downvotes the current map";
+    public string Description => "Submits a double downvote for the current map";
 
     public DoubleDownvoteCommand()
     {

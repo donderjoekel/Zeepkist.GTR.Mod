@@ -12,7 +12,7 @@ public class DoubleUpvoteCommand : ILocalChatCommand
 
     public string Prefix => string.Empty;
     public string Command => "++";
-    public string Description => "Double upvotes the current map";
+    public string Description => "Submits a double upvote for the current map";
 
     public DoubleUpvoteCommand()
     {

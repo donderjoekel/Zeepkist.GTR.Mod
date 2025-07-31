@@ -44,47 +44,83 @@ public class VotingService : IEagerService
 
         if (currentTimeLeft == TIME_LEFT && _previousTimeLeft != TIME_LEFT)
         {
-            ChatApi.AddLocalMessage("Time to cast your vote! (-- - + ++)");
+            ChatApi.AddLocalMessage(
+                "<color=#FFFF00>Cast your vote for ZeepCentral:</color> " +
+                "<size=75%>" +
+                "<size=50%><i>(hated it)</i></size> " +
+                "<b><color=#FF0000>--</color></b> " +
+                "<b><color=#FF8000>-</color></b> " +
+                "<b><color=#FFFF00>-+</color>/<color=#FFFF00>+-</color></b> " +
+                "<b><color=#80FF00>+</color></b> " +
+                "<b><color=#00FF00>++</color></b> " +
+                "<size=50%><i>(loved it)</i></size>" +
+                "</size>"
+            );
+
         }
 
         _previousTimeLeft = currentTimeLeft;
     }
 
+    private void OnVoteSuccess(string vote)
+    {
+        MessengerApi.LogSuccess($"Voted {vote}");
+    }
+
+    private void OnVoteFail(string vote)
+    {
+        MessengerApi.LogError($"Vote {vote} failed");
+    }
+
     public void DoubleDownvote()
     {
-        VoteAsync("ddownvote",
-                () => { MessengerApi.LogSuccess("--'d successfully"); },
-                () => { MessengerApi.LogError("Failed to --"); })
-            .Forget();
+        VoteAsync(
+            -2,
+            () => { OnVoteSuccess("--"); },
+            () => { OnVoteFail("--"); }
+        ).Forget();
     }
 
     public void DoubleUpvote()
     {
-        VoteAsync("dupvote",
-                () => { MessengerApi.LogSuccess("++'d successfully"); },
-                () => { MessengerApi.LogError("Failed to ++"); })
-            .Forget();
+        VoteAsync(
+            2,
+            () => { OnVoteSuccess("++"); },
+            () => { OnVoteFail("++"); }
+        ).Forget();
     }
 
     public void Downvote()
     {
-        VoteAsync("downvote",
-                () => { MessengerApi.LogSuccess("-'d successfully"); },
-                () => { MessengerApi.LogError("Failed to -"); })
-            .Forget();
+        VoteAsync(
+            -1,
+            () => { OnVoteSuccess("-"); },
+            () => { OnVoteFail("-"); }
+        ).Forget();
     }
 
     public void Upvote()
     {
-        VoteAsync("upvote",
-                () => { MessengerApi.LogSuccess("+'d successfully"); },
-                () => { MessengerApi.LogError("Failed to +"); })
-            .Forget();
+        VoteAsync(
+            1,
+            () => { OnVoteSuccess("+"); },
+            () => { OnVoteFail("+"); }
+        ).Forget();
     }
 
-    private async UniTaskVoid VoteAsync(string path, Action onSuccess, Action onFail)
+    public void NeutralVote()
+    {
+        VoteAsync(
+            0,
+            () => { OnVoteSuccess("-+/+-"); },
+            () => { OnVoteFail("-+/+-"); }
+        ).Forget();
+    }
+
+    private async UniTaskVoid VoteAsync(int voteValue, Action onSuccess, Action onFail)
     {
         string currentHash = LevelApi.CurrentHash;
+
         if (string.IsNullOrEmpty(currentHash))
         {
             _logger.LogError("Unable to vote because current level hash is empty");
@@ -92,8 +128,14 @@ public class VotingService : IEagerService
             return;
         }
 
-        HttpResponseMessage response =
-            await _apiHttpClient.PostAsync($"vote/{path}", new VoteResource { Level = currentHash });
+        HttpResponseMessage response = await _apiHttpClient.PostAsync(
+            $"vote/submit",
+            new VoteResource
+            {
+                Level = currentHash,
+                Value = voteValue
+            }
+        );
 
         try
         {
