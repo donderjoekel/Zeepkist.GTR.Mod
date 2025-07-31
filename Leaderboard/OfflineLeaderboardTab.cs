@@ -117,7 +117,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         {
             _levelPoints = levelPointsResult.Value;
         }
-        
+
         Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(LevelApi.CurrentHash);
         if (personalBestCount.IsFailed)
         {
@@ -151,7 +151,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
 
         (Result<IGetPersonalBestsResult> recordsResult, Result<int> userCountResult) =
             await UniTask.WhenAll(recordsTask, userCountTask);
-        
+
 
         if (ct.IsCancellationRequested)
             return;
@@ -197,7 +197,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab
         gui.pointsWon.gameObject.SetActive(_levelPoints.HasValue);
         if (_levelPoints.HasValue)
         {
-            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.995, index))})";
+            gui.pointsWon.text = $"(+{(int)Math.Round(_levelPoints.Value * Math.Pow(0.985, index))})";
         }
     }
 }
