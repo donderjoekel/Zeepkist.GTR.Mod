@@ -21,6 +21,11 @@ public class ApiHttpClient
     private readonly AsyncPolicy<HttpResponseMessage> _wrappedPolicy;
     private readonly AsyncPolicy<HttpResponseMessage> _failurePolicy;
 
+    private readonly string _gameMajorVersion;
+    private readonly string _gameVersion;
+    private readonly string _modVersion;
+    private readonly string _steamId;
+
     private string _accessToken;
     private string _refreshToken;
     private DateTimeOffset _accessTokenExpiry = DateTimeOffset.MinValue;
@@ -34,6 +39,11 @@ public class ApiHttpClient
         _httpClient = httpClient;
         _logger = logger;
         _httpClient.BaseAddress = new Uri(configService.BackendUrl.Value);
+
+        _gameMajorVersion = PlayerManager.Instance.version.version.ToString();
+        _gameVersion = $"{_gameMajorVersion}.{PlayerManager.Instance.version.patch}";
+        _modVersion = MyPluginInfo.PLUGIN_VERSION;
+        _steamId = SteamClient.SteamId.ToString();
 
         _failurePolicy = Policy
             .Handle<Exception>()
@@ -111,7 +121,7 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, url);
-                request.Headers.Add("Authorization", "Bearer " + _accessToken);
+                AddHeaders(request, true);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
@@ -146,6 +156,7 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, "auth/login");
+                AddHeaders(request, false);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
@@ -166,6 +177,7 @@ public class ApiHttpClient
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
         {
             HttpRequestMessage request = new(HttpMethod.Post, "auth/refresh");
+            AddHeaders(request, false);
             string json = JsonConvert.SerializeObject(data);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
             return _httpClient.SendAsync(request);
@@ -199,5 +211,18 @@ public class ApiHttpClient
         _refreshToken = null;
         _accessTokenExpiry = DateTimeOffset.MinValue;
         _refreshTokenExpiry = DateTimeOffset.MinValue;
+    }
+
+    private void AddHeaders(HttpRequestMessage request, bool isAuthenticated)
+    {
+        request.Headers.Add("X-Zeepkist-Version", _gameVersion);
+        request.Headers.Add("X-Zeepkist-Major-Version", _gameMajorVersion);
+        request.Headers.Add("X-GTR-Version", _modVersion);
+        request.Headers.Add("X-Steam-ID", _steamId);
+
+        if (isAuthenticated)
+        {
+            request.Headers.Add("Authorization", "Bearer " + _accessToken);
+        }
     }
 }
