@@ -22,12 +22,6 @@ public class GraphQLApiHttpClient
     private readonly AsyncPolicy<HttpResponseMessage> _policy;
     private readonly JsonSerializerSettings _settings;
 
-    // Cached header values
-    private readonly string _gameMajorVersion;
-    private readonly string _gameVersion;
-    private readonly string _modVersion;
-    private readonly string _steamId;
-
     public GraphQLApiHttpClient(
         HttpClient httpClient,
         ConfigService configService,
@@ -43,12 +37,6 @@ public class GraphQLApiHttpClient
                 new JsonPathConverter()
             }
         };
-
-        // Initialise cached header values
-        _gameMajorVersion = PlayerManager.Instance.version.version.ToString();
-        _gameVersion = $"{_gameMajorVersion}.{PlayerManager.Instance.version.patch}";
-        _modVersion = MyPluginInfo.PLUGIN_VERSION;
-        _steamId = SteamClient.SteamId.ToString();
 
         _policy = Policy
             .Handle<Exception>()
@@ -119,9 +107,14 @@ public class GraphQLApiHttpClient
 
     private void AddHeaders(HttpRequestMessage request)
     {
-        request.Headers.Add("X-Zeepkist-Version", _gameVersion);
-        request.Headers.Add("X-Zeepkist-Major-Version", _gameMajorVersion);
-        request.Headers.Add("X-GTR-Version", _modVersion);
-        request.Headers.Add("X-Steam-ID", _steamId);
+        string gameMajorVersion = PlayerManager.Instance?.version?.version.ToString();
+        string gameVersion = $"{gameMajorVersion}.{PlayerManager.Instance?.version?.patch}";
+        string modVersion = MyPluginInfo.PLUGIN_VERSION ?? "unknown";
+        string steamId = SteamClient.SteamId.ToString();
+
+        request.Headers.Add("X-Zeepkist-Version", gameVersion);
+        request.Headers.Add("X-Zeepkist-Major-Version", gameMajorVersion);
+        request.Headers.Add("X-GTR-Version", modVersion);
+        request.Headers.Add("X-Steam-ID", steamId);
     }
 }
