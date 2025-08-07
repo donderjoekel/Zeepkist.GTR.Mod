@@ -50,7 +50,7 @@ public class WorldRecordCommand : ILocalChatCommand
 
         if (nodes.Record == null)
         {
-            ChatApi.AddLocalMessage("[GTR]No world records set yet");
+            ChatApi.AddLocalMessage("[GTR] No world record set yet");
             return;
         }
 

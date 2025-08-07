@@ -122,7 +122,14 @@ public class Plugin : BaseUnityPlugin
         services.AddHttpClient<GraphQLApiHttpClient>();
         services.AddHttpClient();
         services.AddGtrClient()
-            .ConfigureHttpClient(x => x.BaseAddress = new Uri("https://graphql.zeepki.st"));
+            .ConfigureHttpClient(client =>
+            {
+                client.BaseAddress = new Uri("https://graphql.zeepki.st");
+                client.DefaultRequestHeaders.Add("X-Zeepkist-Version", $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}");
+                client.DefaultRequestHeaders.Add("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
+                client.DefaultRequestHeaders.Add("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
+                client.DefaultRequestHeaders.Add("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
+            });
     }
 
     private async UniTaskVoid StopHost()
