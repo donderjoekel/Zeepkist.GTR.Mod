@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Caching.Memory;
 using StrawberryShake;
-using TNRD.Zeepkist.GTR.Api;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -13,13 +12,11 @@ public class LeaderboardGraphqlService
 {
     private readonly IGtrClient _gtrClient;
     private readonly IMemoryCache _cache;
-    private readonly GraphQLApiHttpClient _client;
 
-    public LeaderboardGraphqlService(IGtrClient gtrClient, IMemoryCache cache, GraphQLApiHttpClient client)
+    public LeaderboardGraphqlService(IGtrClient gtrClient, IMemoryCache cache)
     {
         _gtrClient = gtrClient;
         _cache = cache;
-        _client = client;
     }
 
     public async UniTask<Result<int>> GetPersonalBestCount(string levelHash, CancellationToken ct = default)

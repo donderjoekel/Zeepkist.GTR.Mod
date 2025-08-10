@@ -14,60 +14,20 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class GhostRepository
 {
-    private const string GetGhostByRecordIdQuery
-        = "query($id:Int){allRecordMedias(filter:{recordByIdRecord:{id:{equalTo:$id}}}){nodes{ghostUrl}}}";
-
-    [JsonConverter(typeof(JsonPathConverter))]
-    private class GetGhostByRecordIdResponse
-    {
-        [JsonProperty("data.allRecordMedias.nodes[0].ghostUrl")]
-        public string GhostUrl { get; set; }
-    }
-
-    private readonly GraphQLApiHttpClient _client;
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
     private readonly ConfigService _configService;
 
     public GhostRepository(
-        GraphQLApiHttpClient client,
         IModStorage modStorage,
         GhostReaderFactory ghostReaderFactory,
         HttpClient httpClient, ConfigService configService)
     {
-        _client = client;
         _modStorage = modStorage;
         _ghostReaderFactory = ghostReaderFactory;
         _httpClient = httpClient;
         _configService = configService;
-    }
-
-    public async UniTask<Result<IGhost>> GetGhost(int recordId)
-    {
-        if (TryGetGhostFromDisk(recordId, out IGhost ghost))
-        {
-            return Result.Ok(ghost);
-        }
-
-        Result<GetGhostByRecordIdResponse> result = await _client.PostAsync<GetGhostByRecordIdResponse>(
-            GetGhostByRecordIdQuery,
-            new
-            {
-                id = recordId
-            });
-
-        if (result.IsFailed)
-        {
-            return result.ToResult();
-        }
-
-        if (string.IsNullOrEmpty(result.Value.GhostUrl))
-        {
-            return Result.Fail("Ghost URL is empty");
-        }
-
-        return await GetGhost(recordId, result.Value.GhostUrl);
     }
 
     public async UniTask<Result<IGhost>> GetGhost(int recordId, string ghostUrl)

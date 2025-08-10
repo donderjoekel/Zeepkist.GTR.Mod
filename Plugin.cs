@@ -119,8 +119,7 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V3Reader>();
         services.AddTransient<V4Reader>();
         services.AddTransient<V5Reader>();
-        services.AddHttpClient<ApiHttpClient>();
-        services.AddHttpClient<GraphQLApiHttpClient>();
+        services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
