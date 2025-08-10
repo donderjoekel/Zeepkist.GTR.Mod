@@ -45,7 +45,7 @@ public class VotingService : IEagerService
         if (currentTimeLeft == TIME_LEFT && _previousTimeLeft != TIME_LEFT)
         {
             ChatApi.AddLocalMessage(
-                "<color=#FFFF00>Cast your vote for ZeepCentral:</color> " +
+                "<color=#FFFF00>Cast your vote for ZeepCentraal:</color> " +
                 "<size=75%>" +
                 "<size=50%><i>(hated it)</i></size> " +
                 "<b><color=#FF0000>--</color></b> " +
