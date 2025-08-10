@@ -209,16 +209,6 @@ public class ApiHttpClient
 
     private void AddHeaders(HttpRequestMessage request, bool isAuthenticated)
     {
-        string gameMajorVersion = PlayerManager.Instance?.version?.version.ToString();
-        string gameVersion = $"{gameMajorVersion}.{PlayerManager.Instance?.version?.patch}";
-        string modVersion = MyPluginInfo.PLUGIN_VERSION ?? "unknown";
-        string steamId = SteamClient.SteamId.ToString();
-
-        request.Headers.Add("X-Zeepkist-Version", gameVersion);
-        request.Headers.Add("X-Zeepkist-Major-Version", gameMajorVersion);
-        request.Headers.Add("X-GTR-Version", modVersion);
-        request.Headers.Add("X-Steam-ID", steamId);
-
         if (isAuthenticated)
         {
             request.Headers.Add("Authorization", "Bearer " + _accessToken);
