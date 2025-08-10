@@ -111,7 +111,7 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, url);
-                request.Headers.Add("Authorization", "Bearer " + _accessToken);
+                AddHeaders(request, true);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
@@ -146,6 +146,7 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, "auth/login");
+                AddHeaders(request, false);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 return _httpClient.SendAsync(request);
@@ -166,6 +167,7 @@ public class ApiHttpClient
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
         {
             HttpRequestMessage request = new(HttpMethod.Post, "auth/refresh");
+            AddHeaders(request, false);
             string json = JsonConvert.SerializeObject(data);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
             return _httpClient.SendAsync(request);
@@ -199,5 +201,23 @@ public class ApiHttpClient
         _refreshToken = null;
         _accessTokenExpiry = DateTimeOffset.MinValue;
         _refreshTokenExpiry = DateTimeOffset.MinValue;
+    }
+
+    private void AddHeaders(HttpRequestMessage request, bool isAuthenticated)
+    {
+        string gameMajorVersion = PlayerManager.Instance?.version?.version.ToString();
+        string gameVersion = $"{gameMajorVersion}.{PlayerManager.Instance?.version?.patch}";
+        string modVersion = MyPluginInfo.PLUGIN_VERSION ?? "unknown";
+        string steamId = SteamClient.SteamId.ToString();
+
+        request.Headers.Add("X-Zeepkist-Version", gameVersion);
+        request.Headers.Add("X-Zeepkist-Major-Version", gameMajorVersion);
+        request.Headers.Add("X-GTR-Version", modVersion);
+        request.Headers.Add("X-Steam-ID", steamId);
+
+        if (isAuthenticated)
+        {
+            request.Headers.Add("Authorization", "Bearer " + _accessToken);
+        }
     }
 }
