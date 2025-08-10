@@ -51,6 +51,8 @@ public class Plugin : BaseUnityPlugin
     {
         try
         {
+            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+            
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
             builder.UseSerilog((context, provider, configuration) =>
