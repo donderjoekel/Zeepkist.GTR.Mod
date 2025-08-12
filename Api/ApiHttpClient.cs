@@ -16,7 +16,9 @@ namespace TNRD.Zeepkist.GTR.Api;
 
 public class ApiHttpClient
 {
-    private readonly HttpClient _httpClient;
+    public const string ClientKey = "API";
+    
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ApiHttpClient> _logger;
     private readonly AsyncPolicy<HttpResponseMessage> _wrappedPolicy;
     private readonly AsyncPolicy<HttpResponseMessage> _failurePolicy;
@@ -29,11 +31,10 @@ public class ApiHttpClient
     private bool NeedsLogin => string.IsNullOrEmpty(_accessToken) || DateTimeOffset.UtcNow > _refreshTokenExpiry;
     private bool NeedsRefresh => DateTimeOffset.UtcNow > _accessTokenExpiry;
 
-    public ApiHttpClient(HttpClient httpClient, ConfigService configService, ILogger<ApiHttpClient> logger)
+    public ApiHttpClient(IHttpClientFactory httpClientFactory, ILogger<ApiHttpClient> logger)
     {
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _httpClient.BaseAddress = new Uri(configService.BackendUrl.Value);
 
         _failurePolicy = Policy
             .Handle<Exception>()
@@ -111,10 +112,11 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, url);
-                request.Headers.Add("Authorization", "Bearer " + _accessToken);
+                AddHeaders(request, true);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                return _httpClient.SendAsync(request);
+                var httpClient = _httpClientFactory.CreateClient(ClientKey);
+                return httpClient.SendAsync(request);
             });
     }
 
@@ -146,9 +148,11 @@ public class ApiHttpClient
             () =>
             {
                 HttpRequestMessage request = new(HttpMethod.Post, "auth/login");
+                AddHeaders(request, false);
                 string json = JsonConvert.SerializeObject(data);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                return _httpClient.SendAsync(request);
+                var httpClient = _httpClientFactory.CreateClient(ClientKey);
+                return httpClient.SendAsync(request);
             });
         return await ProcessAuthenticationResponse(response);
     }
@@ -166,9 +170,11 @@ public class ApiHttpClient
         HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
         {
             HttpRequestMessage request = new(HttpMethod.Post, "auth/refresh");
+            AddHeaders(request, false);
             string json = JsonConvert.SerializeObject(data);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-            return _httpClient.SendAsync(request);
+            var httpClient = _httpClientFactory.CreateClient(ClientKey);
+            return httpClient.SendAsync(request);
         });
         return await ProcessAuthenticationResponse(response);
     }
@@ -199,5 +205,13 @@ public class ApiHttpClient
         _refreshToken = null;
         _accessTokenExpiry = DateTimeOffset.MinValue;
         _refreshTokenExpiry = DateTimeOffset.MinValue;
+    }
+
+    private void AddHeaders(HttpRequestMessage request, bool isAuthenticated)
+    {
+        if (isAuthenticated)
+        {
+            request.Headers.Add("Authorization", "Bearer " + _accessToken);
+        }
     }
 }

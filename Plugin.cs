@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -50,6 +51,8 @@ public class Plugin : BaseUnityPlugin
     {
         try
         {
+            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+            
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
             builder.UseSerilog((context, provider, configuration) =>
@@ -118,11 +121,29 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V3Reader>();
         services.AddTransient<V4Reader>();
         services.AddTransient<V5Reader>();
-        services.AddHttpClient<ApiHttpClient>();
-        services.AddHttpClient<GraphQLApiHttpClient>();
+        services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
+        services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
+        {
+            var configService = provider.GetRequiredService<ConfigService>();
+            client.BaseAddress = new Uri(configService.BackendUrl.Value);
+            AddDefaultHeaders(client);
+        });
         services.AddGtrClient()
-            .ConfigureHttpClient(x => x.BaseAddress = new Uri("https://graphql.zeepki.st"));
+            .ConfigureHttpClient((provider,client) =>
+            {
+                var configService = provider.GetRequiredService<ConfigService>();
+                client.BaseAddress = new Uri(configService.GraphQlUrl.Value);
+                AddDefaultHeaders(client);
+            });
+    }
+
+    private static void AddDefaultHeaders(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Add("X-Zeepkist-Version", $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}");
+        client.DefaultRequestHeaders.Add("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
+        client.DefaultRequestHeaders.Add("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
+        client.DefaultRequestHeaders.Add("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
     }
 
     private async UniTaskVoid StopHost()

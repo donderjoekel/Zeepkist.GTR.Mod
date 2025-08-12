@@ -234,21 +234,21 @@ public class ConfigService : IEagerService
     {
         BackendUrl = config.Bind(
             "5. URLs",
-            "1. The Backend API address",
+            "1. The Backend API URL",
             "https://backend.zeepki.st",
             "Allows you to set a custom API address\n" +
             "Changing this requires a restart of the game");
 
         CdnUrl = config.Bind(
             "5. URLs",
-            "2. The CDN address",
+            "2. The CDN URL",
             "https://cdn.zeepki.st",
             "Allows you to set a custom CDN address\n" +
             "Changing this requires a restart of the game");
 
         GraphQlUrl = config.Bind(
             "5. URLs",
-            "3. The GraphQL address",
+            "3. The GraphQL URL",
             "https://graphql.zeepki.st",
             "Allows you to set a custom GraphQL address\n" +
             "Changing this requires a restart of the game");
