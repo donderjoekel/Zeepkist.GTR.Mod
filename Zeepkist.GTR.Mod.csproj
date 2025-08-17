@@ -23,8 +23,8 @@
 
     <ItemGroup>
         <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
-        <PackageReference Include="BepInEx.Core" Version="5.4.21" />
-        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+        <PackageReference Include="BepInEx.Core" Version="5.4.21" PrivateAssets="all" />
+        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" PrivateAssets="all" />
         <PackageReference Include="EasyCompressor" Version="2.1.0" />
         <PackageReference Include="EasyCompressor.LZMA" Version="2.1.0" />
         <PackageReference Include="GraphQL.Client" Version="6.1.0" />
@@ -45,8 +45,8 @@
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" />
-        <PackageReference Include="ZeepSDK" Version="1.45.4" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
+        <PackageReference Include="ZeepSDK" Version="1.45.4" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
