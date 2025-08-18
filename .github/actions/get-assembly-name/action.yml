@@ -1,0 +1,43 @@
+name: Get AssemblyName from csproj
+description: Reads <AssemblyName> (or falls back to <RootNamespace> / file name) from a .csproj.
+
+inputs:
+  csproj:
+    description: Path to the .csproj file
+    required: true
+
+outputs:
+  assembly_name:
+    description: Resolved assembly name
+    value: ${{ steps.assemblyname.outputs.assembly_name }}
+
+runs:
+  using: composite
+  steps:
+    - id: assemblyname
+      shell: pwsh
+      run: |
+        $projPath = "${{ inputs.csproj }}"
+        if (-not $projPath.EndsWith('.csproj')) { $projPath = "$projPath.csproj" }
+
+        if (-not (Test-Path -LiteralPath $projPath)) {
+          throw "csproj not found at path: $projPath"
+        }
+
+        [xml]$proj = Get-Content -Raw -LiteralPath $projPath
+
+        # Read <AssemblyName> then <RootNamespace> (first match), fall back to file name
+        $node = $proj.SelectSingleNode('/Project/PropertyGroup/AssemblyName')
+        $assemblyName = if ($node) { $node.InnerText } else { $null }
+
+        if ([string]::IsNullOrWhiteSpace($assemblyName)) {
+          $node = $proj.SelectSingleNode('/Project/PropertyGroup/RootNamespace')
+          $assemblyName = if ($node) { $node.InnerText } else { $null }
+        }
+
+        if ([string]::IsNullOrWhiteSpace($assemblyName)) {
+          $assemblyName = [System.IO.Path]::GetFileNameWithoutExtension($projPath)
+        }
+
+        # Emit output
+        "assembly_name=$assemblyName" >> $env:GITHUB_OUTPUT
