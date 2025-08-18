@@ -1,0 +1,77 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+env:
+  GAME_ID: 3213
+  MOD_ID: 5178021
+
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - name: Extract version (trim leading v)
+        run: |
+          $raw = "${{ github.event.release.tag_name }}"
+          $version = $raw -replace '^v',''
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Detect csproj
+        id: csproj
+        uses: ./.github/actions/detect-csproj
+
+      - name: Set CSProj Version
+        uses: KageKirin/set-csproj-version@v1.0.0
+        with:
+          file: ${{ steps.csproj.outputs.csproj_name }}.csproj
+          version: ${{ env.VERSION }}
+
+      - name: Publish
+        run: dotnet publish --artifacts-path "C:\out"
+
+      - name: Get AssemblyName
+        id: asm
+        uses: ./.github/actions/get-assembly-name
+        with:
+          csproj: ${{ steps.csproj.outputs.csproj_name }}
+
+      - name: Remove msstore source
+        run: winget source remove msstore
+
+      - name: Install Mono
+        run: winget install -e --id Mono.Mono --accept-package-agreements --accept-source-agreements --disable-interactivity
+
+      - name: PDB2MDB
+        shell: cmd
+        run: >
+          "C:\Program Files\Mono\bin\pdb2mdb.bat"
+          "C:\out\publish\${{ steps.csproj.outputs.csproj_name }}\debug\${{ steps.asm.outputs.assembly_name }}.dll"
+
+      - name: Zip build
+        shell: pwsh
+        run: |
+          $src = "C:\out\publish\${{ steps.csproj.outputs.csproj_name }}\debug"
+          $dst = "C:\out\build-${{ env.VERSION }}.zip"
+          if (Test-Path $dst) { Remove-Item $dst -Force }
+          Compress-Archive -Path "$src\*" -DestinationPath $dst -Force
+
+      - name: Upload mod to mod.io
+        uses: Thundernerd/upload-mod-to-modio@v1.0.0
+        with:
+          bearer-token: ${{ secrets.MODIO_BEARER }}
+          game-id: ${{ env.GAME_ID }}
+          mod-id: ${{ env.MOD_ID }}
+          active: true
+          changelog: ${{ github.event.release.body }}
+          file-path: 'C:\out\build-${{ env.VERSION }}.zip'
+          version: ${{ env.VERSION }}
