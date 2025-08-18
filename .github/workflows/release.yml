@@ -6,7 +6,7 @@ on:
 
 env:
   GAME_ID: 3213
-  MOD_ID: 5178021
+  MOD_ID: 2948039
 
 jobs:
   build:
