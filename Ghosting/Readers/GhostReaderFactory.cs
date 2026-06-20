@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.IO.Compression;
 using EasyCompressor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
@@ -18,89 +19,65 @@ public class GhostReaderFactory
         _provider = provider;
     }
 
-    public IGhostReader GetReader(byte[] buffer)
+    public IGhost Read(byte[] buffer)
     {
         if (buffer == null || buffer.Length < sizeof(int) || buffer.Length > GhostLimits.MaxCompressedBytes)
             throw new InvalidDataException("Ghost data has invalid compressed size.");
 
-        int version = GetVersion(buffer);
-        _logger.LogInformation("Ghost version: {Version}", version);
-
-        switch (version)
+        byte[] payload;
+        if (IsGZip(buffer))
         {
-            case 1:
-                return _provider.GetService<V1Reader>();
-            case 2:
-                return _provider.GetService<V2Reader>();
-            case 3:
-                return _provider.GetService<V3Reader>();
-            case 4:
-                return _provider.GetService<V4Reader>();
-            case 5:
-                return _provider.GetService<V5Reader>();
-            default:
-                throw new NotSupportedException($"Version {version} is not supported.");
-        }
-    }
-
-    private int GetVersion(byte[] buffer)
-    {
-        if (IsLZMA(buffer, out _))
-        {
-            return 5;
-        }
-
-        if (IsGZipped(buffer, out byte[] decompressed))
-        {
-            using BinaryReader reader = new(new MemoryStream(decompressed));
-            return reader.ReadInt32();
+            payload = DecompressGZip(buffer);
         }
         else
         {
-            using MemoryStream stream = new(buffer);
-            using BinaryReader reader = new(stream);
-            return reader.ReadInt32();
+            int rawVersion = ReadVersion(buffer);
+            payload = rawVersion is >= 1 and <= 4 ? buffer : DecompressLzma(buffer);
         }
+
+        int version = ReadVersion(payload);
+        return GetReader(version).Read(payload);
     }
 
-    private static bool IsLZMA(byte[] buffer, out byte[] decompressed)
+    private IGhostReader GetReader(int version)
     {
-        try
+        _logger.LogInformation("Ghost version: {Version}", version);
+        return version switch
         {
-            using MemoryStream input = new(buffer, false);
-            using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
-            LZMACompressor.Shared.Decompress(input, output);
-            decompressed = output.ToArray();
-            return true;
-        }
-        catch
-        {
-            decompressed = null;
-            return false;
-        }
+            1 => _provider.GetRequiredService<V1Reader>(),
+            2 => _provider.GetRequiredService<V2Reader>(),
+            3 => _provider.GetRequiredService<V3Reader>(),
+            4 => _provider.GetRequiredService<V4Reader>(),
+            5 => _provider.GetRequiredService<V5Reader>(),
+            _ => throw new NotSupportedException($"Version {version} is not supported.")
+        };
     }
 
-    private static bool IsGZipped(byte[] buffer, out byte[] decompressed)
+    private static int ReadVersion(byte[] buffer)
     {
-        if (buffer.Length < 2 || buffer[0] != 0x1f || buffer[1] != 0x8b)
-        {
-            decompressed = null;
-            return false;
-        }
+        if (buffer.Length < sizeof(int))
+            throw new InvalidDataException("Ghost data is truncated.");
+        using BinaryReader reader = new(new MemoryStream(buffer, false));
+        return reader.ReadInt32();
+    }
 
-        try
-        {
-            using MemoryStream input = new(buffer, false);
-            using GZipStream gzip = new(input, CompressionMode.Decompress);
-            using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
-            gzip.CopyTo(output);
-            decompressed = output.ToArray();
-            return true;
-        }
-        catch
-        {
-            decompressed = null;
-            return false;
-        }
+    private static bool IsGZip(byte[] buffer) =>
+        buffer.Length >= 2 && buffer[0] == 0x1f && buffer[1] == 0x8b;
+
+    private static byte[] DecompressGZip(byte[] buffer)
+    {
+        using MemoryStream input = new(buffer, false);
+        using GZipStream gzip = new(input, CompressionMode.Decompress);
+        using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+        gzip.CopyTo(output);
+        return output.ToArray();
+    }
+
+    private static byte[] DecompressLzma(byte[] buffer)
+    {
+        using MemoryStream input = new(buffer, false);
+        using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+        LZMACompressor.Shared.Decompress(input, output);
+        return output.ToArray();
     }
 }

@@ -86,7 +86,7 @@ public class GhostRepository
         if (buffer == null || buffer.Length == 0 || buffer.Length > GhostLimits.MaxCompressedBytes)
             throw new InvalidDataException("Ghost data has invalid compressed size.");
 
-        IGhost ghost = _ghostReaderFactory.GetReader(buffer).Read(buffer);
+        IGhost ghost = _ghostReaderFactory.Read(buffer);
         return ghost ?? throw new InvalidDataException("Ghost reader returned no ghost.");
     }
 
