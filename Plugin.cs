@@ -102,7 +102,6 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<UnhandledExceptionLoggerService>();
         services.AddEagerService<VotingService>();
         services.AddSingleton<AssetService>();
-        services.AddSingleton<GhostRepository>();
         services.AddSingleton<GhostReaderFactory>();
         services.AddSingleton<GhostRecorderFactory>();
         services.AddSingleton<LeaderboardGraphqlService>();
@@ -123,17 +122,30 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V5Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
+        services.AddHttpClient(GhostRepository.ClientKey, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddSingleton(provider =>
+            new GhostRepository(
+                provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
+                provider.GetRequiredService<GhostReaderFactory>(),
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey),
+                provider.GetRequiredService<ConfigService>()));
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();
-            client.BaseAddress = new Uri(configService.BackendUrl.Value);
+            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.BackendUrl.Value, "Backend API URL");
+            client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
         services.AddGtrClient()
             .ConfigureHttpClient((provider,client) =>
             {
                 var configService = provider.GetRequiredService<ConfigService>();
-                client.BaseAddress = new Uri(configService.GraphQlUrl.Value);
+                client.BaseAddress =
+                    ServiceUriValidator.ParseBaseAddress(configService.GraphQlUrl.Value, "GraphQL URL");
+                client.Timeout = TimeSpan.FromSeconds(30);
                 AddDefaultHeaders(client);
             });
     }

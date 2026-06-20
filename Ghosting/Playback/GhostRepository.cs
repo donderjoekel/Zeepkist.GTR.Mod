@@ -13,6 +13,8 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class GhostRepository
 {
+    public const string ClientKey = "Ghosts";
+
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
@@ -101,14 +103,6 @@ public class GhostRepository
 
     private static string GetStorageKey(int recordId) => "ghosts/" + recordId;
 
-    private string TransformGhostUrl(string input)
-    {
-        if (input.StartsWith("http"))
-            return input;
-        string output = _configService.CdnUrl.Value;
-        if (!input.StartsWith('/'))
-            output += '/';
-        output += input;
-        return output;
-    }
+    private Uri TransformGhostUrl(string input) =>
+        ServiceUriValidator.ResolveCdnPath(_configService.CdnUrl.Value, input);
 }
