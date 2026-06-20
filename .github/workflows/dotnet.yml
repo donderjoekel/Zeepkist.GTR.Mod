@@ -22,8 +22,16 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        dotnet restore Zeepkist.GTR.Mod.csproj
+        dotnet restore Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj
     - name: Build
-      run: dotnet build --no-restore
+      run: |
+        dotnet build Zeepkist.GTR.Mod.csproj --no-restore --configuration Release
+        dotnet build Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj --no-restore --configuration Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj --no-build --configuration Release --verbosity normal
+    - name: Audit dependencies
+      run: |
+        dotnet list Zeepkist.GTR.Mod.csproj package --vulnerable --include-transitive
+        dotnet list Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj package --vulnerable --include-transitive
