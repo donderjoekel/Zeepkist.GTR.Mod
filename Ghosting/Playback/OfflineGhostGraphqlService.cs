@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
@@ -17,10 +18,12 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
     }
 
     public async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>> GetAdditionalGhosts(
-        List<string> steamIds, string levelHash)
+        List<string> steamIds,
+        string levelHash,
+        CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetAdditionalGhostsResult> result =
-            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash);
+            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash, cancellationToken);
 
         try
         {

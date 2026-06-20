@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
@@ -14,11 +16,15 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 public class GhostRepository
 {
     public const string ClientKey = "Ghosts";
+    private const int MaxConcurrentDownloads = 20;
 
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
     private readonly ConfigService _configService;
+    private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
+    private readonly Dictionary<int, Task<Result<IGhost>>> _downloads = new();
+    private readonly object _downloadsLock = new();
 
     public GhostRepository(
         IModStorage modStorage,
@@ -32,29 +38,76 @@ public class GhostRepository
         _configService = configService;
     }
 
-    public async UniTask<Result<IGhost>> GetGhost(int recordId, string ghostUrl)
+    public async UniTask<Result<IGhost>> GetGhost(
+        int recordId,
+        string ghostUrl,
+        CancellationToken cancellationToken = default)
     {
         if (TryGetGhostFromDisk(recordId, out IGhost ghost))
             return Result.Ok(ghost);
 
+        Task<Result<IGhost>> download;
+        lock (_downloadsLock)
+        {
+            if (!_downloads.TryGetValue(recordId, out download))
+            {
+                download = DownloadGhost(recordId, ghostUrl, cancellationToken);
+                _downloads.Add(recordId, download);
+            }
+        }
+
+        try
+        {
+            return await download;
+        }
+        finally
+        {
+            lock (_downloadsLock)
+            {
+                if (_downloads.TryGetValue(recordId, out Task<Result<IGhost>> current) &&
+                    ReferenceEquals(current, download))
+                {
+                    _downloads.Remove(recordId);
+                }
+            }
+        }
+    }
+
+    private async Task<Result<IGhost>> DownloadGhost(
+        int recordId,
+        string ghostUrl,
+        CancellationToken cancellationToken)
+    {
+        await _downloadSlots.WaitAsync(cancellationToken);
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, TransformGhostUrl(ghostUrl));
-            using HttpResponseMessage response =
-                await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            using HttpResponseMessage response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
             response.EnsureSuccessStatusCode();
 
             if (response.Content.Headers.ContentLength > GhostLimits.MaxCompressedBytes)
                 return Result.Fail($"Ghost exceeds {GhostLimits.MaxCompressedBytes} byte compressed limit.");
 
-            byte[] buffer = await ReadLimitedAsync(response.Content);
+            byte[] buffer = await ReadLimitedAsync(response.Content, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             IGhost downloadedGhost = ReadGhost(buffer);
             _modStorage.WriteBlob(GetStorageKey(recordId), buffer);
             return Result.Ok(downloadedGhost);
         }
+        catch (OperationCanceledException)
+        {
+            return Result.Fail("Ghost download was cancelled.");
+        }
         catch (Exception e)
         {
             return Result.Fail(new ExceptionalError(e));
+        }
+        finally
+        {
+            _downloadSlots.Release();
         }
     }
 
@@ -90,13 +143,13 @@ public class GhostRepository
         return ghost ?? throw new InvalidDataException("Ghost reader returned no ghost.");
     }
 
-    private static async Task<byte[]> ReadLimitedAsync(HttpContent content)
+    private static async Task<byte[]> ReadLimitedAsync(HttpContent content, CancellationToken cancellationToken)
     {
         using Stream input = await content.ReadAsStreamAsync();
         using LimitedMemoryStream output = new(GhostLimits.MaxCompressedBytes);
         byte[] copyBuffer = new byte[81_920];
         int read;
-        while ((read = await input.ReadAsync(copyBuffer, 0, copyBuffer.Length)) > 0)
+        while ((read = await input.ReadAsync(copyBuffer, 0, copyBuffer.Length, cancellationToken)) > 0)
             output.Write(copyBuffer, 0, read);
         return output.ToArray();
     }

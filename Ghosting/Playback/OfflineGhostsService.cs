@@ -85,6 +85,7 @@ public class OfflineGhostsService : IEagerService
         if (MultiplayerApi.IsPlayingOnline)
             return;
 
+        CancelLoad();
         _ghostPlayer.ClearGhosts();
     }
 
@@ -93,12 +94,13 @@ public class OfflineGhostsService : IEagerService
         if (MultiplayerApi.IsPlayingOnline)
             return;
 
+        CancelLoad();
         _ghostPlayer.ClearGhosts();
     }
 
     private void LoadGhosts()
     {
-        _cts?.Cancel();
+        CancelLoad();
         _cts = new CancellationTokenSource();
         LoadGhostsAsync(_cts.Token).Forget();
     }
@@ -141,17 +143,8 @@ public class OfflineGhostsService : IEagerService
             }
         }
 
-        foreach (IGhostRecordFrag personalBest in personalBests)
-        {
-            Result<IGhost> ghost = await _ghostRepository.GetGhost(personalBest.Id, personalBest.RecordMedia.GhostUrl);
-            if (ghost.IsFailed)
-            {
-                _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
-                continue;
-            }
-
-            _ghostPlayer.AddGhost(GhostType.Global, personalBest.Id, personalBest.User.SteamName, ghost.Value);
-        }
+        IEnumerable<UniTask> loads = personalBests.Select(personalBest => LoadGhost(personalBest, ct));
+        await UniTask.WhenAll(loads);
     }
 
     private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
@@ -159,7 +152,7 @@ public class OfflineGhostsService : IEagerService
         CancellationToken ct)
     {
         Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result
-            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
+            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
@@ -175,7 +168,7 @@ public class OfflineGhostsService : IEagerService
         CancellationToken ct)
     {
         Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> result
-            = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash);
+            = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
@@ -203,5 +196,33 @@ public class OfflineGhostsService : IEagerService
         _additionalGhosts.Remove(steamId);
         _ghostPlayer.ClearGhosts();
         LoadGhosts();
+    }
+
+    private async UniTask LoadGhost(IGhostRecordFrag personalBest, CancellationToken cancellationToken)
+    {
+        Result<IGhost> ghost = await _ghostRepository.GetGhost(
+            personalBest.Id,
+            personalBest.RecordMedia.GhostUrl,
+            cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+            return;
+        if (ghost.IsFailed)
+        {
+            _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
+            return;
+        }
+
+        _ghostPlayer.AddGhost(GhostType.Global, personalBest.Id, personalBest.User.SteamName, ghost.Value);
+    }
+
+    private void CancelLoad()
+    {
+        CancellationTokenSource cts = _cts;
+        _cts = null;
+        if (cts == null)
+            return;
+        cts.Cancel();
+        cts.Dispose();
     }
 }

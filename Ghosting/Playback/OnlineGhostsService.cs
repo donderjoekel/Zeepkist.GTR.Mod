@@ -73,6 +73,7 @@ public class OnlineGhostsService : IEagerService
         if (!MultiplayerApi.IsPlayingOnline)
             return;
 
+        CancelLoad();
         _ghostPlayer.ClearGhosts();
     }
 
@@ -92,12 +93,13 @@ public class OnlineGhostsService : IEagerService
         if (!MultiplayerApi.IsPlayingOnline)
             return;
 
+        CancelLoad();
         _ghostPlayer.ClearGhosts();
     }
 
     private void LoadPersonalBests()
     {
-        _cts?.Cancel();
+        CancelLoad();
         _cts = new CancellationTokenSource();
         LoadPersonalBestAsync(_cts.Token).Forget();
     }
@@ -107,7 +109,7 @@ public class OnlineGhostsService : IEagerService
         _logger.LogInformation("Loading personal best...");
 
         Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
-            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash);
+            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return;
@@ -130,23 +132,41 @@ public class OnlineGhostsService : IEagerService
             }
         }
 
-        foreach (IGetPersonalBestGhosts_PersonalBestGlobals_Nodes personalBest in personalBests)
+        IEnumerable<UniTask> loads = personalBests.Select(personalBest => LoadGhost(personalBest, ct));
+        await UniTask.WhenAll(loads);
+    }
+
+    private async UniTask LoadGhost(
+        IGetPersonalBestGhosts_PersonalBestGlobals_Nodes personalBest,
+        CancellationToken cancellationToken)
+    {
+        Result<IGhost> ghost = await _ghostRepository.GetGhost(
+            personalBest.Record.Id,
+            personalBest.Record.RecordMedia.GhostUrl,
+            cancellationToken);
+
+        if (cancellationToken.IsCancellationRequested)
+            return;
+        if (ghost.IsFailed)
         {
-            Result<IGhost> ghost = await _ghostRepository.GetGhost(
-                personalBest.Record.Id,
-                personalBest.Record.RecordMedia.GhostUrl);
-
-            if (ghost.IsFailed)
-            {
-                _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
-                continue;
-            }
-
-            _ghostPlayer.AddGhost(
-                GhostType.Global,
-                personalBest.Record.Id,
-                personalBest.Record.User.SteamName,
-                ghost.Value);
+            _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
+            return;
         }
+
+        _ghostPlayer.AddGhost(
+            GhostType.Global,
+            personalBest.Record.Id,
+            personalBest.Record.User.SteamName,
+            ghost.Value);
+    }
+
+    private void CancelLoad()
+    {
+        CancellationTokenSource cts = _cts;
+        _cts = null;
+        if (cts == null)
+            return;
+        cts.Cancel();
+        cts.Dispose();
     }
 }
