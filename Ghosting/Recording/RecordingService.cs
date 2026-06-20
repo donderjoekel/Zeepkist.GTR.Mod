@@ -123,6 +123,7 @@ public class RecordingService : IEagerService
         if (string.IsNullOrEmpty(ghostData))
         {
             _logger.LogWarning("Something went wrong here");
+            return;
         }
 
         await Submit(hash, time, splits, speeds, ghostData);
@@ -141,8 +142,14 @@ public class RecordingService : IEagerService
                 return string.Empty;
             }
 
-            _logger.LogInformation("Closing stream");
-            stream.Close();
+            if (stream.Length > GhostLimits.MaxCompressedBytes)
+            {
+                _logger.LogError(
+                    "Compressed ghost exceeds {MaxCompressedBytes} byte limit",
+                    GhostLimits.MaxCompressedBytes);
+                return string.Empty;
+            }
+
             _logger.LogInformation("Getting buffer");
             byte[] buffer = stream.ToArray();
             _logger.LogInformation("Converting to base64");
@@ -167,8 +174,8 @@ public class RecordingService : IEagerService
         {
             Level = hash,
             Time = time,
-            Splits = splits.ToList(),
-            Speeds = speeds.ToList(),
+            Splits = splits,
+            Speeds = speeds,
             GhostData = ghostData,
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
             GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"

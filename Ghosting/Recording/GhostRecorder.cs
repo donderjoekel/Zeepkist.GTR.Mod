@@ -84,6 +84,12 @@ public partial class GhostRecorder
     {
         if (_setupCar == null || _readyToReset == null)
             return;
+        if (_frames.Count >= GhostLimits.MaxFrames)
+        {
+            _logger.LogWarning("Ghost frame limit reached; stopping recording");
+            Stop();
+            return;
+        }
 
         Transform carTransform = _setupCar.transform;
         New_ControlCar cc = _setupCar.cc;
@@ -155,9 +161,8 @@ public partial class GhostRecorder
             {
                 using MemoryStream memoryStream = new();
                 Serializer.Serialize(memoryStream, ghost);
-                memoryStream.Close();
-                byte[] buffer = memoryStream.ToArray();
-                Encode(buffer, stream);
+                memoryStream.Position = 0;
+                Encode(memoryStream, stream);
             });
         }
         catch (Exception e)
@@ -259,10 +264,10 @@ public partial class GhostRecorder
         return (byte)Mathf.Clamp(value, 0, 255);
     }
 
-    private static void Encode(byte[] buffer, Stream outStream)
+    private static void Encode(Stream inputStream, Stream outStream)
     {
         LZMACompressor.Shared.CompressionLevel = LZMACompressionLevel.Ultra;
-        LZMACompressor.Shared.Compress(buffer, outStream);
+        LZMACompressor.Shared.Compress(inputStream, outStream);
     }
 
     private static InputFlags CreateInputFlags(Frame frame)
