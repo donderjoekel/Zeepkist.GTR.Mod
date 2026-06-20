@@ -38,4 +38,20 @@ public class GhostLimitTests
     {
         Assert.Throws<InvalidDataException>(() => GhostReaderValidation.RequireFinite(value));
     }
+
+    [Fact]
+    public void ReadProtobufVersionReadsV5PayloadHeader()
+    {
+        byte[] payload = { 0x08, 0x05, 0x10, 0xfc, 0xb0, 0x95 };
+
+        Assert.Equal(5, GhostVersionReader.ReadProtobuf(payload));
+    }
+
+    [Fact]
+    public void ReadBinaryVersionReadsLegacyPayloadHeader()
+    {
+        byte[] payload = BitConverter.GetBytes(4);
+
+        Assert.Equal(4, GhostVersionReader.ReadBinary(payload));
+    }
 }

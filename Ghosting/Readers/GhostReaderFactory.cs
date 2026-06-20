@@ -28,14 +28,17 @@ public class GhostReaderFactory
         if (IsGZip(buffer))
         {
             payload = DecompressGZip(buffer);
-        }
-        else
-        {
-            int rawVersion = ReadVersion(buffer);
-            payload = rawVersion is >= 1 and <= 4 ? buffer : DecompressLzma(buffer);
+            return GetReader(GhostVersionReader.ReadBinary(payload)).Read(payload);
         }
 
-        int version = ReadVersion(payload);
+        int rawVersion = GhostVersionReader.ReadBinary(buffer);
+        if (rawVersion is >= 1 and <= 4)
+        {
+            return GetReader(rawVersion).Read(buffer);
+        }
+
+        payload = DecompressLzma(buffer);
+        int version = GhostVersionReader.ReadProtobuf(payload);
         return GetReader(version).Read(payload);
     }
 
@@ -51,14 +54,6 @@ public class GhostReaderFactory
             5 => _provider.GetRequiredService<V5Reader>(),
             _ => throw new NotSupportedException($"Version {version} is not supported.")
         };
-    }
-
-    private static int ReadVersion(byte[] buffer)
-    {
-        if (buffer.Length < sizeof(int))
-            throw new InvalidDataException("Ghost data is truncated.");
-        using BinaryReader reader = new(new MemoryStream(buffer, false));
-        return reader.ReadInt32();
     }
 
     private static bool IsGZip(byte[] buffer) =>
