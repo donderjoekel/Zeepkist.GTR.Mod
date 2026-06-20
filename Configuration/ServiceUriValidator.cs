@@ -18,13 +18,21 @@ public static class ServiceUriValidator
     public static Uri ResolveCdnPath(string baseAddress, string path)
     {
         Uri cdnUri = ParseBaseAddress(baseAddress, "CDN URL");
-        if (string.IsNullOrWhiteSpace(path) ||
-            path.StartsWith("//", StringComparison.Ordinal) ||
-            path.Contains("..") ||
-            Uri.TryCreate(path, UriKind.Absolute, out _))
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith("//", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("Ghost URL must be a relative CDN path.");
+            throw new InvalidOperationException("Ghost URL is invalid.");
         }
+
+        if (Uri.TryCreate(path, UriKind.Absolute, out Uri absoluteUri))
+        {
+            absoluteUri = ParseBaseAddress(absoluteUri.AbsoluteUri, "Ghost URL");
+            if (!SameOrigin(cdnUri, absoluteUri))
+                throw new InvalidOperationException("Ghost URL must use configured CDN origin.");
+            return absoluteUri;
+        }
+
+        if (path.Contains(".."))
+            throw new InvalidOperationException("Ghost URL escaped configured CDN origin.");
 
         Uri cdnDirectory = cdnUri.AbsoluteUri.EndsWith("/", StringComparison.Ordinal)
             ? cdnUri

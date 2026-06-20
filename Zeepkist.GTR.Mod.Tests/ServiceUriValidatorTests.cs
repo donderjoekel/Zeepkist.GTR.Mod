@@ -37,8 +37,22 @@ public class ServiceUriValidatorTests
         Assert.Equal("https://cdn.zeepki.st/base/ghosts/record.bin", result.AbsoluteUri);
     }
 
+    [Fact]
+    public void ResolveCdnPathAcceptsAbsoluteUrlOnConfiguredOrigin()
+    {
+        Uri result = ServiceUriValidator.ResolveCdnPath(
+            "https://cdn.zeepki.st",
+            "https://cdn.zeepki.st/ghosts/01KVKEMV7RHM741X7RNHGKCPGD.bin");
+
+        Assert.Equal(
+            "https://cdn.zeepki.st/ghosts/01KVKEMV7RHM741X7RNHGKCPGD.bin",
+            result.AbsoluteUri);
+    }
+
     [Theory]
     [InlineData("https://attacker.example/ghost.bin")]
+    [InlineData("http://cdn.zeepki.st/ghost.bin")]
+    [InlineData("https://user:password@cdn.zeepki.st/ghost.bin")]
     [InlineData("//attacker.example/ghost.bin")]
     [InlineData("../ghost.bin")]
     [InlineData("")]
