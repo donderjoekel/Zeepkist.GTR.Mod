@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.PlayerLoop;
 
-public partial class PlayerLoopService : IEagerService
+public partial class PlayerLoopService : IEagerService, IDisposable
 {
     private readonly PlayerLoopBehaviour _behaviour;
     private readonly ILogger<PlayerLoopService> _logger;
@@ -38,5 +38,11 @@ public partial class PlayerLoopService : IEagerService
     public void UnsubscribeFixedUpdate(PlayerLoopSubscription subscription)
     {
         _behaviour.UnsubscribeFixedUpdate(subscription);
+    }
+
+    public void Dispose()
+    {
+        if (_behaviour != null)
+            Object.Destroy(_behaviour.gameObject);
     }
 }

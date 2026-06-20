@@ -5,7 +5,7 @@ using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Logging;
 
-public class UnhandledExceptionLoggerService : IEagerService
+public class UnhandledExceptionLoggerService : IEagerService, IDisposable
 {
     private readonly ILogger<UnhandledExceptionLoggerService> _logger;
 
@@ -25,5 +25,11 @@ public class UnhandledExceptionLoggerService : IEagerService
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         _logger.LogError(e.ExceptionObject as Exception, "Unhandled exception");
+    }
+
+    public void Dispose()
+    {
+        AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
+        UniTaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
     }
 }

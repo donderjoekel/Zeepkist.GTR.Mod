@@ -16,7 +16,7 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class OfflineGhostsService : IEagerService
+public class OfflineGhostsService : IEagerService, System.IDisposable
 {
     private readonly ILogger<OfflineGhostsService> _logger;
     private readonly OfflineGhostGraphqlService _graphqlService;
@@ -24,6 +24,8 @@ public class OfflineGhostsService : IEagerService
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
+    private readonly PlayerLoopService _playerLoopService;
+    private readonly PlayerLoopSubscription _updateSubscription;
 
     private readonly List<string> _additionalGhosts = new();
 
@@ -44,8 +46,9 @@ public class OfflineGhostsService : IEagerService
         _ghostPlayer = ghostPlayer;
         _configService = configService;
         _messengerService = messengerService;
+        _playerLoopService = playerLoopService;
 
-        playerLoopService.SubscribeUpdate(OnUpdate);
+        _updateSubscription = playerLoopService.SubscribeUpdate(OnUpdate);
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
@@ -224,5 +227,14 @@ public class OfflineGhostsService : IEagerService
             return;
         cts.Cancel();
         cts.Dispose();
+    }
+
+    public void Dispose()
+    {
+        CancelLoad();
+        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.Quit -= OnQuit;
     }
 }

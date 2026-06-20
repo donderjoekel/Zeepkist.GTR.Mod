@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +37,7 @@ namespace TNRD.Zeepkist.GTR;
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
+    private readonly CancellationTokenSource _lifetimeCts = new();
 
     private void Awake()
     {
@@ -44,6 +46,7 @@ public class Plugin : BaseUnityPlugin
 
     private void OnDestroy()
     {
+        _lifetimeCts.Cancel();
         StopHost().Forget();
     }
 
@@ -51,7 +54,9 @@ public class Plugin : BaseUnityPlugin
     {
         try
         {
-            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+            await UniTask.WaitUntil(
+                () => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn,
+                cancellationToken: _lifetimeCts.Token);
             
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
@@ -63,7 +68,7 @@ public class Plugin : BaseUnityPlugin
             });
             builder.ConfigureServices(ConfigureServices);
             _host = builder.Build();
-            await _host.StartAsync();
+            await _host.StartAsync(_lifetimeCts.Token);
 
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -160,7 +165,21 @@ public class Plugin : BaseUnityPlugin
 
     private async UniTaskVoid StopHost()
     {
-        await _host.StopAsync();
-        _host.Dispose();
+        IHost host = _host;
+        _host = null;
+        if (host != null)
+        {
+            try
+            {
+                using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
+                await host.StopAsync(timeout.Token);
+            }
+            finally
+            {
+                host.Dispose();
+            }
+        }
+
+        _lifetimeCts.Dispose();
     }
 }
