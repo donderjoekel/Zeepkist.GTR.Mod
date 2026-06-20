@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -22,6 +23,7 @@ public class ApiHttpClient
     private readonly ILogger<ApiHttpClient> _logger;
     private readonly AsyncPolicy<HttpResponseMessage> _wrappedPolicy;
     private readonly AsyncPolicy<HttpResponseMessage> _failurePolicy;
+    private readonly SemaphoreSlim _authenticationLock = new(1, 1);
 
     private string _accessToken;
     private string _refreshToken;
@@ -29,7 +31,7 @@ public class ApiHttpClient
     private DateTimeOffset _refreshTokenExpiry = DateTimeOffset.MinValue;
 
     private bool NeedsLogin => string.IsNullOrEmpty(_accessToken) || DateTimeOffset.UtcNow > _refreshTokenExpiry;
-    private bool NeedsRefresh => DateTimeOffset.UtcNow > _accessTokenExpiry;
+    private bool NeedsRefresh => DateTimeOffset.UtcNow.AddSeconds(30) >= _accessTokenExpiry;
 
     public ApiHttpClient(IHttpClientFactory httpClientFactory, ILogger<ApiHttpClient> logger)
     {
@@ -122,20 +124,40 @@ public class ApiHttpClient
 
     public async UniTask<bool> LoginOrRefresh()
     {
-        if (NeedsLogin)
+        await _authenticationLock.WaitAsync();
+        try
         {
-            return await Login();
-        }
+            if (!NeedsLogin && !NeedsRefresh)
+                return true;
 
-        if (await Refresh())
+            if (!NeedsLogin && await RefreshCore())
+                return true;
+
+            return await LoginCore();
+        }
+        finally
         {
-            return true;
+            _authenticationLock.Release();
         }
-
-        return await Login();
     }
 
     public async UniTask<bool> Login()
+    {
+        await _authenticationLock.WaitAsync();
+        try
+        {
+            if (!NeedsLogin && !NeedsRefresh)
+                return true;
+
+            return await LoginCore();
+        }
+        finally
+        {
+            _authenticationLock.Release();
+        }
+    }
+
+    private async UniTask<bool> LoginCore()
     {
         LoginPostResource data = new()
         {
@@ -158,6 +180,24 @@ public class ApiHttpClient
     }
 
     private async UniTask<bool> Refresh()
+    {
+        await _authenticationLock.WaitAsync();
+        try
+        {
+            if (!NeedsRefresh)
+                return true;
+            if (NeedsLogin)
+                return await LoginCore();
+
+            return await RefreshCore();
+        }
+        finally
+        {
+            _authenticationLock.Release();
+        }
+    }
+
+    private async UniTask<bool> RefreshCore()
     {
         RefreshPostResource data = new()
         {
@@ -188,15 +228,42 @@ public class ApiHttpClient
             return false;
         }
 
-        // TODO: Should this be done in a safe way?
-        string content = await response.Content.ReadAsStringAsync();
-        AuthenticationResource resource = JsonConvert.DeserializeObject<AuthenticationResource>(content);
+        try
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            AuthenticationResource resource = JsonConvert.DeserializeObject<AuthenticationResource>(content);
+            if (resource == null ||
+                string.IsNullOrWhiteSpace(resource.AccessToken) ||
+                string.IsNullOrWhiteSpace(resource.RefreshToken) ||
+                !long.TryParse(resource.AccessTokenExpiry, out long accessTokenExpiry) ||
+                !long.TryParse(resource.RefreshTokenExpiry, out long refreshTokenExpiry))
+            {
+                _logger.LogError("Authentication response was malformed");
+                ResetData();
+                return false;
+            }
 
-        _accessToken = resource.AccessToken;
-        _refreshToken = resource.RefreshToken;
-        _accessTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.AccessTokenExpiry));
-        _refreshTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.RefreshTokenExpiry));
-        return true;
+            DateTimeOffset parsedAccessExpiry = DateTimeOffset.FromUnixTimeSeconds(accessTokenExpiry);
+            DateTimeOffset parsedRefreshExpiry = DateTimeOffset.FromUnixTimeSeconds(refreshTokenExpiry);
+            if (parsedAccessExpiry <= DateTimeOffset.UtcNow || parsedRefreshExpiry <= parsedAccessExpiry)
+            {
+                _logger.LogError("Authentication response contained invalid expiry values");
+                ResetData();
+                return false;
+            }
+
+            _accessToken = resource.AccessToken;
+            _refreshToken = resource.RefreshToken;
+            _accessTokenExpiry = parsedAccessExpiry;
+            _refreshTokenExpiry = parsedRefreshExpiry;
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to parse authentication response");
+            ResetData();
+            return false;
+        }
     }
 
     private void ResetData()
