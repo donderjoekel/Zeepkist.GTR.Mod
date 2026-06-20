@@ -20,6 +20,9 @@ public class GhostReaderFactory
 
     public IGhostReader GetReader(byte[] buffer)
     {
+        if (buffer == null || buffer.Length < sizeof(int) || buffer.Length > GhostLimits.MaxCompressedBytes)
+            throw new InvalidDataException("Ghost data has invalid compressed size.");
+
         int version = GetVersion(buffer);
         _logger.LogInformation("Ghost version: {Version}", version);
 
@@ -64,7 +67,10 @@ public class GhostReaderFactory
     {
         try
         {
-            decompressed = LZMACompressor.Shared.Decompress(buffer);
+            using MemoryStream input = new(buffer, false);
+            using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+            LZMACompressor.Shared.Decompress(input, output);
+            decompressed = output.ToArray();
             return true;
         }
         catch
@@ -76,9 +82,19 @@ public class GhostReaderFactory
 
     private static bool IsGZipped(byte[] buffer, out byte[] decompressed)
     {
+        if (buffer.Length < 2 || buffer[0] != 0x1f || buffer[1] != 0x8b)
+        {
+            decompressed = null;
+            return false;
+        }
+
         try
         {
-            decompressed = GZipCompressor.Shared.Decompress(buffer);
+            using MemoryStream input = new(buffer, false);
+            using GZipStream gzip = new(input, CompressionMode.Decompress);
+            using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+            gzip.CopyTo(output);
+            decompressed = output.ToArray();
             return true;
         }
         catch

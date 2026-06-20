@@ -44,6 +44,13 @@ public class V5Reader : GhostReaderBase<V5Ghost>
         {
             MemoryAlias::System.ReadOnlyMemory<byte> memory = new(decompressed);
             deserializedGhost = Serializer.Deserialize<Ghost>(memory);
+            if (deserializedGhost?.InitialFrame == null ||
+                deserializedGhost.Cosmetics == null ||
+                deserializedGhost.DeltaFrames == null ||
+                deserializedGhost.DeltaFrames.Count > GhostLimits.MaxFrames)
+            {
+                throw new InvalidDataException("Ghost payload is incomplete or contains too many frames.");
+            }
         }
         catch (Exception e)
         {
@@ -116,7 +123,10 @@ public class V5Reader : GhostReaderBase<V5Ghost>
 
     private static byte[] Decode(byte[] buffer)
     {
-        return LZMACompressor.Shared.Decompress(buffer);
+        using MemoryStream input = new(buffer, false);
+        using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+        LZMACompressor.Shared.Decompress(input, output);
+        return output.ToArray();
     }
 
     private CosmeticIDs ReadCosmetics(BinaryReader reader)
