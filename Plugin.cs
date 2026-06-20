@@ -135,21 +135,22 @@ public class Plugin : BaseUnityPlugin
             new GhostRepository(
                 provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
                 provider.GetRequiredService<GhostReaderFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey),
-                provider.GetRequiredService<ConfigService>()));
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey)));
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();
-            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.BackendUrl.Value, "Backend API URL");
+            string backendUrl = configService.BackendUrl.Value
+                ? ConfigService.LocalDevelopmentBackendUrl
+                : ConfigService.ProductionBackendUrl;
+            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(backendUrl, "Backend API URL");
             client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
         services.AddGtrClient()
             .ConfigureHttpClient((provider,client) =>
             {
-                var configService = provider.GetRequiredService<ConfigService>();
                 client.BaseAddress =
-                    ServiceUriValidator.ParseBaseAddress(configService.GraphQlUrl.Value, "GraphQL URL");
+                    ServiceUriValidator.ParseBaseAddress(ConfigService.GraphQLUrl, "GraphQL URL");
                 client.Timeout = TimeSpan.FromSeconds(30);
                 AddDefaultHeaders(client);
             });

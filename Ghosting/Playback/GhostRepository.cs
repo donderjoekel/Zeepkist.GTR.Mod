@@ -21,7 +21,6 @@ public class GhostRepository
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
-    private readonly ConfigService _configService;
     private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
     private readonly Dictionary<int, Task<Result<IGhost>>> _downloads = new();
     private readonly object _downloadsLock = new();
@@ -29,13 +28,11 @@ public class GhostRepository
     public GhostRepository(
         IModStorage modStorage,
         GhostReaderFactory ghostReaderFactory,
-        HttpClient httpClient,
-        ConfigService configService)
+        HttpClient httpClient)
     {
         _modStorage = modStorage;
         _ghostReaderFactory = ghostReaderFactory;
         _httpClient = httpClient;
-        _configService = configService;
     }
 
     public async UniTask<Result<IGhost>> GetGhost(
@@ -157,5 +154,5 @@ public class GhostRepository
     private static string GetStorageKey(int recordId) => "ghosts/" + recordId;
 
     private Uri TransformGhostUrl(string input) =>
-        ServiceUriValidator.ResolveCdnPath(_configService.CdnUrl.Value, input);
+        ServiceUriValidator.ResolveCdnPath(ConfigService.CdnUrl, input);
 }
