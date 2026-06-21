@@ -14,15 +14,4 @@ public class GhostLoadProgressTests
     {
         Assert.Equal(expected, GhostLoadProgress.CalculatePercent(completed, total));
     }
-
-    [Theory]
-    [InlineData(4, 0, false)]
-    [InlineData(5, 0, true)]
-    [InlineData(19, 15, false)]
-    [InlineData(20, 15, true)]
-    [InlineData(100, 100, true)]
-    public void ThrottlesProgressReports(int percent, int previous, bool expected)
-    {
-        Assert.Equal(expected, GhostLoadProgress.ShouldReport(percent, previous));
-    }
 }
