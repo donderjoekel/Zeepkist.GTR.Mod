@@ -22,6 +22,7 @@
     <Compile Include="..\Ghosting\Playback\OfflineGhostLimit.cs" Link="Source\OfflineGhostLimit.cs" />
     <Compile Include="..\Ghosting\Playback\GhostVisualProfile.cs" Link="Source\GhostVisualProfile.cs" />
     <Compile Include="..\Ghosting\Playback\GhostVisualProfileResolver.cs" Link="Source\GhostVisualProfileResolver.cs" />
+    <Compile Include="..\Ghosting\Playback\BulkGhostBatching.cs" Link="Source\BulkGhostBatching.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
     <Compile Include="..\Ghosting\Readers\LimitedMemoryStream.cs" Link="Source\LimitedMemoryStream.cs" />

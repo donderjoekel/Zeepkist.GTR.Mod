@@ -40,6 +40,16 @@ public partial class PlayerLoopService : IEagerService, IDisposable
         _behaviour.UnsubscribeFixedUpdate(subscription);
     }
 
+    public PlayerLoopSubscription SubscribeLateUpdate(Action action)
+    {
+        return _behaviour.SubscribeLateUpdate(action);
+    }
+
+    public void UnsubscribeLateUpdate(PlayerLoopSubscription subscription)
+    {
+        _behaviour.UnsubscribeLateUpdate(subscription);
+    }
+
     public void Dispose()
     {
         if (_behaviour != null)

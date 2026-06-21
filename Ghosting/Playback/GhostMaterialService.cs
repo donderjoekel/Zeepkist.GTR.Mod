@@ -30,7 +30,10 @@ public class GhostMaterialService : IEagerService
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
     {
-        e.GhostData.GameObject.SetActive(_configService.ShowGhosts.Value);
+        e.GhostData.SetActive(_configService.ShowGhosts.Value);
+
+        if (e.GhostData.IsInstanced)
+            return;
 
         if (_configService.ShowGhostTransparent.Value)
         {
@@ -57,6 +60,9 @@ public class GhostMaterialService : IEagerService
 
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
+            if (ghostData.IsInstanced)
+                continue;
+
             if (_configService.ShowGhostTransparent.Value)
             {
                 ghostData.Renderer.SwitchToGhost();

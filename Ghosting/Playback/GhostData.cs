@@ -5,10 +5,16 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class GhostData
 {
-    public GhostData(GhostVisuals ghostVisuals, GhostVisualProfile visualProfile)
+    public GhostData(
+        GameObject gameObject,
+        GhostVisuals ghostVisuals,
+        GhostVisualProfile visualProfile,
+        bool isInstanced)
     {
+        GameObject = gameObject;
         Visuals = ghostVisuals;
         VisualProfile = visualProfile;
+        IsInstanced = isInstanced;
         Object.DontDestroyOnLoad(GameObject.transform.root.gameObject);
     }
 
@@ -32,7 +38,8 @@ public class GhostData
     public IGhost Ghost { get; private set; }
     public GhostType Type { get; private set; }
     public GhostVisualProfile VisualProfile { get; }
-    public GameObject GameObject => Visuals.GhostModel.gameObject;
+    public bool IsInstanced { get; }
+    public GameObject GameObject { get; }
     public GhostVisuals Visuals { get; private set; }
     public GhostRenderer Renderer { get; private set; }
     public RoyTheunissen.FMODSyntax.FmodAudioPlayback CurrentHorn { get; set; }
@@ -44,5 +51,13 @@ public class GhostData
     {
         Renderer?.Dispose();
         Renderer = null;
+    }
+
+    public void SetActive(bool active)
+    {
+        if (Visuals != null)
+            Visuals.gameObject.SetActive(active);
+
+        GameObject.SetActive(active);
     }
 }

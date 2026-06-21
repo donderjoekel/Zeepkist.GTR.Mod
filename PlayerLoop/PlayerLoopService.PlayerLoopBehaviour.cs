@@ -12,9 +12,11 @@ public partial class PlayerLoopService
     {
         private readonly Dictionary<PlayerLoopSubscription, Action> _updates = new();
         private readonly Dictionary<PlayerLoopSubscription, Action> _fixedUpdates = new();
+        private readonly Dictionary<PlayerLoopSubscription, Action> _lateUpdates = new();
 
         private readonly HashSet<PlayerLoopSubscription> _updatesToRemove = new();
         private readonly HashSet<PlayerLoopSubscription> _fixedUpdatesToRemove = new();
+        private readonly HashSet<PlayerLoopSubscription> _lateUpdatesToRemove = new();
 
         private ILogger _logger;
 
@@ -54,6 +56,24 @@ public partial class PlayerLoopService
             _fixedUpdatesToRemove.Add(subscription);
         }
 
+        public PlayerLoopSubscription SubscribeLateUpdate(Action action)
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            PlayerLoopSubscription subscription = new();
+            _lateUpdates.Add(subscription, action);
+            return subscription;
+        }
+
+        public void UnsubscribeLateUpdate(PlayerLoopSubscription subscription)
+        {
+            if (subscription == null)
+                throw new ArgumentNullException(nameof(subscription));
+
+            _lateUpdatesToRemove.Add(subscription);
+        }
+
         private void Update()
         {
             foreach (PlayerLoopSubscription subscription in _updatesToRemove)
@@ -87,6 +107,27 @@ public partial class PlayerLoopService
             _fixedUpdatesToRemove.Clear();
 
             foreach (KeyValuePair<PlayerLoopSubscription, Action> kvp in _fixedUpdates)
+            {
+                try
+                {
+                    kvp.Value();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+        }
+
+        private void LateUpdate()
+        {
+            foreach (PlayerLoopSubscription subscription in _lateUpdatesToRemove)
+                _lateUpdates.Remove(subscription);
+
+            _lateUpdatesToRemove.Clear();
+
+            foreach (KeyValuePair<PlayerLoopSubscription, Action> kvp in _lateUpdates)
             {
                 try
                 {
