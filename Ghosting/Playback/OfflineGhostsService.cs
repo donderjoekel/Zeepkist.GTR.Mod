@@ -224,7 +224,8 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
         foreach (IGetAllPersonalBestGhosts_Records_Nodes record in bulkGhosts)
             _bulkGhostIds.Add(record.Id);
 
-        HashSet<int> desiredIds = protectedGhosts.Select(x => x.Id).ToHashSet();
+        HashSet<int> protectedGhostIds = protectedGhosts.Select(x => x.Id).ToHashSet();
+        HashSet<int> desiredIds = protectedGhostIds.ToHashSet();
         desiredIds.UnionWith(_bulkGhostIds);
         foreach (int loadedGhostId in _ghostPlayer.GetLoadedGhostIds())
         {
@@ -236,7 +237,10 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
             .Concat(bulkGhosts)
             .GroupBy(record => record.Id)
             .Select(group => group.First());
-        await UniTask.WhenAll(recordsToLoad.Select(record => LoadGhost(record, ct)));
+        await UniTask.WhenAll(recordsToLoad.Select(record => LoadGhost(
+            record,
+            ct,
+            GhostVisualProfileResolver.Resolve(record.Id, protectedGhostIds, _bulkGhostIds))));
     }
 
     private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
@@ -294,7 +298,10 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
         LoadGhosts();
     }
 
-    private async UniTask LoadGhost(IGhostRecordFrag personalBest, CancellationToken cancellationToken)
+    private async UniTask LoadGhost(
+        IGhostRecordFrag personalBest,
+        CancellationToken cancellationToken,
+        GhostVisualProfile visualProfile = GhostVisualProfile.Full)
     {
         Result<IGhost> ghost = await _ghostRepository.GetGhost(
             personalBest.Id,
@@ -309,7 +316,12 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
             return;
         }
 
-        _ghostPlayer.AddGhost(GhostType.Global, personalBest.Id, personalBest.User.SteamName, ghost.Value);
+        _ghostPlayer.AddGhost(
+            GhostType.Global,
+            personalBest.Id,
+            personalBest.User.SteamName,
+            ghost.Value,
+            visualProfile);
     }
 
     private void SetBulkMode(bool enabled)

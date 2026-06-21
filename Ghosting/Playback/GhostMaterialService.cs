@@ -87,6 +87,9 @@ public class GhostMaterialService : IEagerService
 
     private void UpdateRenderer(GhostData ghostData)
     {
+        if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
+            return;
+
         const float minDistance = 2.5f;
         const float maxDistance = 8f;
         float maxAlpha = _configService.ShowGhostTransparent.Value ? 0.3f : 1f;
