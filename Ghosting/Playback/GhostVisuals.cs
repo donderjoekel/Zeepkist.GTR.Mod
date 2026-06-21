@@ -49,18 +49,29 @@ public class GhostVisuals : MonoBehaviour
 
     private void ConfigureBulkVisuals()
     {
-        Cosmetics = GetBulkCosmetics();
-
-        GhostModel.DoCarSetup(Cosmetics, true, true, false);
-        GhostModel.DisableParaglider();
+        Cosmetics = ConfigureBulkModel(GhostModel);
         HornHolder.SetActive(false);
+    }
 
-        foreach (Ghost_AnimateWheel_v16 wheel in Wheels)
+    public static CosmeticsV16 ConfigureBulkModel(SetupModelCar model)
+    {
+        CosmeticsV16 cosmetics = GetBulkCosmetics();
+        model.DoCarSetup(cosmetics, true, true, false);
+        model.DisableParaglider();
+
+        foreach (Ghost_AnimateWheel_v16 wheel in model.GetComponentsInChildren<Ghost_AnimateWheel_v16>())
         {
+            wheel.enabled = false;
             wheel.offroadWheelModel.gameObject.SetActive(false);
             wheel.soapwheelModel.gameObject.SetActive(false);
             wheel.wheelModel.gameObject.SetActive(true);
         }
+
+        GameObject hornHolder = model.transform.Find("Visible Horn")?.gameObject;
+        if (hornHolder != null)
+            hornHolder.SetActive(false);
+
+        return cosmetics;
     }
 
     private static CosmeticsV16 GetBulkCosmetics()

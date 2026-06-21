@@ -15,11 +15,8 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public partial class GhostPlayer : IEagerService, IDisposable
 {
-    private readonly ObjectPool<GhostData> _fullPool =
-        new(CreateFullGhost, GetGhost, ReleaseGhost, DestroyGhost);
-
-    private readonly ObjectPool<GhostData> _bulkPool =
-        new(CreateBulkGhost, GetGhost, ReleaseGhost, DestroyGhost);
+    private readonly ObjectPool<GhostData> _fullPool;
+    private readonly ObjectPool<GhostData> _bulkPool;
 
     private static ILogger<GhostPlayer> _logger;
 
@@ -27,6 +24,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
     private readonly Dictionary<int, GhostData> _ghostData = new();
     private readonly HashSet<int> _ghostsToRemove = new();
     private readonly PlayerLoopService _playerLoopService;
+    private readonly BulkGhostRenderService _bulkGhostRenderService;
     private readonly PlayerLoopSubscription _updateSubscription;
     private readonly PlayerLoopSubscription _fixedUpdateSubscription;
 
@@ -38,10 +36,24 @@ public partial class GhostPlayer : IEagerService, IDisposable
     public event EventHandler<GhostAddedEventArgs> GhostAdded;
     public event EventHandler<GhostRemovedEventArgs> GhostRemoved;
 
-    public GhostPlayer(PlayerLoopService playerLoopService, ILogger<GhostPlayer> logger)
+    public GhostPlayer(
+        PlayerLoopService playerLoopService,
+        BulkGhostRenderService bulkGhostRenderService,
+        ILogger<GhostPlayer> logger)
     {
         _logger = logger;
         _playerLoopService = playerLoopService;
+        _bulkGhostRenderService = bulkGhostRenderService;
+        _fullPool = new ObjectPool<GhostData>(
+            CreateFullGhost,
+            GetGhost,
+            ReleaseGhost,
+            DestroyGhost);
+        _bulkPool = new ObjectPool<GhostData>(
+            CreateBulkGhost,
+            GetGhost,
+            ReleaseGhost,
+            DestroyGhost);
 
         _updateSubscription = playerLoopService.SubscribeUpdate(Update);
         _fixedUpdateSubscription = playerLoopService.SubscribeFixedUpdate(FixedUpdate);
@@ -53,31 +65,40 @@ public partial class GhostPlayer : IEagerService, IDisposable
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
     }
 
-    private static GhostData CreateFullGhost()
+    private GhostData CreateFullGhost()
     {
-        return CreateGhost(GhostVisualProfile.Full);
+        return CreateVisualGhost(GhostVisualProfile.Full);
     }
 
-    private static GhostData CreateBulkGhost()
+    private GhostData CreateBulkGhost()
     {
-        GhostData ghostData = CreateGhost(GhostVisualProfile.Bulk);
+        if (_bulkGhostRenderService.CanUseInstancing())
+        {
+            var gameObject = new GameObject("Instanced Bulk Ghost");
+            return new GhostData(gameObject, null, GhostVisualProfile.Bulk, true);
+        }
+
+        GhostData ghostData = CreateVisualGhost(GhostVisualProfile.Bulk);
         ghostData.InitializeRenderer();
         return ghostData;
     }
 
-    private static GhostData CreateGhost(GhostVisualProfile visualProfile)
+    private static GhostData CreateVisualGhost(GhostVisualProfile visualProfile)
     {
         GameObject gameObject = new("Ghost");
         Object.DontDestroyOnLoad(gameObject.transform.root.gameObject);
         GhostVisuals ghostVisuals = gameObject.AddComponent<GhostVisuals>();
         ghostVisuals.Initialize(visualProfile);
-        return new GhostData(ghostVisuals, visualProfile);
+        return new GhostData(
+            ghostVisuals.GhostModel.gameObject,
+            ghostVisuals,
+            visualProfile,
+            false);
     }
 
     private static void GetGhost(GhostData ghostData)
     {
-        ghostData.GameObject.SetActive(true);
-        ghostData.Visuals.gameObject.SetActive(true);
+        ghostData.SetActive(true);
     }
 
     private static void ReleaseGhost(GhostData ghostData)
@@ -85,15 +106,16 @@ public partial class GhostPlayer : IEagerService, IDisposable
         ghostData.CurrentHorn?.Stop();
         ghostData.CurrentHorn?.Cleanup();
         ghostData.CurrentHorn = null;
-        ghostData.Visuals.gameObject.SetActive(false);
-        ghostData.GameObject.SetActive(false);
+        ghostData.SetActive(false);
     }
 
     private static void DestroyGhost(GhostData ghostData)
     {
         ghostData.DisposeRenderer();
-        if (ghostData.Visuals.gameObject != null)
+        if (ghostData.Visuals != null && ghostData.Visuals.gameObject != null)
             Object.Destroy(ghostData.Visuals.gameObject);
+        else if (ghostData.GameObject != null)
+            Object.Destroy(ghostData.GameObject);
     }
 
     private void OnRoundStarted()
@@ -160,6 +182,12 @@ public partial class GhostPlayer : IEagerService, IDisposable
         return _ghosts.ContainsKey(recordId);
     }
 
+    public bool HasGhost(int recordId, GhostVisualProfile visualProfile)
+    {
+        return _ghostData.TryGetValue(recordId, out GhostData ghostData) &&
+               ghostData.VisualProfile == visualProfile;
+    }
+
     public void AddGhost(
         GhostType type,
         int recordId,
@@ -195,6 +223,9 @@ public partial class GhostPlayer : IEagerService, IDisposable
             ghostData.InitializeRenderer();
         }
 
+        if (ghostData.IsInstanced)
+            _bulkGhostRenderService.Register(ghostData.GameObject.transform);
+
         if (!hadExistingGhost)
         {
             _ghosts.Add(recordId, ghost);
@@ -217,6 +248,9 @@ public partial class GhostPlayer : IEagerService, IDisposable
 
         if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
+            if (ghostData.IsInstanced)
+                _bulkGhostRenderService.Unregister(ghostData.GameObject.transform);
+
             GetPool(ghostData.VisualProfile).Release(ghostData);
             GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));
         }

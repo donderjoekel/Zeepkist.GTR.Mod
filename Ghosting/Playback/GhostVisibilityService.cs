@@ -59,7 +59,7 @@ public class GhostVisibilityService : IEagerService
             return;
         }
 
-        ghostData.Visuals.gameObject.SetActive(_configService.ShowGhosts.Value);
+        ghostData.SetActive(_configService.ShowGhosts.Value);
 
         if (!_configService.ShowGhosts.Value)
         {
@@ -72,7 +72,7 @@ public class GhostVisibilityService : IEagerService
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        ghostData.Visuals.gameObject.SetActive(configEntry.Value);
+        ghostData.SetActive(configEntry.Value);
     }
 
     private void OnUpdate()
