@@ -1,5 +1,6 @@
 using System.Text;
 using TNRD.Zeepkist.GTR.Ghosting;
+using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
 using Xunit;
 
@@ -53,5 +54,15 @@ public class GhostLimitTests
         byte[] payload = BitConverter.GetBytes(4);
 
         Assert.Equal(4, GhostVersionReader.ReadBinary(payload));
+    }
+
+    [Theory]
+    [InlineData(-1, null)]
+    [InlineData(-100, null)]
+    [InlineData(0, 0)]
+    [InlineData(200, 200)]
+    public void OfflineGhostLimitMapsConfiguredValueToGraphQlFirst(int configuredValue, int? expected)
+    {
+        Assert.Equal(expected, OfflineGhostLimit.ToGraphQlFirst(configuredValue));
     }
 }

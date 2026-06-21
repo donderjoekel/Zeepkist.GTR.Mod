@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Include="..\Configuration\ServiceUriValidator.cs" Link="Source\ServiceUriValidator.cs" />
     <Compile Include="..\Ghosting\GhostLimits.cs" Link="Source\GhostLimits.cs" />
+    <Compile Include="..\Ghosting\Playback\OfflineGhostLimit.cs" Link="Source\OfflineGhostLimit.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
     <Compile Include="..\Ghosting\Readers\LimitedMemoryStream.cs" Link="Source\LimitedMemoryStream.cs" />

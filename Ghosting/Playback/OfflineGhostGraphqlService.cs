@@ -38,6 +38,27 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
         return Result.Ok(nodes);
     }
 
+    public async UniTask<Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>>> GetAllPersonalBestGhosts(
+        string levelHash,
+        int? first,
+        CancellationToken cancellationToken = default)
+    {
+        IOperationResult<IGetAllPersonalBestGhostsResult> result =
+            await GtrClient.GetAllPersonalBestGhosts.ExecuteAsync(levelHash, first, cancellationToken);
+
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes> nodes = result.Data?.Records?.Nodes;
+        return Result.Ok(nodes ?? []);
+    }
+
     private static List<PersonalBest> Map(Root root)
     {
         return Map(root.Data);

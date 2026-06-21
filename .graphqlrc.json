@@ -1,9 +1,12 @@
 {
   "schema": "schema.graphql",
-  "documents": "**/*.graphql",
+  "documents": "GraphQL/**/*.graphql",
   "extensions": {
     "strawberryShake": {
       "name": "GtrClient",
+      "namespace": "TNRD.Zeepkist.GTR",
+      "outputDirectoryName": "GraphQL",
+      "noStore": true,
       "url": "https://graphql.zeepki.st",
       "records": {
         "inputs": false,

@@ -26,6 +26,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostNames { get; private set; }
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowGlobalPersonalBest { get; private set; }
+    public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -156,6 +157,14 @@ public class ConfigService : IEagerService
             "5. Toggle Show Global Personal Best",
             KeyCode.None,
             "Toggles if the global personal best should be shown");
+
+        MaximumVisibleOfflineGhosts = config.Bind(
+            "2.3 - Ghosts - Offline",
+            "1. Number of ghosts rendered when showing all ghosts (-1 means Show All)",
+            -1,
+            new ConfigDescription(
+                "Maximum number of fastest PB ghosts loaded by Show All",
+                new AcceptableValueRange<int>(-1, int.MaxValue)));
     }
 
     private void ConfigRecordHolder(ConfigFile config)
