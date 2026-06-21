@@ -6,26 +6,31 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostNamePositioniongService : IEagerService
+public class GhostNamePositioniongService : IEagerService, System.IDisposable
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
+    private readonly BulkGhostModeState _bulkModeState;
+    private readonly PlayerLoopSubscription _updateSubscription;
 
     public GhostNamePositioniongService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
         ConfigService configService,
-        MessengerService messengerService)
+        MessengerService messengerService,
+        BulkGhostModeState bulkModeState)
     {
         _playerLoopService = playerLoopService;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
         _messengerService = messengerService;
+        _bulkModeState = bulkModeState;
 
-        _playerLoopService.SubscribeUpdate(OnUpdate);
+        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
+        _bulkModeState.Changed += OnBulkModeChanged;
     }
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
@@ -40,6 +45,9 @@ public class GhostNamePositioniongService : IEagerService
 
         ghostData.Visuals.NameDisplay.gameObject.SetActive(
             _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
+
+        if (_bulkModeState.IsActive)
+            SetNameAlpha(ghostData, 1);
     }
 
     private void OnUpdate()
@@ -106,5 +114,29 @@ public class GhostNamePositioniongService : IEagerService
         nameDisplayTransform.position = ghostData.GameObject.transform.position + Vector3.up * 2.5f;
         nameDisplayTransform.LookAt(cameraPosition);
         nameDisplayTransform.LookAt(nameDisplayTransform.position - nameDisplayTransform.forward);
+    }
+
+    private void OnBulkModeChanged()
+    {
+        foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
+        {
+            UpdateVisibility(ghostData);
+        }
+    }
+
+    private static void SetNameAlpha(GhostData ghostData, float alpha)
+    {
+        ghostData.Visuals.NameDisplay.theDisplayName.color =
+            ghostData.Visuals.NameDisplay.theDisplayName.color with
+            {
+                a = alpha
+            };
+    }
+
+    public void Dispose()
+    {
+        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
+        _ghostPlayer.GhostAdded -= OnGhostAdded;
+        _bulkModeState.Changed -= OnBulkModeChanged;
     }
 }
