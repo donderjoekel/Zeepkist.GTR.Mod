@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +37,7 @@ namespace TNRD.Zeepkist.GTR;
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
+    private readonly CancellationTokenSource _lifetimeCts = new();
 
     private void Awake()
     {
@@ -44,6 +46,7 @@ public class Plugin : BaseUnityPlugin
 
     private void OnDestroy()
     {
+        _lifetimeCts.Cancel();
         StopHost().Forget();
     }
 
@@ -51,7 +54,9 @@ public class Plugin : BaseUnityPlugin
     {
         try
         {
-            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+            await UniTask.WaitUntil(
+                () => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn,
+                cancellationToken: _lifetimeCts.Token);
             
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
@@ -63,7 +68,7 @@ public class Plugin : BaseUnityPlugin
             });
             builder.ConfigureServices(ConfigureServices);
             _host = builder.Build();
-            await _host.StartAsync();
+            await _host.StartAsync(_lifetimeCts.Token);
 
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -102,7 +107,6 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<UnhandledExceptionLoggerService>();
         services.AddEagerService<VotingService>();
         services.AddSingleton<AssetService>();
-        services.AddSingleton<GhostRepository>();
         services.AddSingleton<GhostReaderFactory>();
         services.AddSingleton<GhostRecorderFactory>();
         services.AddSingleton<LeaderboardGraphqlService>();
@@ -123,17 +127,31 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V5Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
+        services.AddHttpClient(GhostRepository.ClientKey, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddSingleton(provider =>
+            new GhostRepository(
+                provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
+                provider.GetRequiredService<GhostReaderFactory>(),
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey)));
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();
-            client.BaseAddress = new Uri(configService.BackendUrl.Value);
+            string backendUrl = configService.BackendUrl.Value
+                ? ConfigService.LocalDevelopmentBackendUrl
+                : ConfigService.ProductionBackendUrl;
+            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(backendUrl, "Backend API URL");
+            client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
         services.AddGtrClient()
             .ConfigureHttpClient((provider,client) =>
             {
-                var configService = provider.GetRequiredService<ConfigService>();
-                client.BaseAddress = new Uri(configService.GraphQlUrl.Value);
+                client.BaseAddress =
+                    ServiceUriValidator.ParseBaseAddress(ConfigService.GraphQLUrl, "GraphQL URL");
+                client.Timeout = TimeSpan.FromSeconds(30);
                 AddDefaultHeaders(client);
             });
     }
@@ -148,7 +166,21 @@ public class Plugin : BaseUnityPlugin
 
     private async UniTaskVoid StopHost()
     {
-        await _host.StopAsync();
-        _host.Dispose();
+        IHost host = _host;
+        _host = null;
+        if (host != null)
+        {
+            try
+            {
+                using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
+                await host.StopAsync(timeout.Token);
+            }
+            finally
+            {
+                host.Dispose();
+            }
+        }
+
+        _lifetimeCts.Dispose();
     }
 }

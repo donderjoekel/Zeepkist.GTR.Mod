@@ -113,7 +113,8 @@ public abstract class GhostBase : IGhost
         if (_fixedUpdateFrame >= FrameCount - 1)
             return;
 
-        OnFixedUpdate(_fixedUpdateFrame);
+        if (Ghost.VisualProfile == GhostVisualProfile.Full)
+            OnFixedUpdate(_fixedUpdateFrame);
 
         _fixedUpdateFrame++;
     }

@@ -1,15 +1,14 @@
-﻿using System;
+using System;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Polly;
-using Polly.Retry;
 using Steamworks;
 using Steamworks.Data;
-using TNRD.Zeepkist.GTR.Configuration;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Api;
@@ -17,11 +16,14 @@ namespace TNRD.Zeepkist.GTR.Api;
 public class ApiHttpClient
 {
     public const string ClientKey = "API";
-    
+
+    private const int MaxRetryCount = 3;
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ApiHttpClient> _logger;
-    private readonly AsyncPolicy<HttpResponseMessage> _wrappedPolicy;
-    private readonly AsyncPolicy<HttpResponseMessage> _failurePolicy;
+    private readonly SemaphoreSlim _authenticationLock = new(1, 1);
+    private readonly Random _jitter = new();
+    private readonly object _jitterLock = new();
 
     private string _accessToken;
     private string _refreshToken;
@@ -29,48 +31,12 @@ public class ApiHttpClient
     private DateTimeOffset _refreshTokenExpiry = DateTimeOffset.MinValue;
 
     private bool NeedsLogin => string.IsNullOrEmpty(_accessToken) || DateTimeOffset.UtcNow > _refreshTokenExpiry;
-    private bool NeedsRefresh => DateTimeOffset.UtcNow > _accessTokenExpiry;
+    private bool NeedsRefresh => DateTimeOffset.UtcNow.AddSeconds(30) >= _accessTokenExpiry;
 
     public ApiHttpClient(IHttpClientFactory httpClientFactory, ILogger<ApiHttpClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-
-        _failurePolicy = Policy
-            .Handle<Exception>()
-            .OrResult<HttpResponseMessage>(x => !x.IsSuccessStatusCode)
-            .WaitAndRetryAsync(
-                3,
-                retryCount =>
-                {
-                    _logger.LogWarning("Request failed, retrying ({RetryCount})", retryCount);
-                    return TimeSpan.FromSeconds(Math.Pow(2, retryCount));
-                });
-
-        AsyncRetryPolicy<HttpResponseMessage> unauthorizedPolicy = Policy
-            .HandleResult<HttpResponseMessage>(x => x.StatusCode == HttpStatusCode.Unauthorized)
-            .RetryAsync(3, HandleUnauthorizedRequest);
-
-        _wrappedPolicy = Policy.WrapAsync(_failurePolicy, unauthorizedPolicy);
-    }
-
-    private async Task HandleUnauthorizedRequest(DelegateResult<HttpResponseMessage> response, int retryCount)
-    {
-        if (retryCount > 3)
-        {
-            throw new Exception("Unauthorized request failed after 3 retries");
-        }
-
-        _logger.LogInformation("Unauthorized, retrying ({RetryCount})", retryCount);
-
-        if (NeedsLogin)
-        {
-            await Login();
-        }
-        else if (NeedsRefresh)
-        {
-            await Refresh();
-        }
     }
 
     private static string CreateAuthenticationTicket()
@@ -78,64 +44,66 @@ public class ApiHttpClient
         AuthTicket authSessionTicket = SteamUser.GetAuthSessionTicket(new NetIdentity());
         StringBuilder stringBuilder = new();
         foreach (byte b in authSessionTicket.Data)
-        {
             stringBuilder.AppendFormat("{0:x2}", b);
-        }
-
         return stringBuilder.ToString();
     }
 
     public async UniTask<HttpResponseMessage> PostAsync(string url, object data)
     {
-        if (NeedsLogin)
-        {
-            if (!await Login())
-            {
-                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                {
-                    ReasonPhrase = "Failed to authenticate (Login)"
-                };
-            }
-        }
-        else if (NeedsRefresh)
-        {
-            if (!await Refresh())
-            {
-                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                {
-                    ReasonPhrase = "Failed to authenticate (Refresh)"
-                };
-            }
-        }
+        if (!await LoginOrRefresh())
+            return CreateAuthenticationFailure("Failed to authenticate");
 
-        return await _wrappedPolicy.ExecuteAsync(
-            () =>
-            {
-                HttpRequestMessage request = new(HttpMethod.Post, url);
-                AddHeaders(request, true);
-                string json = JsonConvert.SerializeObject(data);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                var httpClient = _httpClientFactory.CreateClient(ClientKey);
-                return httpClient.SendAsync(request);
-            });
+        bool allowTransientRetries = !string.Equals(url, "record/submit", StringComparison.OrdinalIgnoreCase);
+        string accessToken = _accessToken;
+        HttpResponseMessage response = await SendPostAsync(url, data, true, allowTransientRetries);
+        if (response.StatusCode != HttpStatusCode.Unauthorized)
+            return response;
+
+        response.Dispose();
+        if (string.Equals(accessToken, _accessToken, StringComparison.Ordinal))
+            _accessTokenExpiry = DateTimeOffset.MinValue;
+
+        if (!await LoginOrRefresh())
+            return CreateAuthenticationFailure("Failed to re-authenticate");
+
+        return await SendPostAsync(url, data, true, allowTransientRetries);
     }
 
     public async UniTask<bool> LoginOrRefresh()
     {
-        if (NeedsLogin)
+        await _authenticationLock.WaitAsync();
+        try
         {
-            return await Login();
-        }
+            if (!NeedsLogin && !NeedsRefresh)
+                return true;
 
-        if (await Refresh())
+            if (!NeedsLogin && await RefreshCore())
+                return true;
+
+            return await LoginCore();
+        }
+        finally
         {
-            return true;
+            _authenticationLock.Release();
         }
-
-        return await Login();
     }
 
     public async UniTask<bool> Login()
+    {
+        await _authenticationLock.WaitAsync();
+        try
+        {
+            if (!NeedsLogin && !NeedsRefresh)
+                return true;
+            return await LoginCore();
+        }
+        finally
+        {
+            _authenticationLock.Release();
+        }
+    }
+
+    private async UniTask<bool> LoginCore()
     {
         LoginPostResource data = new()
         {
@@ -144,20 +112,11 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId.ToString()
         };
 
-        HttpResponseMessage response = await _failurePolicy.ExecuteAsync(
-            () =>
-            {
-                HttpRequestMessage request = new(HttpMethod.Post, "auth/login");
-                AddHeaders(request, false);
-                string json = JsonConvert.SerializeObject(data);
-                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                var httpClient = _httpClientFactory.CreateClient(ClientKey);
-                return httpClient.SendAsync(request);
-            });
+        using HttpResponseMessage response = await SendPostAsync("auth/login", data, false, true);
         return await ProcessAuthenticationResponse(response);
     }
 
-    private async UniTask<bool> Refresh()
+    private async UniTask<bool> RefreshCore()
     {
         RefreshPostResource data = new()
         {
@@ -167,36 +126,133 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId.ToString()
         };
 
-        HttpResponseMessage response = await _failurePolicy.ExecuteAsync(() =>
-        {
-            HttpRequestMessage request = new(HttpMethod.Post, "auth/refresh");
-            AddHeaders(request, false);
-            string json = JsonConvert.SerializeObject(data);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-            var httpClient = _httpClientFactory.CreateClient(ClientKey);
-            return httpClient.SendAsync(request);
-        });
+        using HttpResponseMessage response = await SendPostAsync("auth/refresh", data, false, true);
         return await ProcessAuthenticationResponse(response);
+    }
+
+    private async Task<HttpResponseMessage> SendPostAsync(
+        string url,
+        object data,
+        bool authenticated,
+        bool allowTransientRetries)
+    {
+        string json = JsonConvert.SerializeObject(data);
+        int retryCount = 0;
+
+        while (true)
+        {
+            try
+            {
+                using HttpRequestMessage request = new(HttpMethod.Post, url);
+                if (authenticated)
+                    request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _accessToken);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                HttpClient httpClient = _httpClientFactory.CreateClient(ClientKey);
+                HttpResponseMessage response = await httpClient.SendAsync(request);
+
+                if (!allowTransientRetries || !IsTransient(response.StatusCode) || retryCount >= MaxRetryCount)
+                    return response;
+
+                TimeSpan delay = GetRetryDelay(response, retryCount++);
+                response.Dispose();
+                _logger.LogWarning("Transient response, retrying in {Delay} ({RetryCount})", delay, retryCount);
+                await Task.Delay(delay);
+            }
+            catch (Exception e) when (IsTransient(e) && allowTransientRetries && retryCount < MaxRetryCount)
+            {
+                TimeSpan delay = GetRetryDelay(null, retryCount++);
+                _logger.LogWarning(e, "Transient request failure, retrying in {Delay} ({RetryCount})", delay, retryCount);
+                await Task.Delay(delay);
+            }
+        }
+    }
+
+    private static bool IsTransient(HttpStatusCode statusCode)
+    {
+        return statusCode == HttpStatusCode.RequestTimeout ||
+               (int)statusCode == 429 ||
+               (int)statusCode >= 500;
+    }
+
+    private static bool IsTransient(Exception exception)
+    {
+        return exception is HttpRequestException || exception is TaskCanceledException;
+    }
+
+    private TimeSpan GetRetryDelay(HttpResponseMessage response, int retryCount)
+    {
+        if (response?.Headers.RetryAfter?.Delta is TimeSpan retryAfterDelta)
+            return retryAfterDelta > TimeSpan.FromSeconds(30) ? TimeSpan.FromSeconds(30) : retryAfterDelta;
+
+        if (response?.Headers.RetryAfter?.Date is DateTimeOffset retryAfterDate)
+        {
+            TimeSpan serverDelay = retryAfterDate - DateTimeOffset.UtcNow;
+            if (serverDelay > TimeSpan.Zero)
+                return serverDelay > TimeSpan.FromSeconds(30) ? TimeSpan.FromSeconds(30) : serverDelay;
+        }
+
+        int jitterMilliseconds;
+        lock (_jitterLock)
+            jitterMilliseconds = _jitter.Next(100, 501);
+        return TimeSpan.FromSeconds(Math.Pow(2, retryCount)) + TimeSpan.FromMilliseconds(jitterMilliseconds);
     }
 
     private async UniTask<bool> ProcessAuthenticationResponse(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError("Failed to refresh: {StatusCode}", response.StatusCode);
+            _logger.LogError("Authentication failed: {StatusCode}", response.StatusCode);
             ResetData();
             return false;
         }
 
-        // TODO: Should this be done in a safe way?
-        string content = await response.Content.ReadAsStringAsync();
-        AuthenticationResource resource = JsonConvert.DeserializeObject<AuthenticationResource>(content);
+        try
+        {
+            string content = await response.Content.ReadAsStringAsync();
+            AuthenticationResource resource = JsonConvert.DeserializeObject<AuthenticationResource>(content);
+            if (resource == null ||
+                string.IsNullOrWhiteSpace(resource.AccessToken) ||
+                string.IsNullOrWhiteSpace(resource.RefreshToken) ||
+                !long.TryParse(resource.AccessTokenExpiry, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                    out long accessTokenExpiry) ||
+                !long.TryParse(resource.RefreshTokenExpiry, NumberStyles.Integer, CultureInfo.InvariantCulture,
+                    out long refreshTokenExpiry))
+            {
+                _logger.LogError("Authentication response was malformed");
+                ResetData();
+                return false;
+            }
 
-        _accessToken = resource.AccessToken;
-        _refreshToken = resource.RefreshToken;
-        _accessTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.AccessTokenExpiry));
-        _refreshTokenExpiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(resource.RefreshTokenExpiry));
-        return true;
+            DateTimeOffset parsedAccessExpiry = DateTimeOffset.FromUnixTimeSeconds(accessTokenExpiry);
+            DateTimeOffset parsedRefreshExpiry = DateTimeOffset.FromUnixTimeSeconds(refreshTokenExpiry);
+            if (parsedAccessExpiry <= DateTimeOffset.UtcNow || parsedRefreshExpiry <= parsedAccessExpiry)
+            {
+                _logger.LogError("Authentication response contained invalid expiry values");
+                ResetData();
+                return false;
+            }
+
+            _accessToken = resource.AccessToken;
+            _refreshToken = resource.RefreshToken;
+            _accessTokenExpiry = parsedAccessExpiry;
+            _refreshTokenExpiry = parsedRefreshExpiry;
+            return true;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to parse authentication response");
+            ResetData();
+            return false;
+        }
+    }
+
+    private static HttpResponseMessage CreateAuthenticationFailure(string reason)
+    {
+        return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+        {
+            ReasonPhrase = reason
+        };
     }
 
     private void ResetData()
@@ -205,13 +261,5 @@ public class ApiHttpClient
         _refreshToken = null;
         _accessTokenExpiry = DateTimeOffset.MinValue;
         _refreshTokenExpiry = DateTimeOffset.MinValue;
-    }
-
-    private void AddHeaders(HttpRequestMessage request, bool isAuthenticated)
-    {
-        if (isAuthenticated)
-        {
-            request.Headers.Add("Authorization", "Bearer " + _accessToken);
-        }
     }
 }

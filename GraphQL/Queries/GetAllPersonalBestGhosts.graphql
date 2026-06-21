@@ -1,0 +1,14 @@
+query GetAllPersonalBestGhosts($hash: String, $first: Int = null) {
+  records(
+    filter: {
+      level: { hash: { equalTo: $hash } }
+      personalBestGlobalsExist: true
+    }
+    first: $first
+    orderBy: TIME_ASC
+  ) {
+    nodes {
+      ...GhostRecordFrag
+    }
+  }
+}

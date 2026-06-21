@@ -20,12 +20,20 @@ public class V1Reader : GhostReaderBase<V1Ghost>
         using (BinaryReader reader = new(ms))
         {
             reader.ReadInt32();
-            int frameCount = reader.ReadInt32();
+            int frameCount = GhostReaderValidation.ReadFrameCount(reader);
             for (int i = 0; i < frameCount; i++)
             {
                 float time = reader.ReadSingle();
-                Vector3 position = new(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-                Quaternion rotation = Quaternion.Euler(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                float positionX = reader.ReadSingle();
+                float positionY = reader.ReadSingle();
+                float positionZ = reader.ReadSingle();
+                float rotationX = reader.ReadSingle();
+                float rotationY = reader.ReadSingle();
+                float rotationZ = reader.ReadSingle();
+                GhostReaderValidation.RequireFinite(
+                    time, positionX, positionY, positionZ, rotationX, rotationY, rotationZ);
+                Vector3 position = new(positionX, positionY, positionZ);
+                Quaternion rotation = Quaternion.Euler(rotationX, rotationY, rotationZ);
                 frames.Add(new V1Ghost.Frame(time, position, rotation));
             }
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
@@ -17,10 +18,12 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
     }
 
     public async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>> GetAdditionalGhosts(
-        List<string> steamIds, string levelHash)
+        List<string> steamIds,
+        string levelHash,
+        CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetAdditionalGhostsResult> result =
-            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash);
+            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash, cancellationToken);
 
         try
         {
@@ -33,6 +36,27 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
 
         IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes> nodes = result.Data.PersonalBestGlobals.Nodes;
         return Result.Ok(nodes);
+    }
+
+    public async UniTask<Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>>> GetAllPersonalBestGhosts(
+        string levelHash,
+        int? first,
+        CancellationToken cancellationToken = default)
+    {
+        IOperationResult<IGetAllPersonalBestGhostsResult> result =
+            await GtrClient.GetAllPersonalBestGhosts.ExecuteAsync(levelHash, first, cancellationToken);
+
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes> nodes = result.Data?.Records?.Nodes;
+        return Result.Ok(nodes ?? []);
     }
 
     private static List<PersonalBest> Map(Root root)

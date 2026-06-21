@@ -43,7 +43,9 @@ public class V4Reader : GhostReaderBase<V4Ghost>
             hatId = reader.ReadInt32();
             colorId = reader.ReadInt32();
             byte precision = reader.ReadByte();
-            int frameCount = reader.ReadInt32();
+            if (precision == 0)
+                throw new InvalidDataException("Ghost precision cannot be zero.");
+            int frameCount = GhostReaderValidation.ReadFrameCount(reader);
 
             ResetFrame lastResetFrame = null;
             List<DeltaFrame> deltaFrames = new();
@@ -75,6 +77,11 @@ public class V4Reader : GhostReaderBase<V4Ghost>
     private static (V4Ghost.Frame, ResetFrame) ReadResetFrame(BinaryReader reader, List<DeltaFrame> deltaFrames)
     {
         ResetFrame lastResetFrame = ResetFrame.Read(reader);
+        GhostReaderValidation.RequireFinite(
+            lastResetFrame.Time,
+            lastResetFrame.PositionX,
+            lastResetFrame.PositionY,
+            lastResetFrame.PositionZ);
         deltaFrames.Clear();
 
         return (new V4Ghost.Frame(
@@ -100,6 +107,7 @@ public class V4Reader : GhostReaderBase<V4Ghost>
         ResetFrame lastResetFrame)
     {
         DeltaFrame deltaFrame = DeltaFrame.Read(reader);
+        GhostReaderValidation.RequireFinite(deltaFrame.Time);
         deltaFrames.Add(deltaFrame);
 
         List<V4Ghost.Frame> frames = new();
@@ -137,7 +145,7 @@ public class V4Reader : GhostReaderBase<V4Ghost>
 
     private static bool IsGZipped(byte[] buffer)
     {
-        return buffer[0] == 0x1f && buffer[1] == 0x8b;
+        return buffer.Length >= 2 && buffer[0] == 0x1f && buffer[1] == 0x8b;
     }
 
     private static float ShortToFloat(short value, float scale = 10000f)

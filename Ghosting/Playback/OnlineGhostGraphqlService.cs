@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using Steamworks;
 using StrawberryShake;
@@ -26,10 +27,14 @@ public class OnlineGhostGraphqlService
     }
 
     public async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>> GetPersonalBests(
-        string levelHash)
+        string levelHash,
+        CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetPersonalBestGhostsResult> result =
-            await _gtrClient.GetPersonalBestGhosts.ExecuteAsync(SteamClient.SteamId.ToString(), levelHash);
+            await _gtrClient.GetPersonalBestGhosts.ExecuteAsync(
+                SteamClient.SteamId.ToString(),
+                levelHash,
+                cancellationToken);
 
         try
         {

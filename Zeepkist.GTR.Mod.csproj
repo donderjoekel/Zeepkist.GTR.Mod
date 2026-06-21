@@ -22,6 +22,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Remove="Zeepkist.GTR.Mod.Tests\**\*.cs" />
         <PackageReference Include="BepInEx.Analyzers" Version="1.0.8" PrivateAssets="all" />
         <PackageReference Include="BepInEx.Core" Version="5.4.21" PrivateAssets="all" />
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" PrivateAssets="all" />
@@ -32,7 +33,6 @@
         <PackageReference Include="JsonApiSerializer" Version="2.0.1" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.19" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
         <PackageReference Include="protobuf-net" Version="3.2.56" />
         <PackageReference Include="RestEase" Version="1.6.4" />
@@ -79,7 +79,6 @@
             <OutputFiles Include="$(TargetDir)Serilog*.dll"/>
             <OutputFiles Include="$(TargetDir)RestEase*.dll"/>
             <OutputFiles Include="$(TargetDir)System*.dll"/>
-            <OutputFiles Include="$(TargetDir)Polly*.dll"/>
             <OutputFiles Include="$(TargetDir)protobuf*.dll"/>
             <OutputFiles Include="$(TargetDir)SevenZip.dll"/>
             <OutputFiles Include="$(TargetDir)EasyCompressor*.dll"/>

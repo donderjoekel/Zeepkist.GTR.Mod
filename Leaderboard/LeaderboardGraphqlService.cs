@@ -106,11 +106,14 @@ public class LeaderboardGraphqlService
         }
     }
 
-    public async UniTask<Result<IGetPersonalBestsResult>> GetLeaderboardRecords(string levelHash, int page = 0,
-        CancellationToken ct = default)
+    public async UniTask<Result<IGetPersonalBestsResult>> GetLeaderboardRecords(
+        string levelHash,
+        int page = 0,
+        CancellationToken ct = default,
+        int pageSize = 16)
     {
         IOperationResult<IGetPersonalBestsResult> result =
-            await _gtrClient.GetPersonalBests.ExecuteAsync(levelHash, 16, page * 16, ct);
+            await _gtrClient.GetPersonalBests.ExecuteAsync(levelHash, pageSize, page * pageSize, ct);
 
         try
         {

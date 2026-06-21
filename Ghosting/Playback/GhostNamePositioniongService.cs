@@ -35,6 +35,9 @@ public class GhostNamePositioniongService : IEagerService
 
     private void UpdateVisibility(GhostData ghostData)
     {
+        if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
+            return;
+
         ghostData.Visuals.NameDisplay.gameObject.SetActive(
             _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
     }
@@ -44,6 +47,9 @@ public class GhostNamePositioniongService : IEagerService
         Vector3 cameraPosition = GetCameraPosition();
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
+            if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
+                continue;
+
             UpdateName(ghostData, cameraPosition);
         }
 

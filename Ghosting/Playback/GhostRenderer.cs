@@ -1,17 +1,19 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public partial class GhostRenderer
+public partial class GhostRenderer : IDisposable
 {
     private readonly List<RendererData> _rendererData = new();
 
-    public GhostRenderer(GameObject gameObject)
+    public GhostRenderer(GameObject gameObject, GhostVisualProfile visualProfile)
     {
-        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(true);
-        renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer)));
+        bool includeInactive = visualProfile == GhostVisualProfile.Full;
+        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
+        renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer, visualProfile)));
     }
 
     public void SwitchToNormal()
@@ -42,5 +44,16 @@ public partial class GhostRenderer
     public void SetGhostColor(Color color)
     {
         _rendererData.ForEach(rendererData => rendererData.SetGhostColor(color));
+    }
+
+    public void Dispose()
+    {
+        _rendererData.ForEach(rendererData => rendererData.Dispose());
+        _rendererData.Clear();
+    }
+
+    public static void DisposeSharedResources()
+    {
+        RendererData.DisposeSharedResources();
     }
 }

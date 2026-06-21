@@ -13,14 +13,22 @@ using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public partial class GhostPlayer : IEagerService
+public partial class GhostPlayer : IEagerService, IDisposable
 {
-    private readonly ObjectPool<GhostData> _pool = new(CreateGhost, GetGhost, ReleaseGhost, DestroyGhost);
+    private readonly ObjectPool<GhostData> _fullPool =
+        new(CreateFullGhost, GetGhost, ReleaseGhost, DestroyGhost);
+
+    private readonly ObjectPool<GhostData> _bulkPool =
+        new(CreateBulkGhost, GetGhost, ReleaseGhost, DestroyGhost);
+
     private static ILogger<GhostPlayer> _logger;
 
     private readonly Dictionary<int, IGhost> _ghosts = new();
     private readonly Dictionary<int, GhostData> _ghostData = new();
     private readonly HashSet<int> _ghostsToRemove = new();
+    private readonly PlayerLoopService _playerLoopService;
+    private readonly PlayerLoopSubscription _updateSubscription;
+    private readonly PlayerLoopSubscription _fixedUpdateSubscription;
 
     private bool _roundStarted;
     private bool _paused;
@@ -33,9 +41,10 @@ public partial class GhostPlayer : IEagerService
     public GhostPlayer(PlayerLoopService playerLoopService, ILogger<GhostPlayer> logger)
     {
         _logger = logger;
+        _playerLoopService = playerLoopService;
 
-        playerLoopService.SubscribeUpdate(Update);
-        playerLoopService.SubscribeFixedUpdate(FixedUpdate);
+        _updateSubscription = playerLoopService.SubscribeUpdate(Update);
+        _fixedUpdateSubscription = playerLoopService.SubscribeFixedUpdate(FixedUpdate);
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
@@ -44,12 +53,25 @@ public partial class GhostPlayer : IEagerService
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
     }
 
-    private static GhostData CreateGhost()
+    private static GhostData CreateFullGhost()
+    {
+        return CreateGhost(GhostVisualProfile.Full);
+    }
+
+    private static GhostData CreateBulkGhost()
+    {
+        GhostData ghostData = CreateGhost(GhostVisualProfile.Bulk);
+        ghostData.InitializeRenderer();
+        return ghostData;
+    }
+
+    private static GhostData CreateGhost(GhostVisualProfile visualProfile)
     {
         GameObject gameObject = new("Ghost");
         Object.DontDestroyOnLoad(gameObject.transform.root.gameObject);
         GhostVisuals ghostVisuals = gameObject.AddComponent<GhostVisuals>();
-        return new GhostData(ghostVisuals);
+        ghostVisuals.Initialize(visualProfile);
+        return new GhostData(ghostVisuals, visualProfile);
     }
 
     private static void GetGhost(GhostData ghostData)
@@ -60,12 +82,16 @@ public partial class GhostPlayer : IEagerService
 
     private static void ReleaseGhost(GhostData ghostData)
     {
+        ghostData.CurrentHorn?.Stop();
+        ghostData.CurrentHorn?.Cleanup();
+        ghostData.CurrentHorn = null;
         ghostData.Visuals.gameObject.SetActive(false);
         ghostData.GameObject.SetActive(false);
     }
 
     private static void DestroyGhost(GhostData ghostData)
     {
+        ghostData.DisposeRenderer();
         if (ghostData.Visuals.gameObject != null)
             Object.Destroy(ghostData.Visuals.gameObject);
     }
@@ -114,14 +140,14 @@ public partial class GhostPlayer : IEagerService
     {
         _roundStarted = false;
         ClearGhosts();
-        _pool.Clear();
+        ClearPools();
     }
 
     private void OnDisconnectedFromGame()
     {
         _roundStarted = false;
         ClearGhosts();
-        _pool.Clear();
+        ClearPools();
     }
 
     public IReadOnlyList<int> GetLoadedGhostIds()
@@ -134,28 +160,49 @@ public partial class GhostPlayer : IEagerService
         return _ghosts.ContainsKey(recordId);
     }
 
-    public void AddGhost(GhostType type, int recordId, string steamName, IGhost ghost)
+    public void AddGhost(
+        GhostType type,
+        int recordId,
+        string steamName,
+        IGhost ghost,
+        GhostVisualProfile visualProfile = GhostVisualProfile.Full)
     {
         bool hadExistingGhost = false;
 
         if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
-            hadExistingGhost = true;
+            if (ghostData.VisualProfile == visualProfile)
+            {
+                hadExistingGhost = true;
+                _ghosts[recordId].Stop();
+            }
+            else
+            {
+                RemoveGhost(recordId);
+                ghostData = GetPool(visualProfile).Get();
+            }
         }
         else
         {
-            ghostData = _pool.Get();
+            ghostData = GetPool(visualProfile).Get();
         }
 
         ghostData.Initialize(type, ghost);
         ghost.Initialize(ghostData);
-        ghost.ApplyCosmetics(steamName);
-        ghostData.InitializeRenderer();
+        if (visualProfile == GhostVisualProfile.Full)
+        {
+            ghost.ApplyCosmetics(steamName);
+            ghostData.InitializeRenderer();
+        }
 
         if (!hadExistingGhost)
         {
             _ghosts.Add(recordId, ghost);
             _ghostData.Add(recordId, ghostData);
+        }
+        else
+        {
+            _ghosts[recordId] = ghost;
         }
 
         GhostAdded?.Invoke(this, new GhostAddedEventArgs(recordId, ghost, ghostData));
@@ -170,7 +217,7 @@ public partial class GhostPlayer : IEagerService
 
         if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
-            _pool.Release(ghostData);
+            GetPool(ghostData.VisualProfile).Release(ghostData);
             GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));
         }
 
@@ -251,5 +298,31 @@ public partial class GhostPlayer : IEagerService
         {
             RemoveGhost(id);
         }
+    }
+
+    public void Dispose()
+    {
+        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
+        _playerLoopService.UnsubscribeFixedUpdate(_fixedUpdateSubscription);
+        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.QuickReset -= OnQuickReset;
+        RacingApi.Quit -= OnQuit;
+        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
+        ClearGhosts();
+        ClearPools();
+    }
+
+    private ObjectPool<GhostData> GetPool(GhostVisualProfile visualProfile)
+    {
+        return visualProfile == GhostVisualProfile.Bulk ? _bulkPool : _fullPool;
+    }
+
+    private void ClearPools()
+    {
+        _fullPool.Clear();
+        _bulkPool.Clear();
+        GhostRenderer.DisposeSharedResources();
     }
 }
