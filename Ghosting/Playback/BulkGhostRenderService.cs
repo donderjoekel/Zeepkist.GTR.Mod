@@ -13,32 +13,25 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public sealed class BulkGhostRenderService : IEagerService, IDisposable
 {
-    private static readonly int ColorId = Shader.PropertyToID("_Color");
-
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _lateUpdateSubscription;
-    private readonly BulkGhostModeState _bulkModeState;
     private readonly HashSet<Transform> _instances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
-    private Mesh _mesh;
-    private Material _opaqueMaterial;
-    private Material _transparentMaterial;
+    private readonly List<RenderPart> _renderParts = new();
     private bool _initializationAttempted;
     private bool _initialized;
 
     public BulkGhostRenderService(
         ILogger<BulkGhostRenderService> logger,
         ConfigService configService,
-        PlayerLoopService playerLoopService,
-        BulkGhostModeState bulkModeState)
+        PlayerLoopService playerLoopService)
     {
         _logger = logger;
         _configService = configService;
         _playerLoopService = playerLoopService;
-        _bulkModeState = bulkModeState;
         _lateUpdateSubscription = playerLoopService.SubscribeLateUpdate(Draw);
     }
 
@@ -89,10 +82,6 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
             return;
         }
 
-        Material material = _configService.ShowGhostTransparent.Value && !_bulkModeState.IsActive
-            ? _transparentMaterial
-            : _opaqueMaterial;
-
         int count = 0;
         foreach (Transform instance in _instances)
         {
@@ -103,29 +92,32 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
             if (count != BulkGhostBatching.MaximumInstancesPerBatch)
                 continue;
 
-            DrawBatch(material, count);
+            DrawBatch(count);
             count = 0;
         }
 
         if (count > 0)
-            DrawBatch(material, count);
+            DrawBatch(count);
     }
 
-    private void DrawBatch(Material material, int count)
+    private void DrawBatch(int count)
     {
-        Graphics.DrawMeshInstanced(
-            _mesh,
-            0,
-            material,
-            _matrices,
-            count,
-            null,
-            ShadowCastingMode.Off,
-            false,
-            0,
-            null,
-            LightProbeUsage.Off,
-            null);
+        foreach (RenderPart part in _renderParts)
+        {
+            Graphics.DrawMeshInstanced(
+                part.Mesh,
+                0,
+                part.Material,
+                _matrices,
+                count,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                0,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
     }
 
     private void InitializeResources()
@@ -141,7 +133,7 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
             GhostVisuals.ConfigureBulkModel(model);
 
             Matrix4x4 rootInverse = templateRoot.transform.worldToLocalMatrix;
-            var combineInstances = new List<CombineInstance>();
+            var materialGroups = new Dictionary<Material, List<CombineInstance>>();
 
             foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
             {
@@ -149,10 +141,11 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
                 if (renderer == null || !renderer.enabled || filter.sharedMesh == null)
                     continue;
 
-                AddSubMeshes(
-                    combineInstances,
+                AddSubMeshesByMaterial(
+                    materialGroups,
                     filter.sharedMesh,
-                    rootInverse * filter.transform.localToWorldMatrix);
+                    rootInverse * filter.transform.localToWorldMatrix,
+                    renderer.sharedMaterials);
             }
 
             foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
@@ -179,27 +172,34 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
                     MaximumComponent(bakedWorldBounds.size));
                 transform *= Matrix4x4.Scale(Vector3.one * correction);
 
-                AddSubMeshes(
-                    combineInstances,
+                AddSubMeshesByMaterial(
+                    materialGroups,
                     bakedMesh,
-                    transform);
+                    transform,
+                    renderer.sharedMaterials);
             }
 
-            if (combineInstances.Count == 0)
+            if (materialGroups.Count == 0)
                 throw new InvalidOperationException("Bulk ghost template contains no active meshes.");
 
-            _mesh = new Mesh
+            int partIndex = 0;
+            foreach (KeyValuePair<Material, List<CombineInstance>> materialGroup in materialGroups)
             {
-                name = "GTR Instanced Bulk Ghost",
-                indexFormat = IndexFormat.UInt32
-            };
-            _mesh.CombineMeshes(combineInstances.ToArray(), true, true, false);
-            _mesh.RecalculateBounds();
+                var mesh = new Mesh
+                {
+                    name = $"GTR Instanced Bulk Ghost {partIndex++}",
+                    indexFormat = IndexFormat.UInt32
+                };
+                mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
+                mesh.RecalculateBounds();
 
-            Material source =
-                ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostFader.fadeThisMaterial;
-            _opaqueMaterial = CreateMaterial(source, 1f);
-            _transparentMaterial = CreateMaterial(source, 0.3f);
+                var material = new Material(materialGroup.Key)
+                {
+                    enableInstancing = true,
+                    name = $"GTR Instanced {materialGroup.Key.name}"
+                };
+                _renderParts.Add(new RenderPart(mesh, material));
+            }
         }
         finally
         {
@@ -211,33 +211,34 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
         }
     }
 
-    private static void AddSubMeshes(
-        ICollection<CombineInstance> destination,
+    private static void AddSubMeshesByMaterial(
+        IDictionary<Material, List<CombineInstance>> destination,
         Mesh mesh,
-        Matrix4x4 transform)
+        Matrix4x4 transform,
+        IReadOnlyList<Material> materials)
     {
         for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
         {
-            destination.Add(new CombineInstance
+            if (materials.Count == 0)
+                continue;
+
+            Material material = materials[Math.Min(subMesh, materials.Count - 1)];
+            if (material == null)
+                continue;
+
+            if (!destination.TryGetValue(material, out List<CombineInstance> instances))
+            {
+                instances = new List<CombineInstance>();
+                destination.Add(material, instances);
+            }
+
+            instances.Add(new CombineInstance
             {
                 mesh = mesh,
                 subMeshIndex = subMesh,
                 transform = transform
             });
         }
-    }
-
-    private static Material CreateMaterial(Material source, float alpha)
-    {
-        var material = new Material(source)
-        {
-            enableInstancing = true
-        };
-
-        if (material.HasProperty(ColorId))
-            material.color = Color.white with { a = alpha };
-
-        return material;
     }
 
     private static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
@@ -259,16 +260,13 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
 
     private void DisposeResources()
     {
-        if (_mesh != null)
-            Object.Destroy(_mesh);
-        if (_opaqueMaterial != null)
-            Object.Destroy(_opaqueMaterial);
-        if (_transparentMaterial != null)
-            Object.Destroy(_transparentMaterial);
+        foreach (RenderPart part in _renderParts)
+        {
+            Object.Destroy(part.Mesh);
+            Object.Destroy(part.Material);
+        }
 
-        _mesh = null;
-        _opaqueMaterial = null;
-        _transparentMaterial = null;
+        _renderParts.Clear();
         _initialized = false;
     }
 
@@ -277,5 +275,17 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
         _playerLoopService.UnsubscribeLateUpdate(_lateUpdateSubscription);
         _instances.Clear();
         DisposeResources();
+    }
+
+    private sealed class RenderPart
+    {
+        public RenderPart(Mesh mesh, Material material)
+        {
+            Mesh = mesh;
+            Material = material;
+        }
+
+        public Mesh Mesh { get; }
+        public Material Material { get; }
     }
 }

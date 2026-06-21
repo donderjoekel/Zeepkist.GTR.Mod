@@ -11,4 +11,12 @@ public static class BulkGhostBatching
 
         return (instanceCount + MaximumInstancesPerBatch - 1) / MaximumInstancesPerBatch;
     }
+
+    public static int GetDrawCallCount(int instanceCount, int materialCount)
+    {
+        if (materialCount <= 0)
+            return 0;
+
+        return GetBatchCount(instanceCount) * materialCount;
+    }
 }

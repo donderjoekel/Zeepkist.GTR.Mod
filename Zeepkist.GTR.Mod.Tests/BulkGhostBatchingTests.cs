@@ -17,4 +17,17 @@ public class BulkGhostBatchingTests
     {
         Assert.Equal(expected, BulkGhostBatching.GetBatchCount(instanceCount));
     }
+
+    [Theory]
+    [InlineData(0, 4, 0)]
+    [InlineData(1000, 4, 4)]
+    [InlineData(1024, 4, 8)]
+    [InlineData(2000, 0, 0)]
+    public void CalculatesDrawCallsAcrossMaterialGroups(
+        int instanceCount,
+        int materialCount,
+        int expected)
+    {
+        Assert.Equal(expected, BulkGhostBatching.GetDrawCallCount(instanceCount, materialCount));
+    }
 }
