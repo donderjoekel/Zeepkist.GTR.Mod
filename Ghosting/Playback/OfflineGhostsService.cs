@@ -42,6 +42,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private int _progressTotal;
     private int _progressCompleted;
     private int _progressLoaded;
+    private int _lastReportedProgressCompleted;
     private bool _progressActive;
 
     public bool IsShowingAllGhosts { get; private set; }
@@ -479,6 +480,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
         Volatile.Write(ref _progressTotal, total);
         Volatile.Write(ref _progressCompleted, 0);
         Volatile.Write(ref _progressLoaded, 0);
+        _lastReportedProgressCompleted = 0;
         _progressActive = true;
     }
 
@@ -503,6 +505,10 @@ public class OfflineGhostsService : IEagerService, IDisposable
 
         int total = Volatile.Read(ref _progressTotal);
         int completed = Volatile.Read(ref _progressCompleted);
+        if (!GhostLoadProgress.HasAdvanced(completed, _lastReportedProgressCompleted))
+            return;
+
+        _lastReportedProgressCompleted = completed;
         int percent = GhostLoadProgress.CalculatePercent(completed, total);
 
         int loaded = Volatile.Read(ref _progressLoaded);

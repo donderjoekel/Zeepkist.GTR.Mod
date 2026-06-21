@@ -11,4 +11,9 @@ public static class GhostLoadProgress
 
         return Math.Min(100, Math.Max(0, completed * 100 / total));
     }
+
+    public static bool HasAdvanced(int completed, int lastReportedCompleted)
+    {
+        return completed > lastReportedCompleted;
+    }
 }

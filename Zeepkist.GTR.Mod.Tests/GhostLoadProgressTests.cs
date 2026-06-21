@@ -14,4 +14,19 @@ public class GhostLoadProgressTests
     {
         Assert.Equal(expected, GhostLoadProgress.CalculatePercent(completed, total));
     }
+
+    [Theory]
+    [InlineData(0, 0, false)]
+    [InlineData(1, 0, true)]
+    [InlineData(5, 5, false)]
+    [InlineData(6, 5, true)]
+    public void ReportsOnlyAfterCompletionAdvances(
+        int completed,
+        int lastReportedCompleted,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            GhostLoadProgress.HasAdvanced(completed, lastReportedCompleted));
+    }
 }
