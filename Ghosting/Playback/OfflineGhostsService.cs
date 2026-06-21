@@ -331,6 +331,15 @@ public class OfflineGhostsService : IEagerService, IDisposable
         {
             return;
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unable to download or parse ghost {RecordId}",
+                record.Id);
+            CompleteProgressRecord(generation, false);
+            return;
+        }
 
         if (cancellationToken.IsCancellationRequested ||
             !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)))
@@ -435,13 +444,24 @@ public class OfflineGhostsService : IEagerService, IDisposable
             }
             else
             {
-                _ghostPlayer.AddGhost(
-                    GhostType.Global,
-                    operation.RecordId,
-                    operation.SteamName,
-                    operation.Ghost,
-                    operation.VisualProfile);
-                CompleteProgressRecord(operation.Generation, true);
+                try
+                {
+                    _ghostPlayer.AddGhost(
+                        GhostType.Global,
+                        operation.RecordId,
+                        operation.SteamName,
+                        operation.Ghost,
+                        operation.VisualProfile);
+                    CompleteProgressRecord(operation.Generation, true);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(
+                        exception,
+                        "Unable to add ghost {RecordId}",
+                        operation.RecordId);
+                    CompleteProgressRecord(operation.Generation, false);
+                }
             }
 
             processed++;
@@ -496,9 +516,17 @@ public class OfflineGhostsService : IEagerService, IDisposable
 
         _progressActive = false;
         if (loaded == total)
-            _messengerService.LogSuccess($"Loaded {loaded} ghosts");
+        {
+            _messengerService.LogSuccess(
+                $"Loading ghosts: 100% ({loaded}/{total})",
+                2);
+        }
         else
-            _messengerService.LogWarning($"Loaded {loaded}/{total} ghosts");
+        {
+            _messengerService.LogWarning(
+                $"Loading ghosts: 100% ({loaded}/{total})",
+                2);
+        }
     }
 
     public void Dispose()
