@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
+using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -27,6 +28,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _updateSubscription;
     private readonly BulkGhostModeState _bulkModeState;
+    private readonly MessengerService _messengerService;
 
     private readonly List<string> _additionalGhosts = new();
     private readonly HashSet<int> _bulkGhostIds = new();
@@ -36,6 +38,12 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private string _bulkLevelHash;
     private string _loadedLevelHash;
     private int _loadGeneration;
+    private int _progressGeneration;
+    private int _progressTotal;
+    private int _progressCompleted;
+    private int _progressLoaded;
+    private int _lastReportedProgress;
+    private bool _progressActive;
 
     public bool IsShowingAllGhosts { get; private set; }
     public event Action BulkModeChanged;
@@ -47,6 +55,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
         GhostPlayer ghostPlayer,
         ConfigService configService,
         PlayerLoopService playerLoopService,
+        MessengerService messengerService,
         BulkGhostModeState bulkModeState)
     {
         _logger = logger;
@@ -55,6 +64,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
         _ghostPlayer = ghostPlayer;
         _configService = configService;
         _playerLoopService = playerLoopService;
+        _messengerService = messengerService;
         _bulkModeState = bulkModeState;
 
         _updateSubscription = playerLoopService.SubscribeUpdate(OnUpdate);
@@ -66,6 +76,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private void OnUpdate()
     {
         DrainPendingOperations();
+        UpdateLoadProgress();
 
         if (MultiplayerApi.IsPlayingOnline)
             return;
@@ -234,6 +245,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
         var desiredIds = protectedIds.ToHashSet();
         desiredIds.UnionWith(_bulkGhostIds);
 
+        BeginProgress(generation, distinctProtected.Count + distinctBulk.Count);
         await LoadRecords(distinctProtected, GhostVisualProfile.Full, ct, generation);
         await LoadRecords(distinctBulk, GhostVisualProfile.Bulk, ct, generation);
         EnqueueReconciliation(desiredIds, generation);
@@ -303,7 +315,10 @@ public class OfflineGhostsService : IEagerService, IDisposable
         int generation)
     {
         if (_ghostPlayer.HasGhost(record.Id, visualProfile))
+        {
+            CompleteProgressRecord(generation, true);
             return;
+        }
 
         Result<IGhost> ghost;
         try
@@ -327,6 +342,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
         if (ghost.IsFailed)
         {
             _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
+            CompleteProgressRecord(generation, false);
             return;
         }
 
@@ -358,6 +374,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private void CancelLoad()
     {
         Interlocked.Increment(ref _loadGeneration);
+        _progressActive = false;
         while (_pendingOperations.TryDequeue(out _))
         {
         }
@@ -425,6 +442,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
                     operation.SteamName,
                     operation.Ghost,
                     operation.VisualProfile);
+                CompleteProgressRecord(operation.Generation, true);
             }
 
             processed++;
@@ -434,6 +452,58 @@ public class OfflineGhostsService : IEagerService, IDisposable
     private static double GetElapsedMilliseconds(long startedAt)
     {
         return (Stopwatch.GetTimestamp() - startedAt) * 1000d / Stopwatch.Frequency;
+    }
+
+    private void BeginProgress(int generation, int total)
+    {
+        Volatile.Write(ref _progressGeneration, generation);
+        Volatile.Write(ref _progressTotal, total);
+        Volatile.Write(ref _progressCompleted, 0);
+        Volatile.Write(ref _progressLoaded, 0);
+        _lastReportedProgress = -GhostLoadProgress.ReportStepPercent;
+        _progressActive = true;
+    }
+
+    private void CompleteProgressRecord(int generation, bool loaded)
+    {
+        if (!GhostLoadBudget.IsCurrentGeneration(
+                generation,
+                Volatile.Read(ref _progressGeneration)))
+        {
+            return;
+        }
+
+        if (loaded)
+            Interlocked.Increment(ref _progressLoaded);
+        Interlocked.Increment(ref _progressCompleted);
+    }
+
+    private void UpdateLoadProgress()
+    {
+        if (!_progressActive)
+            return;
+
+        int total = Volatile.Read(ref _progressTotal);
+        int completed = Volatile.Read(ref _progressCompleted);
+        int percent = GhostLoadProgress.CalculatePercent(completed, total);
+        if (!GhostLoadProgress.ShouldReport(percent, _lastReportedProgress))
+            return;
+
+        _lastReportedProgress = percent;
+        int loaded = Volatile.Read(ref _progressLoaded);
+        if (percent < 100)
+        {
+            _messengerService.Log(
+                $"Loading ghosts: {percent}% ({loaded}/{total})",
+                1.5f);
+            return;
+        }
+
+        _progressActive = false;
+        if (loaded == total)
+            _messengerService.LogSuccess($"Loaded {loaded} ghosts");
+        else
+            _messengerService.LogWarning($"Loaded {loaded}/{total} ghosts");
     }
 
     public void Dispose()

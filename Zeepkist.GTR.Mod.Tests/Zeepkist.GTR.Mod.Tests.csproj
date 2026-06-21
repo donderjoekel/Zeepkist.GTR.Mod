@@ -26,6 +26,7 @@
     <Compile Include="..\Ghosting\Playback\BulkGhostModeState.cs" Link="Source\BulkGhostModeState.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostMeshScale.cs" Link="Source\BulkGhostMeshScale.cs" />
     <Compile Include="..\Ghosting\Playback\GhostLoadBudget.cs" Link="Source\GhostLoadBudget.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostLoadProgress.cs" Link="Source\GhostLoadProgress.cs" />
     <Compile Include="..\Ghosting\Playback\GhostReconciliation.cs" Link="Source\GhostReconciliation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
