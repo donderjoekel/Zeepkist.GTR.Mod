@@ -1,13 +1,14 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
-using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
-using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Level;
@@ -16,25 +17,28 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class OfflineGhostsService : IEagerService, System.IDisposable
+public class OfflineGhostsService : IEagerService, IDisposable
 {
     private readonly ILogger<OfflineGhostsService> _logger;
     private readonly OfflineGhostGraphqlService _graphqlService;
     private readonly GhostRepository _ghostRepository;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
-    private readonly MessengerService _messengerService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _updateSubscription;
+    private readonly BulkGhostModeState _bulkModeState;
 
     private readonly List<string> _additionalGhosts = new();
     private readonly HashSet<int> _bulkGhostIds = new();
+    private readonly ConcurrentQueue<PendingGhostOperation> _pendingOperations = new();
 
     private CancellationTokenSource _cts;
     private string _bulkLevelHash;
+    private string _loadedLevelHash;
+    private int _loadGeneration;
 
     public bool IsShowingAllGhosts { get; private set; }
-    public event System.Action BulkModeChanged;
+    public event Action BulkModeChanged;
 
     public OfflineGhostsService(
         ILogger<OfflineGhostsService> logger,
@@ -43,52 +47,49 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
         GhostPlayer ghostPlayer,
         ConfigService configService,
         PlayerLoopService playerLoopService,
-        MessengerService messengerService)
+        BulkGhostModeState bulkModeState)
     {
         _logger = logger;
         _graphqlService = graphqlService;
         _ghostRepository = ghostRepository;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
-        _messengerService = messengerService;
         _playerLoopService = playerLoopService;
+        _bulkModeState = bulkModeState;
 
         _updateSubscription = playerLoopService.SubscribeUpdate(OnUpdate);
-
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.Quit += OnQuit;
-        // TODO: Figure out when quitting to main menu
-        // TODO: Figure out when pause menu opened
     }
 
     private void OnUpdate()
     {
+        DrainPendingOperations();
+
         if (MultiplayerApi.IsPlayingOnline)
             return;
-
-        if (PlayerManager.Instance == null) return;
-        if (PlayerManager.Instance.currentMaster == null) return;
-        if (PlayerManager.Instance.currentMaster.OnlineGameplayUI == null) return;
+        if (PlayerManager.Instance == null ||
+            PlayerManager.Instance.currentMaster == null ||
+            PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
+        {
+            return;
+        }
 
         if (PlayerManager.Instance.currentMaster.OnlineGameplayUI.LeaderboardAction.buttonDown)
-        {
             PlayerManager.Instance.currentMaster.OnlineGameplayUI.OnlineTabLeaderboard.Open(true);
-        }
     }
 
     protected virtual void OnPlayerSpawned()
     {
-        if (MultiplayerApi.IsPlayingOnline)
+        if (MultiplayerApi.IsPlayingOnline || !_configService.EnableGhosts.Value)
             return;
 
-        if (_configService.EnableGhosts.Value)
-        {
-            if (IsShowingAllGhosts && _bulkLevelHash == LevelApi.CurrentHash)
-                LoadAllGhosts();
-            else
-                ClearAllGhosts();
-        }
+        PrepareLevel();
+        if (IsShowingAllGhosts && _bulkLevelHash == LevelApi.CurrentHash)
+            LoadAllGhosts();
+        else
+            LoadGhosts();
     }
 
     private void OnQuit()
@@ -98,65 +99,55 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
 
         CancelLoad();
         SetBulkMode(false);
+        _loadedLevelHash = null;
+        _bulkLevelHash = null;
+        _bulkGhostIds.Clear();
         _ghostPlayer.ClearGhosts();
     }
 
-    private void OnRoundEnded()
+    private static void OnRoundEnded()
     {
-        if (MultiplayerApi.IsPlayingOnline)
-            return;
-
-        CancelLoad();
-        _ghostPlayer.ClearGhosts();
+        // Keep same-level ghosts loaded. GhostPlayer resets playback state.
     }
 
     private void LoadGhosts()
     {
-        CancelLoad();
-        _cts = new CancellationTokenSource();
-        LoadGhostsAsync(_cts.Token).Forget();
+        (CancellationToken token, int generation) = BeginLoad();
+        LoadGhostsAsync(token, generation).Forget();
     }
 
-    private async UniTaskVoid LoadGhostsAsync(CancellationToken ct)
+    private async UniTaskVoid LoadGhostsAsync(CancellationToken ct, int generation)
     {
-        (Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> pbResult,
-                Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> additionalResult) =
-            await UniTask.WhenAll(
-                LoadPersonalBestsAsync(ct),
-                LoadAdditionalGhostsAsync(ct));
+        (
+            Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> pbResult,
+            Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> additionalResult
+        ) = await UniTask.WhenAll(
+            LoadPersonalBestsAsync(ct),
+            LoadAdditionalGhostsAsync(ct));
 
-        List<IGhostRecordFrag> personalBests = new();
+        if (ct.IsCancellationRequested ||
+            !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)))
+            return;
 
+        var records = new List<IGhostRecordFrag>();
         if (pbResult.IsSuccess)
-        {
-            personalBests.AddRange(pbResult.Value.Select(x => x.Record));
-        }
+            records.AddRange(pbResult.Value.Select(x => x.Record));
         else
-        {
             _logger.LogWarning("Loading Personal Bests failed: {Result}", pbResult);
-        }
 
         if (additionalResult.IsSuccess)
-        {
-            personalBests.AddRange(additionalResult.Value.Select(x => x.Record));
-        }
+            records.AddRange(additionalResult.Value.Select(x => x.Record));
         else
-        {
             _logger.LogWarning("Loading AdditionalGhosts failed: {Result}", additionalResult);
-        }
 
-        IReadOnlyList<int> loadedGhostIds = _ghostPlayer.GetLoadedGhostIds();
+        List<IGhostRecordFrag> distinctRecords = records
+            .GroupBy(record => record.Id)
+            .Select(group => group.First())
+            .ToList();
+        var desiredIds = distinctRecords.Select(record => record.Id).ToHashSet();
 
-        foreach (int loadedGhostId in loadedGhostIds)
-        {
-            if (personalBests.All(x => x.Id != loadedGhostId))
-            {
-                _ghostPlayer.RemoveGhost(loadedGhostId);
-            }
-        }
-
-        IEnumerable<UniTask> loads = personalBests.Select(personalBest => LoadGhost(personalBest, ct));
-        await UniTask.WhenAll(loads);
+        await LoadRecords(distinctRecords, GhostVisualProfile.Full, ct, generation);
+        EnqueueReconciliation(desiredIds, generation);
     }
 
     public void ShowAllGhosts()
@@ -164,6 +155,7 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
         if (IsShowingAllGhosts)
             return;
 
+        PrepareLevel();
         _bulkLevelHash = LevelApi.CurrentHash;
         SetBulkMode(true);
         LoadAllGhosts();
@@ -183,12 +175,11 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
 
     private void LoadAllGhosts()
     {
-        CancelLoad();
-        _cts = new CancellationTokenSource();
-        LoadAllGhostsAsync(_cts.Token).Forget();
+        (CancellationToken token, int generation) = BeginLoad();
+        LoadAllGhostsAsync(token, generation).Forget();
     }
 
-    private async UniTaskVoid LoadAllGhostsAsync(CancellationToken ct)
+    private async UniTaskVoid LoadAllGhostsAsync(CancellationToken ct, int generation)
     {
         int? first = OfflineGhostLimit.ToGraphQlFirst(_configService.MaximumVisibleOfflineGhosts.Value);
         (
@@ -200,10 +191,14 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
             LoadAdditionalGhostsAsync(ct),
             _graphqlService.GetAllPersonalBestGhosts(LevelApi.CurrentHash, first, ct));
 
-        if (ct.IsCancellationRequested || !IsShowingAllGhosts)
+        if (ct.IsCancellationRequested ||
+            !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)) ||
+            !IsShowingAllGhosts)
+        {
             return;
+        }
 
-        List<IGhostRecordFrag> protectedGhosts = new();
+        var protectedGhosts = new List<IGhostRecordFrag>();
         if (pbResult.IsSuccess)
             protectedGhosts.AddRange(pbResult.Value.Select(x => x.Record));
         else
@@ -224,54 +219,49 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
         foreach (IGetAllPersonalBestGhosts_Records_Nodes record in bulkGhosts)
             _bulkGhostIds.Add(record.Id);
 
-        HashSet<int> protectedGhostIds = protectedGhosts.Select(x => x.Id).ToHashSet();
-        HashSet<int> desiredIds = protectedGhostIds.ToHashSet();
-        desiredIds.UnionWith(_bulkGhostIds);
-        foreach (int loadedGhostId in _ghostPlayer.GetLoadedGhostIds())
-        {
-            if (!desiredIds.Contains(loadedGhostId))
-                _ghostPlayer.RemoveGhost(loadedGhostId);
-        }
-
-        IEnumerable<IGhostRecordFrag> recordsToLoad = protectedGhosts
-            .Concat(bulkGhosts)
+        List<IGhostRecordFrag> distinctProtected = protectedGhosts
             .GroupBy(record => record.Id)
-            .Select(group => group.First());
-        await UniTask.WhenAll(recordsToLoad.Select(record => LoadGhost(
-            record,
-            ct,
-            GhostVisualProfileResolver.Resolve(record.Id, protectedGhostIds, _bulkGhostIds))));
+            .Select(group => group.First())
+            .ToList();
+        HashSet<int> protectedIds = distinctProtected.Select(record => record.Id).ToHashSet();
+
+        var distinctBulk = bulkGhosts
+            .Where(record => !protectedIds.Contains(record.Id))
+            .GroupBy(record => record.Id)
+            .Select(group => (IGhostRecordFrag)group.First())
+            .ToList();
+
+        var desiredIds = protectedIds.ToHashSet();
+        desiredIds.UnionWith(_bulkGhostIds);
+
+        await LoadRecords(distinctProtected, GhostVisualProfile.Full, ct, generation);
+        await LoadRecords(distinctBulk, GhostVisualProfile.Bulk, ct, generation);
+        EnqueueReconciliation(desiredIds, generation);
     }
 
     private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
-        LoadPersonalBestsAsync(
-        CancellationToken ct)
+        LoadPersonalBestsAsync(CancellationToken ct)
     {
-        Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result
-            = await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
+        Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
+            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
-
         if (result.IsFailed)
             _logger.LogError("Failed to load personal bests: {Result}", result);
-
         return result;
     }
 
     private async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>>
-        LoadAdditionalGhostsAsync(
-        CancellationToken ct)
+        LoadAdditionalGhostsAsync(CancellationToken ct)
     {
-        Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> result
-            = await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash, ct);
+        Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> result =
+            await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
-
         if (result.IsFailed)
             _logger.LogError("Failed to load additional ghosts: {Result}", result);
-
         return result;
     }
 
@@ -279,49 +269,73 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
     {
         if (IsShowingAllGhosts)
             return;
+
         _additionalGhosts.Add(steamId);
-        _ghostPlayer.ClearGhosts();
         LoadGhosts();
     }
 
-    public bool ContainsAdditionalGhost(string steamId)
-    {
-        return _additionalGhosts.Contains(steamId);
-    }
+    public bool ContainsAdditionalGhost(string steamId) => _additionalGhosts.Contains(steamId);
 
     public void RemoveAdditionalGhost(string steamId)
     {
         if (IsShowingAllGhosts)
             return;
+
         _additionalGhosts.Remove(steamId);
-        _ghostPlayer.ClearGhosts();
         LoadGhosts();
     }
 
-    private async UniTask LoadGhost(
-        IGhostRecordFrag personalBest,
+    private async UniTask LoadRecords(
+        IReadOnlyCollection<IGhostRecordFrag> records,
+        GhostVisualProfile visualProfile,
         CancellationToken cancellationToken,
-        GhostVisualProfile visualProfile = GhostVisualProfile.Full)
+        int generation)
     {
-        Result<IGhost> ghost = await _ghostRepository.GetGhost(
-            personalBest.Id,
-            personalBest.RecordMedia.GhostUrl,
-            cancellationToken);
+        IEnumerable<UniTask> loads = records.Select(record =>
+            LoadGhost(record, cancellationToken, visualProfile, generation));
+        await UniTask.WhenAll(loads);
+    }
 
-        if (cancellationToken.IsCancellationRequested)
+    private async UniTask LoadGhost(
+        IGhostRecordFrag record,
+        CancellationToken cancellationToken,
+        GhostVisualProfile visualProfile,
+        int generation)
+    {
+        if (_ghostPlayer.HasGhost(record.Id, visualProfile))
             return;
+
+        Result<IGhost> ghost;
+        try
+        {
+            ghost = await _ghostRepository.GetGhost(
+                record.Id,
+                record.RecordMedia.GhostUrl,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (cancellationToken.IsCancellationRequested ||
+            !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)))
+        {
+            return;
+        }
+
         if (ghost.IsFailed)
         {
             _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
             return;
         }
 
-        _ghostPlayer.AddGhost(
-            GhostType.Global,
-            personalBest.Id,
-            personalBest.User.SteamName,
+        _pendingOperations.Enqueue(PendingGhostOperation.Add(
+            generation,
+            record.Id,
+            record.User.SteamName,
             ghost.Value,
-            visualProfile);
+            visualProfile));
     }
 
     private void SetBulkMode(bool enabled)
@@ -330,26 +344,152 @@ public class OfflineGhostsService : IEagerService, System.IDisposable
             return;
 
         IsShowingAllGhosts = enabled;
+        _bulkModeState.SetActive(enabled);
         BulkModeChanged?.Invoke();
+    }
+
+    private (CancellationToken Token, int Generation) BeginLoad()
+    {
+        CancelLoad();
+        _cts = new CancellationTokenSource();
+        return (_cts.Token, Volatile.Read(ref _loadGeneration));
     }
 
     private void CancelLoad()
     {
+        Interlocked.Increment(ref _loadGeneration);
+        while (_pendingOperations.TryDequeue(out _))
+        {
+        }
+
         CancellationTokenSource cts = _cts;
         _cts = null;
         if (cts == null)
             return;
+
         cts.Cancel();
         cts.Dispose();
+    }
+
+    private void PrepareLevel()
+    {
+        string currentLevelHash = LevelApi.CurrentHash;
+        if (_loadedLevelHash == currentLevelHash)
+            return;
+
+        CancelLoad();
+        _ghostPlayer.ClearGhosts();
+        _loadedLevelHash = currentLevelHash;
+    }
+
+    private void EnqueueReconciliation(HashSet<int> desiredIds, int generation)
+    {
+        if (GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)))
+            _pendingOperations.Enqueue(PendingGhostOperation.Reconcile(generation, desiredIds));
+    }
+
+    private void DrainPendingOperations()
+    {
+        int processed = 0;
+        long startedAt = Stopwatch.GetTimestamp();
+        while (GhostLoadBudget.CanProcessNext(processed, GetElapsedMilliseconds(startedAt)) &&
+               _pendingOperations.TryDequeue(out PendingGhostOperation operation))
+        {
+            if (!GhostLoadBudget.IsCurrentGeneration(
+                    operation.Generation,
+                    Volatile.Read(ref _loadGeneration)))
+            {
+                continue;
+            }
+
+            if (operation.DesiredIds != null)
+            {
+                IReadOnlyList<int> obsoleteIds = GhostReconciliation.GetObsoleteIds(
+                    _ghostPlayer.GetLoadedGhostIds(),
+                    operation.DesiredIds);
+                foreach (int loadedGhostId in obsoleteIds)
+                {
+                    _pendingOperations.Enqueue(
+                        PendingGhostOperation.Remove(operation.Generation, loadedGhostId));
+                }
+            }
+            else if (operation.RemoveRecordId.HasValue)
+            {
+                _ghostPlayer.RemoveGhost(operation.RemoveRecordId.Value);
+            }
+            else
+            {
+                _ghostPlayer.AddGhost(
+                    GhostType.Global,
+                    operation.RecordId,
+                    operation.SteamName,
+                    operation.Ghost,
+                    operation.VisualProfile);
+            }
+
+            processed++;
+        }
+    }
+
+    private static double GetElapsedMilliseconds(long startedAt)
+    {
+        return (Stopwatch.GetTimestamp() - startedAt) * 1000d / Stopwatch.Frequency;
     }
 
     public void Dispose()
     {
         CancelLoad();
+        SetBulkMode(false);
         BulkModeChanged = null;
         _playerLoopService.UnsubscribeUpdate(_updateSubscription);
         RacingApi.PlayerSpawned -= OnPlayerSpawned;
         RacingApi.RoundEnded -= OnRoundEnded;
         RacingApi.Quit -= OnQuit;
+    }
+
+    private sealed class PendingGhostOperation
+    {
+        public int Generation { get; private set; }
+        public int RecordId { get; private set; }
+        public string SteamName { get; private set; }
+        public IGhost Ghost { get; private set; }
+        public GhostVisualProfile VisualProfile { get; private set; }
+        public HashSet<int> DesiredIds { get; private set; }
+        public int? RemoveRecordId { get; private set; }
+
+        public static PendingGhostOperation Add(
+            int generation,
+            int recordId,
+            string steamName,
+            IGhost ghost,
+            GhostVisualProfile visualProfile)
+        {
+            return new PendingGhostOperation
+            {
+                Generation = generation,
+                RecordId = recordId,
+                SteamName = steamName,
+                Ghost = ghost,
+                VisualProfile = visualProfile
+            };
+        }
+
+        public static PendingGhostOperation Reconcile(int generation, HashSet<int> desiredIds)
+        {
+            return new PendingGhostOperation
+            {
+                Generation = generation,
+                DesiredIds = desiredIds
+            };
+        }
+
+        public static PendingGhostOperation Remove(int generation, int recordId)
+        {
+            return new PendingGhostOperation
+            {
+                Generation = generation,
+                RemoveRecordId = recordId
+            };
+        }
     }
 }

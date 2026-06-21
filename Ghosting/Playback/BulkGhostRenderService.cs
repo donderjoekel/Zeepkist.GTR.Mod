@@ -19,6 +19,7 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
     private readonly ConfigService _configService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _lateUpdateSubscription;
+    private readonly BulkGhostModeState _bulkModeState;
     private readonly HashSet<Transform> _instances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
@@ -31,11 +32,13 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
     public BulkGhostRenderService(
         ILogger<BulkGhostRenderService> logger,
         ConfigService configService,
-        PlayerLoopService playerLoopService)
+        PlayerLoopService playerLoopService,
+        BulkGhostModeState bulkModeState)
     {
         _logger = logger;
         _configService = configService;
         _playerLoopService = playerLoopService;
+        _bulkModeState = bulkModeState;
         _lateUpdateSubscription = playerLoopService.SubscribeLateUpdate(Draw);
     }
 
@@ -86,7 +89,7 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
             return;
         }
 
-        Material material = _configService.ShowGhostTransparent.Value
+        Material material = _configService.ShowGhostTransparent.Value && !_bulkModeState.IsActive
             ? _transparentMaterial
             : _opaqueMaterial;
 
@@ -158,12 +161,28 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
                     continue;
 
                 var bakedMesh = new Mesh();
-                renderer.BakeMesh(bakedMesh);
+                renderer.BakeMesh(bakedMesh, true);
                 bakedMeshes.Add(bakedMesh);
+
+                Matrix4x4 transform = rootInverse * Matrix4x4.TRS(
+                    renderer.transform.position,
+                    renderer.transform.rotation,
+                    Vector3.one);
+                Bounds bakedWorldBounds = TransformBounds(
+                    bakedMesh.bounds,
+                    Matrix4x4.TRS(
+                        renderer.transform.position,
+                        renderer.transform.rotation,
+                        Vector3.one));
+                float correction = BulkGhostMeshScale.CalculateUniformScale(
+                    MaximumComponent(renderer.bounds.size),
+                    MaximumComponent(bakedWorldBounds.size));
+                transform *= Matrix4x4.Scale(Vector3.one * correction);
+
                 AddSubMeshes(
                     combineInstances,
                     bakedMesh,
-                    rootInverse * renderer.transform.localToWorldMatrix);
+                    transform);
             }
 
             if (combineInstances.Count == 0)
@@ -220,6 +239,23 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
 
         return material;
     }
+
+    private static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
+    {
+        Vector3 center = matrix.MultiplyPoint3x4(bounds.center);
+        Vector3 extents = bounds.extents;
+        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
+        Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
+        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0, 0, extents.z));
+        extents = new Vector3(
+            Math.Abs(axisX.x) + Math.Abs(axisY.x) + Math.Abs(axisZ.x),
+            Math.Abs(axisX.y) + Math.Abs(axisY.y) + Math.Abs(axisZ.y),
+            Math.Abs(axisX.z) + Math.Abs(axisY.z) + Math.Abs(axisZ.z));
+        return new Bounds(center, extents * 2);
+    }
+
+    private static float MaximumComponent(Vector3 vector) =>
+        Math.Max(vector.x, Math.Max(vector.y, vector.z));
 
     private void DisposeResources()
     {

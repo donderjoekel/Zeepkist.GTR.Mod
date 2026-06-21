@@ -182,6 +182,12 @@ public partial class GhostPlayer : IEagerService, IDisposable
         return _ghosts.ContainsKey(recordId);
     }
 
+    public bool HasGhost(int recordId, GhostVisualProfile visualProfile)
+    {
+        return _ghostData.TryGetValue(recordId, out GhostData ghostData) &&
+               ghostData.VisualProfile == visualProfile;
+    }
+
     public void AddGhost(
         GhostType type,
         int recordId,

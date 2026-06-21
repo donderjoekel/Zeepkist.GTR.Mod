@@ -22,6 +22,7 @@ public class GhostRepository
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
+    private readonly SemaphoreSlim _parseSlots = new(4, 4);
     private readonly Dictionary<int, Task<Result<IGhost>>> _downloads = new();
     private readonly object _downloadsLock = new();
 
@@ -40,8 +41,9 @@ public class GhostRepository
         string ghostUrl,
         CancellationToken cancellationToken = default)
     {
-        if (TryGetGhostFromDisk(recordId, out IGhost ghost))
-            return Result.Ok(ghost);
+        IGhost cachedGhost = await ReadGhostFromDiskAsync(recordId, cancellationToken);
+        if (cachedGhost != null)
+            return Result.Ok(cachedGhost);
 
         Task<Result<IGhost>> download;
         lock (_downloadsLock)
@@ -90,7 +92,7 @@ public class GhostRepository
 
             byte[] buffer = await ReadLimitedAsync(response.Content, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
-            IGhost downloadedGhost = ReadGhost(buffer);
+            IGhost downloadedGhost = await ParseGhostAsync(buffer, cancellationToken);
             _modStorage.WriteBlob(GetStorageKey(recordId), buffer);
             return Result.Ok(downloadedGhost);
         }
@@ -108,26 +110,50 @@ public class GhostRepository
         }
     }
 
-    private bool TryGetGhostFromDisk(int recordId, out IGhost ghost)
+    private async Task<IGhost> ReadGhostFromDiskAsync(int recordId, CancellationToken cancellationToken)
     {
-        string storageKey = GetStorageKey(recordId);
-        if (!_modStorage.BlobFileExists(storageKey))
-        {
-            ghost = null;
-            return false;
-        }
-
+        await _parseSlots.WaitAsync(cancellationToken);
         try
         {
-            byte[] buffer = _modStorage.ReadBlob(storageKey);
-            ghost = ReadGhost(buffer);
-            return true;
+            return await Task.Run(() =>
+            {
+                string storageKey = GetStorageKey(recordId);
+                if (!_modStorage.BlobFileExists(storageKey))
+                    return null;
+
+                try
+                {
+                    byte[] buffer = _modStorage.ReadBlob(storageKey);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return ReadGhost(buffer);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    _modStorage.DeleteBlob(storageKey);
+                    return null;
+                }
+            }, cancellationToken);
         }
-        catch
+        finally
         {
-            _modStorage.DeleteBlob(storageKey);
-            ghost = null;
-            return false;
+            _parseSlots.Release();
+        }
+    }
+
+    private async Task<IGhost> ParseGhostAsync(byte[] buffer, CancellationToken cancellationToken)
+    {
+        await _parseSlots.WaitAsync(cancellationToken);
+        try
+        {
+            return await Task.Run(() => ReadGhost(buffer), cancellationToken);
+        }
+        finally
+        {
+            _parseSlots.Release();
         }
     }
 

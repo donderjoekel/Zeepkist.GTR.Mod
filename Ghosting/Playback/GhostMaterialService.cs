@@ -6,26 +6,31 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostMaterialService : IEagerService
+public class GhostMaterialService : IEagerService, System.IDisposable
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
+    private readonly BulkGhostModeState _bulkModeState;
+    private readonly PlayerLoopSubscription _updateSubscription;
 
     public GhostMaterialService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
         ConfigService configService,
-        MessengerService messengerService)
+        MessengerService messengerService,
+        BulkGhostModeState bulkModeState)
     {
         _playerLoopService = playerLoopService;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
         _messengerService = messengerService;
+        _bulkModeState = bulkModeState;
 
-        _playerLoopService.SubscribeUpdate(OnUpdate);
+        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
+        _bulkModeState.Changed += ApplyMaterialMode;
     }
 
     private void OnGhostAdded(object sender, GhostPlayer.GhostAddedEventArgs e)
@@ -35,7 +40,7 @@ public class GhostMaterialService : IEagerService
         if (e.GhostData.IsInstanced)
             return;
 
-        if (_configService.ShowGhostTransparent.Value)
+        if (UseTransparency)
         {
             e.GhostData.Renderer.SwitchToGhost();
         }
@@ -58,20 +63,7 @@ public class GhostMaterialService : IEagerService
 
         _configService.ShowGhostTransparent.Value = !_configService.ShowGhostTransparent.Value;
 
-        foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
-        {
-            if (ghostData.IsInstanced)
-                continue;
-
-            if (_configService.ShowGhostTransparent.Value)
-            {
-                ghostData.Renderer.SwitchToGhost();
-            }
-            else
-            {
-                ghostData.Renderer.SwitchToNormal();
-            }
-        }
+        ApplyMaterialMode();
 
         if (_configService.ShowGhostTransparent.Value)
         {
@@ -85,6 +77,9 @@ public class GhostMaterialService : IEagerService
 
     private void UpdateRenderers()
     {
+        if (_bulkModeState.IsActive)
+            return;
+
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
             UpdateRenderer(ghostData);
@@ -98,7 +93,7 @@ public class GhostMaterialService : IEagerService
 
         const float minDistance = 2.5f;
         const float maxDistance = 8f;
-        float maxAlpha = _configService.ShowGhostTransparent.Value ? 0.3f : 1f;
+        float maxAlpha = UseTransparency ? 0.3f : 1f;
 
         if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null)
             return;
@@ -124,7 +119,7 @@ public class GhostMaterialService : IEagerService
             a = inverseLerp
         };
 
-        if (_configService.ShowGhostTransparent.Value)
+        if (UseTransparency)
         {
             Color color = ghostData.Ghost.Color with
             {
@@ -137,5 +132,34 @@ public class GhostMaterialService : IEagerService
         {
             ghostData.Renderer.SetFade(fadeAmount);
         }
+    }
+
+    private bool UseTransparency =>
+        _configService.ShowGhostTransparent.Value && !_bulkModeState.IsActive;
+
+    private void ApplyMaterialMode()
+    {
+        foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
+        {
+            if (ghostData.IsInstanced)
+                continue;
+
+            if (UseTransparency)
+            {
+                ghostData.Renderer.SwitchToGhost();
+            }
+            else
+            {
+                ghostData.Renderer.SwitchToNormal();
+                ghostData.Renderer.SetFade(1);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
+        _ghostPlayer.GhostAdded -= OnGhostAdded;
+        _bulkModeState.Changed -= ApplyMaterialMode;
     }
 }
