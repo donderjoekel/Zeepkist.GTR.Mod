@@ -99,6 +99,13 @@ public class RecordingService : IEagerService, IDisposable
 
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.CurrentHash;
+        LevelScriptableObject currentLevel = LevelApi.CurrentLevel;
+        string workshopId = currentLevel == null
+            ? null
+            : RecordWorkshopId.ToWireValue(
+                currentLevel.WorkshopID,
+                currentLevel.IsAdventureLevel,
+                currentLevel.UseAvonturenLevel);
 
         if (string.IsNullOrEmpty(hash))
         {
@@ -126,7 +133,7 @@ public class RecordingService : IEagerService, IDisposable
             return;
         }
 
-        await Submit(hash, time, splits, speeds, ghostData);
+        await Submit(hash, workshopId, time, splits, speeds, ghostData);
     }
 
     private async UniTask<string> ProcessGhostRecorder(GhostRecorder ghostRecorder)
@@ -164,6 +171,7 @@ public class RecordingService : IEagerService, IDisposable
 
     private async UniTask Submit(
         string hash,
+        string workshopId,
         float time,
         List<float> splits,
         List<float> speeds,
@@ -173,6 +181,7 @@ public class RecordingService : IEagerService, IDisposable
         RecordPostResource resource = new()
         {
             Level = hash,
+            WorkshopId = workshopId,
             Time = time,
             Splits = splits,
             Speeds = speeds,

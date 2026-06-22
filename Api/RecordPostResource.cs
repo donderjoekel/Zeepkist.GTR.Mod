@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace TNRD.Zeepkist.GTR.Api;
 
@@ -11,4 +12,7 @@ public class RecordPostResource
     public string GhostData { get; set; } = null!;
     public string GameVersion { get; set; } = null!;
     public string ModVersion { get; set; } = null!;
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string WorkshopId { get; set; }
 }
