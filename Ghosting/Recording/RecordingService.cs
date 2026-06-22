@@ -100,12 +100,17 @@ public class RecordingService : IEagerService, IDisposable
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.CurrentHash;
         LevelScriptableObject currentLevel = LevelApi.CurrentLevel;
-        string workshopId = currentLevel == null
-            ? null
-            : RecordWorkshopId.ToWireValue(
-                currentLevel.WorkshopID,
-                currentLevel.IsAdventureLevel,
-                currentLevel.UseAvonturenLevel);
+        string workshopId = RecordWorkshopId.ToWireValue(
+            ZeepkistNetwork.CurrentLobby?.WorkshopID ?? 0,
+            currentLevel?.WorkshopID ?? 0,
+            currentLevel?.IsAdventureLevel ?? false,
+            currentLevel?.UseAvonturenLevel ?? false);
+
+        _logger.LogInformation(
+            "Resolved workshop ID {WorkshopId} from lobby {LobbyWorkshopId} and level {LevelWorkshopId}",
+            workshopId ?? "<none>",
+            ZeepkistNetwork.CurrentLobby?.WorkshopID ?? 0,
+            currentLevel?.WorkshopID ?? 0);
 
         if (string.IsNullOrEmpty(hash))
         {

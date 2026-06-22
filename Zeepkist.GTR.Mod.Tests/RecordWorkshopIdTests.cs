@@ -9,16 +9,39 @@ public class RecordWorkshopIdTests
     [Fact]
     public void UsesDecimalStringForWorkshopLevel()
     {
-        Assert.Equal("18446744073709551615", RecordWorkshopId.ToWireValue(ulong.MaxValue, false, false));
+        Assert.Equal(
+            "18446744073709551615",
+            RecordWorkshopId.ToWireValue(ulong.MaxValue, 0, false, false));
+    }
+
+    [Fact]
+    public void UsesLobbyWorkshopIdBeforeClonedLevelValue()
+    {
+        Assert.Equal("3749321871", RecordWorkshopId.ToWireValue(3749321871, 0, false, false));
+    }
+
+    [Fact]
+    public void FallsBackToLevelWorkshopId()
+    {
+        Assert.Equal("3749321871", RecordWorkshopId.ToWireValue(0, 3749321871, false, false));
     }
 
     [Theory]
-    [InlineData(0, false, false)]
-    [InlineData(1, true, false)]
-    [InlineData(1, false, true)]
-    public void OmitsAdventureAndZeroWorkshopIds(ulong workshopId, bool adventure, bool avonturen)
+    [InlineData(0, 0, false, false)]
+    [InlineData(1, 1, true, false)]
+    [InlineData(1, 1, false, true)]
+    public void OmitsAdventureAndZeroWorkshopIds(
+        ulong lobbyWorkshopId,
+        ulong levelWorkshopId,
+        bool adventure,
+        bool avonturen)
     {
-        Assert.Null(RecordWorkshopId.ToWireValue(workshopId, adventure, avonturen));
+        Assert.Null(
+            RecordWorkshopId.ToWireValue(
+                lobbyWorkshopId,
+                levelWorkshopId,
+                adventure,
+                avonturen));
     }
 
     [Fact]
