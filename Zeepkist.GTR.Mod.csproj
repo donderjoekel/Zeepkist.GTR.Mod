@@ -40,13 +40,13 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Serilog" Version="4.3.0" />
+        <PackageReference Include="Serilog" Version="4.3.1" />
         <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
-        <PackageReference Include="ZeepSDK" Version="1.45.4" PrivateAssets="all" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all" />
+        <PackageReference Include="ZeepSDK" Version="2.2.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
@@ -55,6 +55,10 @@
 
     <ItemGroup>
         <Reference Include="System.Memory">
+            <HintPath>$(NuGetPackageRoot)system.memory/4.5.5/lib/net461/System.Memory.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Memory">
+            <HintPath>$(NuGetPackageRoot)system.memory/4.5.5/lib/net461/System.Memory.dll</HintPath>
             <Aliases>MemoryAlias</Aliases>
         </Reference>
     </ItemGroup>
