@@ -115,10 +115,18 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
     private void DrawCameraModeRadios(ImGui gui)
     {
         var mode = _spectateService.CameraMode;
-        ImRadio.Radio(gui, ref mode, false);
 
-        if (mode != _spectateService.CameraMode)
-            _spectateService.SetCameraMode(mode);
+        var firstPerson = mode == GhostSpectateCameraMode.FirstPerson;
+        if (gui.Radio(ref firstPerson, "First person".AsSpan()))
+            _spectateService.SetCameraMode(GhostSpectateCameraMode.FirstPerson);
+
+        var thirdPerson = mode == GhostSpectateCameraMode.ThirdPersonStrict;
+        if (gui.Radio(ref thirdPerson, "Third person".AsSpan()))
+            _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonStrict);
+
+        var smoothThirdPerson = mode == GhostSpectateCameraMode.ThirdPersonSmooth;
+        if (gui.Radio(ref smoothThirdPerson, "Smooth".AsSpan()))
+            _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonSmooth);
     }
 
     private void SyncSelectedListIndex()
