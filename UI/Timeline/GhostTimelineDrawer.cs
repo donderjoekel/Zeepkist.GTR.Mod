@@ -35,7 +35,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             return;
 
         var open = true;
-        ImSize windowSize = new Vector2(960f, 96f);
+        ImSize windowSize = new Vector2(960f, 128f);
         if (!gui.BeginWindow("GTR Timeline", ref open, ref _mouseOverWindow, windowSize))
             return;
 
@@ -67,21 +67,17 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
         using (gui.Vertical())
         {
-            DrawTimeLabel(gui, _scrubTime, duration);
-            DrawTimeScrubber(gui, duration);
+            DrawTimeScrubber(gui, _scrubTime, duration);
             DrawTransportControls(gui);
+            DrawSpeedControl(gui);
         }
     }
 
-    private void DrawTimeLabel(ImGui gui, float currentTime, float duration)
+    private void DrawTimeScrubber(ImGui gui, float currentTime, float duration)
     {
-        var label = $"{FormatTime(currentTime)} / {FormatTime(duration)}";
-        gui.Text(label.AsSpan(),
-            new Color32(255, 255, 255, 255));
-    }
+        var timeDisplay = $"{FormatTime(currentTime)} / {FormatTime(duration)}";
+        gui.SliderHeader("Time".AsSpan(), currentTime, timeDisplay.AsSpan());
 
-    private void DrawTimeScrubber(ImGui gui, float duration)
-    {
         ImSize size = new Vector2(gui.GetLayoutWidth(), gui.GetRowHeight());
         var scrubTime = _scrubTime;
         var scrubberChanged = gui.Slider(ref scrubTime, 0f, duration, size, 0.01f);
@@ -101,15 +97,13 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             var rowHeight = gui.GetRowHeight();
             const float buttonWidth = 72f;
             const int buttonCount = 4;
-            const float speedWidth = 120f;
             var playbackButtonsWidth = buttonWidth * buttonCount;
             var availableWidth = gui.GetLayoutWidth();
-            var sideSpacing = Mathf.Max(0f, (availableWidth - playbackButtonsWidth - speedWidth) * 0.5f);
+            var sideSpacing = Mathf.Max(0f, (availableWidth - playbackButtonsWidth) * 0.5f);
 
             gui.AddSpacing(sideSpacing);
             DrawPlaybackButtons(gui, rowHeight, buttonWidth);
             gui.AddSpacing(sideSpacing);
-            DrawSpeedControl(gui, rowHeight);
         }
     }
 
@@ -131,20 +125,18 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             _playbackService.SkipForward();
     }
 
-    private void DrawSpeedControl(ImGui gui, float rowHeight)
+    private void DrawSpeedControl(ImGui gui)
     {
         var speed = _speed;
+        var rowHeight = gui.GetRowHeight();
 
-        using (gui.Vertical())
+        gui.SliderHeader("Speed".AsSpan(), speed, "0.00x".AsSpan());
+
+        ImSize speedSize = new Vector2(gui.GetLayoutWidth(), rowHeight);
+        if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
         {
-            gui.SliderHeader("Speed".AsSpan(), speed, "0.00x".AsSpan());
-
-            ImSize speedSize = new Vector2(120f, rowHeight);
-            if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
-            {
-                _speed = speed;
-                _playbackService.SetSpeed(speed);
-            }
+            _speed = speed;
+            _playbackService.SetSpeed(speed);
         }
     }
 
