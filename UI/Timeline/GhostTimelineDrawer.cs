@@ -87,7 +87,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         var scrubberChanged = gui.Slider(ref scrubTime, 0f, duration, size, 0.01f);
         _isScrubbing = scrubberChanged || gui.IsControlActive(gui.LastControl);
 
-        if (_isScrubbing)
+        if (scrubberChanged)
         {
             _scrubTime = scrubTime;
             _playbackService.Seek(scrubTime);
