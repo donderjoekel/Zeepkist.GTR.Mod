@@ -55,6 +55,8 @@ public class ConfigService : IEagerService
 
     public ConfigEntry<KeyCode> ToggleCursorEnabled { get; private set; }
 
+    public ConfigEntry<KeyCode> PhotoModeCameraFreezeKey { get; private set; }
+
     public ConfigService(ConfigFile config)
     {
         ConfigRecords(config);
@@ -63,6 +65,7 @@ public class ConfigService : IEagerService
         ConfigDiscord(config);
         ConfigUrls(config);
         ConfigDebug(config);
+        ConfigPlayback(config);
     }
 
     private void ConfigRecords(ConfigFile config)
@@ -262,5 +265,15 @@ public class ConfigService : IEagerService
             "1. Toggle Cursor Enabled",
             KeyCode.None,
             "Toggles UnityEngine.Cursor.visible and unlocks the cursor when shown");
+    }
+
+    private void ConfigPlayback(ConfigFile config)
+    {
+        PhotoModeCameraFreezeKey = config.Bind(
+            "7. Playback",
+            "1. Photo Mode Camera Freeze Key",
+            KeyCode.None,
+            "Hold this key in photo mode to freeze the flying camera while using the playback UI\n" +
+            "Set to None to disable");
     }
 }
