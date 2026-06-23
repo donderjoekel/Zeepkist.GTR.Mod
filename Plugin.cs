@@ -110,6 +110,7 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton<GhostTimelineDrawer>();
         services.AddSingleton<GtrToolbarDrawer>();
         services.AddEagerService<GhostTimelineUiService>();
+        services.AddEagerService<CursorDebugService>();
         services.AddEagerService<LeaderboardService>();
         services.AddEagerService<RecordHolderService>();
         services.AddEagerService<DiscordService>();

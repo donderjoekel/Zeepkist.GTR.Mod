@@ -53,6 +53,8 @@ public class ConfigService : IEagerService
 
     public ConfigEntry<bool> BackendUrl { get; private set; }
 
+    public ConfigEntry<KeyCode> ToggleCursorEnabled { get; private set; }
+
     public ConfigService(ConfigFile config)
     {
         ConfigRecords(config);
@@ -60,6 +62,7 @@ public class ConfigService : IEagerService
         ConfigRecordHolder(config);
         ConfigDiscord(config);
         ConfigUrls(config);
+        ConfigDebug(config);
     }
 
     private void ConfigRecords(ConfigFile config)
@@ -250,5 +253,14 @@ public class ConfigService : IEagerService
             false,
             "Use http://localhost:3000 instead of production backend\n" +
             "Changing this requires a restart of the game");
+    }
+
+    private void ConfigDebug(ConfigFile config)
+    {
+        ToggleCursorEnabled = config.Bind(
+            "6. Debug",
+            "1. Toggle Cursor Enabled",
+            KeyCode.None,
+            "Toggles CursorManager.IsEnabled via SetEnabled");
     }
 }
