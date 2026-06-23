@@ -29,6 +29,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
     private readonly PlayerLoopSubscription _fixedUpdateSubscription;
 
     private bool _roundStarted;
+    private bool _manualPlaybackActive;
     private bool _paused;
 
     public IEnumerable<GhostData> ActiveGhosts => _ghostData.Values;
@@ -268,6 +269,51 @@ public partial class GhostPlayer : IEagerService, IDisposable
         }
     }
 
+    public float GetMaxDuration()
+    {
+        if (_ghosts.Count == 0)
+            return 0f;
+
+        float maxDuration = 0f;
+        foreach (IGhost ghost in _ghosts.Values)
+        {
+            if (ghost.Duration > maxDuration)
+                maxDuration = ghost.Duration;
+        }
+
+        return maxDuration;
+    }
+
+    public void StartManualPlayback()
+    {
+        _manualPlaybackActive = true;
+        _paused = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Start();
+        }
+    }
+
+    public void StopManualPlayback()
+    {
+        _manualPlaybackActive = false;
+        _paused = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Stop();
+        }
+    }
+
+    public void SeekAllGhosts(float time)
+    {
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Seek(time);
+        }
+    }
+
     public void PauseGhosts()
     {
         _paused = true;
@@ -280,7 +326,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
 
     private void Update()
     {
-        if (!_roundStarted)
+        if (!_roundStarted && !_manualPlaybackActive)
             return;
 
         if (_paused)
@@ -308,7 +354,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
 
     private void FixedUpdate()
     {
-        if (!_roundStarted)
+        if (!_roundStarted && !_manualPlaybackActive)
             return;
 
         if (_paused)

@@ -15,6 +15,8 @@ public abstract class GhostBase : IGhost
 
     public abstract Color Color { get; }
 
+    public float Duration => FrameCount > 0 ? GetFrame(FrameCount - 1).Time : 0f;
+
     protected GhostBase(GhostTimingService timingService)
     {
         _timingService = timingService;
@@ -67,6 +69,17 @@ public abstract class GhostBase : IGhost
         _fixedUpdateFrame = 0;
     }
 
+    public void Seek(float time)
+    {
+        _updateFrame = 0;
+        _fixedUpdateFrame = 0;
+
+        if (FrameCount == 0)
+            return;
+
+        ApplyPositionAtTime(time);
+    }
+
     public void Update()
     {
         if (_updateFrame >= FrameCount - 1)
@@ -96,11 +109,7 @@ public abstract class GhostBase : IGhost
         if (_updateFrame >= FrameCount - 1)
             return;
 
-        float t = Mathf.InverseLerp(previousFrame.Time, nextFrame.Time, _timingService.CurrentTime);
-        Vector3 position = Vector3.Lerp(previousFrame.Position, nextFrame.Position, t);
-        Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
-        Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
-
+        ApplyInterpolatedTransform(previousFrame, nextFrame, _timingService.CurrentTime);
         OnUpdate();
     }
 
@@ -124,4 +133,50 @@ public abstract class GhostBase : IGhost
     }
 
     protected abstract IFrame GetFrame(int index);
+
+    private void ApplyPositionAtTime(float time)
+    {
+        if (FrameCount == 0)
+            return;
+
+        IFrame firstFrame = GetFrame(0);
+        if (time <= firstFrame.Time)
+        {
+            Ghost.GameObject.transform.SetPositionAndRotation(firstFrame.Position, firstFrame.Rotation);
+            return;
+        }
+
+        IFrame lastFrame = GetFrame(FrameCount - 1);
+        if (time >= lastFrame.Time)
+        {
+            Ghost.GameObject.transform.SetPositionAndRotation(lastFrame.Position, lastFrame.Rotation);
+            _updateFrame = FrameCount - 1;
+            return;
+        }
+
+        IFrame previousFrame = firstFrame;
+        IFrame nextFrame = lastFrame;
+
+        for (int i = 1; i < FrameCount; i++)
+        {
+            IFrame frame = GetFrame(i);
+            if (frame.Time >= time)
+            {
+                nextFrame = frame;
+                previousFrame = GetFrame(i - 1);
+                _updateFrame = i - 1;
+                break;
+            }
+        }
+
+        ApplyInterpolatedTransform(previousFrame, nextFrame, time);
+    }
+
+    private void ApplyInterpolatedTransform(IFrame previousFrame, IFrame nextFrame, float time)
+    {
+        float t = Mathf.InverseLerp(previousFrame.Time, nextFrame.Time, time);
+        Vector3 position = Vector3.Lerp(previousFrame.Position, nextFrame.Position, t);
+        Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
+        Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
+    }
 }
