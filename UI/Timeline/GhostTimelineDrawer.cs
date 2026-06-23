@@ -120,14 +120,18 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private void DrawSpeedControl(ImGui gui, float rowHeight)
     {
-        gui.Text("Speed".AsSpan(), new Color32(255, 255, 255, 255));
-
         var speed = _speed;
-        ImSize speedSize = new Vector2(120f, rowHeight);
-        if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
+
+        using (gui.Vertical())
         {
-            _speed = speed;
-            _playbackService.SetSpeed(speed);
+            gui.SliderHeader("Speed".AsSpan(), speed, "0.00x".AsSpan());
+
+            ImSize speedSize = new Vector2(120f, rowHeight);
+            if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
+            {
+                _speed = speed;
+                _playbackService.SetSpeed(speed);
+            }
         }
     }
 
