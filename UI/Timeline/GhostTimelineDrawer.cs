@@ -84,12 +84,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     {
         ImSize size = new Vector2(gui.GetLayoutWidth(), gui.GetRowHeight());
         var scrubTime = _scrubTime;
-        _isScrubbing = gui.NumericEdit(ref scrubTime,
-            size,
-            ReadOnlySpan<char>.Empty,
-            0.01f,
-            0f,
-            duration);
+        var scrubberChanged = gui.Slider(ref scrubTime, 0f, duration, size, 0.01f);
+        _isScrubbing = scrubberChanged || gui.IsControlActive(gui.LastControl);
 
         if (_isScrubbing)
         {
@@ -124,14 +120,11 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private void DrawSpeedControl(ImGui gui, float rowHeight)
     {
+        gui.Text("Speed".AsSpan(), new Color32(255, 255, 255, 255));
+
         var speed = _speed;
         ImSize speedSize = new Vector2(120f, rowHeight);
-        if (gui.NumericEdit(ref speed,
-                speedSize,
-                "Speed".AsSpan(),
-                0.05f,
-                0.25f,
-                4f))
+        if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
         {
             _speed = speed;
             _playbackService.SetSpeed(speed);
