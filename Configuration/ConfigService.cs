@@ -261,6 +261,6 @@ public class ConfigService : IEagerService
             "6. Debug",
             "1. Toggle Cursor Enabled",
             KeyCode.None,
-            "Toggles UnityEngine.Cursor.visible");
+            "Toggles UnityEngine.Cursor.visible and unlocks the cursor when shown");
     }
 }

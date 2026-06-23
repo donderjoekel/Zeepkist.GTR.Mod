@@ -31,6 +31,9 @@ public class CursorDebugService : IEagerService, IDisposable
             return;
 
         Cursor.visible = !Cursor.visible;
+        if (Cursor.visible)
+            Cursor.lockState = CursorLockMode.None;
+
         _messengerService.Log(Cursor.visible ? "Cursor visible" : "Cursor hidden");
     }
 
