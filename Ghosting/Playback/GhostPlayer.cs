@@ -107,6 +107,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
         ghostData.CurrentHorn?.Stop();
         ghostData.CurrentHorn?.Cleanup();
         ghostData.CurrentHorn = null;
+        ghostData.ClearIdentity();
         ghostData.SetActive(false);
     }
 
@@ -178,6 +179,23 @@ public partial class GhostPlayer : IEagerService, IDisposable
         return _ghosts.Keys.ToList();
     }
 
+    public bool TryGetGhostData(int recordId, out GhostData ghostData)
+    {
+        return _ghostData.TryGetValue(recordId, out ghostData);
+    }
+
+    public IReadOnlyList<LoadedGhostEntry> GetLoadedGhosts()
+    {
+        return _ghosts.Keys
+            .OrderBy(recordId => _ghostData[recordId].DisplayName)
+            .Select(recordId => new LoadedGhostEntry(
+                recordId,
+                _ghostData[recordId].DisplayName,
+                _ghostData[recordId],
+                _ghosts[recordId]))
+            .ToList();
+    }
+
     public bool HasGhost(int recordId)
     {
         return _ghosts.ContainsKey(recordId);
@@ -217,6 +235,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
         }
 
         ghostData.Initialize(type, ghost);
+        ghostData.SetIdentity(recordId, steamName);
         ghost.Initialize(ghostData);
         if (visualProfile == GhostVisualProfile.Full)
         {
