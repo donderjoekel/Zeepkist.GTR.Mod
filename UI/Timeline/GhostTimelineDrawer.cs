@@ -10,7 +10,7 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 
 public class GhostTimelineDrawer : IZeepGUIDrawer
 {
-    private readonly SpectatorModeService _spectatorModeService;
+    private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
     private readonly GhostTimelineState _timelineState;
 
@@ -20,18 +20,18 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private bool _isScrubbing;
 
     public GhostTimelineDrawer(
-        SpectatorModeService spectatorModeService,
+        PhotoModeTimelineService photoModeTimelineService,
         GhostPlaybackService playbackService,
         GhostTimelineState timelineState)
     {
-        _spectatorModeService = spectatorModeService;
+        _photoModeTimelineService = photoModeTimelineService;
         _playbackService = playbackService;
         _timelineState = timelineState;
     }
 
     public void OnZeepGUI(ImGui gui)
     {
-        if (!_timelineState.IsVisible || !_spectatorModeService.IsTimelineAvailable)
+        if (!_timelineState.IsVisible || !_photoModeTimelineService.IsTimelineAvailable)
             return;
 
         var open = true;

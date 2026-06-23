@@ -105,7 +105,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<GhostVisibilityService>();
         services.AddEagerService<GhostTimingService>();
         services.AddEagerService<GhostPlaybackService>();
-        services.AddEagerService<SpectatorModeService>();
+        services.AddEagerService<PhotoModeTimelineService>();
         services.AddSingleton<GhostTimelineState>();
         services.AddSingleton<GhostTimelineDrawer>();
         services.AddSingleton<GtrToolbarDrawer>();

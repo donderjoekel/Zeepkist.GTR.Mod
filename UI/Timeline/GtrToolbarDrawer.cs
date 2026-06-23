@@ -10,14 +10,14 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 
 public class GtrToolbarDrawer : IZeepToolbarDrawer
 {
-    private readonly SpectatorModeService _spectatorModeService;
+    private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostTimelineState _timelineState;
 
     public GtrToolbarDrawer(
-        SpectatorModeService spectatorModeService,
+        PhotoModeTimelineService photoModeTimelineService,
         GhostTimelineState timelineState)
     {
-        _spectatorModeService = spectatorModeService;
+        _photoModeTimelineService = photoModeTimelineService;
         _timelineState = timelineState;
     }
 
@@ -25,7 +25,7 @@ public class GtrToolbarDrawer : IZeepToolbarDrawer
 
     public void DrawMenuItems(ImGui gui)
     {
-        if (_spectatorModeService.IsTimelineAvailable)
+        if (_photoModeTimelineService.IsTimelineAvailable)
         {
             if (gui.Menu("Timeline".AsSpan(), _timelineState.IsVisible))
                 _timelineState.ToggleVisible();
