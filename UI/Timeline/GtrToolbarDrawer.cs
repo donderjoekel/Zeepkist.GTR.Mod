@@ -27,12 +27,12 @@ public class GtrToolbarDrawer : IZeepToolbarDrawer
     {
         if (_photoModeTimelineService.IsTimelineAvailable)
         {
-            if (gui.Menu("Timeline".AsSpan(), _timelineState.IsVisible))
+            if (gui.Menu("Playback".AsSpan(), _timelineState.IsVisible))
                 _timelineState.ToggleVisible();
             return;
         }
 
-        gui.Text("Timeline".AsSpan(),
+        gui.Text("Playback".AsSpan(),
             new Color32(128, 128, 128, 255));
     }
 }
