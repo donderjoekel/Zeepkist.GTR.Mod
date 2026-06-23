@@ -106,7 +106,7 @@ public class GhostTimingService : IEagerService
     {
         if (_manualPlaybackActive && !_manualPaused)
         {
-            _time += Time.deltaTime * _speed;
+            _time += Time.unscaledDeltaTime * _speed;
             if (_duration > 0f && _time > _duration)
                 _time = _duration;
             return;
