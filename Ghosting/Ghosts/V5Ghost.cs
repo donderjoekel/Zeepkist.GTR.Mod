@@ -6,7 +6,7 @@ using ZeepkistNetworking;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V5Ghost : GhostBase
+public partial class V5Ghost : GhostBase, IGhostInputProvider
 {
     private readonly string _taggedUsername;
     private readonly Color _color;
@@ -42,6 +42,29 @@ public partial class V5Ghost : GhostBase
     protected override IFrame GetFrame(int index)
     {
         return _frames[index];
+    }
+
+    public bool TrySampleInputAtTime(float time, out GhostInputSample sample)
+    {
+        return GhostInputFrameSampler.TrySample(
+            _frames,
+            time,
+            frame => frame.Time,
+            frame => frame.Steering,
+            frame => frame.InputFlags.HasFlagFast(InputFlags.ArmsUp),
+            frame => frame.InputFlags.HasFlagFast(InputFlags.Braking),
+            out sample,
+            MapZeepkistState,
+            frame => frame.Speed);
+    }
+
+    private static byte MapZeepkistState(Frame frame)
+    {
+        SoapboxFlags flags = frame.SoapboxFlags;
+        if (flags.HasFlagFast(SoapboxFlags.Soap))
+            return 1;
+
+        return 0;
     }
 
     protected override void OnFixedUpdate(int fixedUpdateFrame)

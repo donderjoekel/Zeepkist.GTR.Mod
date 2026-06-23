@@ -6,7 +6,7 @@ using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V3Ghost : GhostBase
+public partial class V3Ghost : GhostBase, IGhostInputProvider
 {
     private readonly ulong _steamId;
     private readonly int _soapboxId;
@@ -42,5 +42,17 @@ public partial class V3Ghost : GhostBase
     protected override IFrame GetFrame(int index)
     {
         return _frames[index];
+    }
+
+    public bool TrySampleInputAtTime(float time, out GhostInputSample sample)
+    {
+        return GhostInputFrameSampler.TrySample(
+            _frames,
+            time,
+            frame => frame.Time,
+            frame => frame.Steering,
+            frame => frame.ArmsUp,
+            frame => frame.IsBraking,
+            out sample);
     }
 }
