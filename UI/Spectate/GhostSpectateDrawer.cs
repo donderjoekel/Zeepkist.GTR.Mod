@@ -10,7 +10,7 @@ namespace TNRD.Zeepkist.GTR.UI.Spectate;
 public class GhostSpectateDrawer : IZeepGUIDrawer
 {
     private const string WindowTitle = "GTR Spectate";
-    private const float DefaultWindowWidth = 420f;
+    private const float DefaultWindowWidth = 480f;
     private const float ListHeight = 240f;
 
     private readonly GhostPlayer _ghostPlayer;
@@ -60,22 +60,29 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
 
     private void DrawContent(ImGui gui)
     {
-        var loadedGhosts = _ghostPlayer.GetLoadedGhosts();
+        using (gui.Vertical())
+        {
+            DrawGhostSelection(gui);
+            DrawCameraModeSection(gui);
+        }
+    }
+
+    private void DrawGhostSelection(ImGui gui)
+    {
         var selectedName = _spectateService.GetSelectedDisplayName();
         if (selectedName != null)
-        {
             gui.Text($"Spectating: {selectedName}".AsSpan());
-        }
         else
-        {
             gui.Text("Spectating: None".AsSpan());
-        }
 
         gui.AddSpacing(gui.Style.Layout.Spacing);
         gui.Text("Ghosts".AsSpan());
 
-        ImSize listSize = new Vector2(gui.GetLayoutWidth(), ListHeight);
-        using (gui.Scrollable())
+        var loadedGhosts = _ghostPlayer.GetLoadedGhosts();
+        ImSize listSize = new Vector2(
+            gui.GetLayoutWidth(),
+            ImList.GetEnclosingHeight(gui, ListHeight));
+
         using (gui.List(listSize))
         {
             if (gui.ListItem(ref _selectedListIndex, 0, "None".AsSpan()))
@@ -85,11 +92,14 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
             {
                 LoadedGhostEntry ghost = loadedGhosts[i];
                 int listIndex = i + 1;
-                if (gui.ListItem(ref _selectedListIndex, listIndex, ghost.DisplayName.AsSpan()))
+                if (gui.ListItem(ref _selectedListIndex, listIndex, ghost.GetListLabel().AsSpan()))
                     _spectateService.SelectGhost(ghost.RecordId);
             }
         }
+    }
 
+    private void DrawCameraModeSection(ImGui gui)
+    {
         gui.AddSpacing(gui.Style.Layout.Spacing);
         gui.Text("Camera Mode".AsSpan());
         DrawCameraModeRadios(gui);
@@ -98,15 +108,10 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
     private void DrawCameraModeRadios(ImGui gui)
     {
         var mode = _spectateService.CameraMode;
+        ImRadio.Radio(gui, ref mode, false);
 
-        if (gui.Radio(mode == GhostSpectateCameraMode.FirstPerson, "First Person".AsSpan()))
-            _spectateService.SetCameraMode(GhostSpectateCameraMode.FirstPerson);
-
-        if (gui.Radio(mode == GhostSpectateCameraMode.ThirdPersonStrict, "Third Person (Strict)".AsSpan()))
-            _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonStrict);
-
-        if (gui.Radio(mode == GhostSpectateCameraMode.ThirdPersonSmooth, "Third Person (Smooth)".AsSpan()))
-            _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonSmooth);
+        if (mode != _spectateService.CameraMode)
+            _spectateService.SetCameraMode(mode);
     }
 
     private void SyncSelectedListIndex()
@@ -132,10 +137,11 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
 
     private static ImSize GetWindowSize(ImGui gui)
     {
-        const int contentRows = 8;
-        var contentHeight = gui.GetRowsHeightWithSpacing(contentRows);
+        const int labelRows = 4;
+        var labelHeight = gui.GetRowsHeightWithSpacing(labelRows);
+        var listHeight = ImList.GetEnclosingHeight(gui, ListHeight);
         var windowPadding = gui.Style.Window.ContentPadding.Vertical;
-        var height = contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding + ListHeight;
+        var height = labelHeight + listHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
         return new Vector2(DefaultWindowWidth, height);
     }
 }
