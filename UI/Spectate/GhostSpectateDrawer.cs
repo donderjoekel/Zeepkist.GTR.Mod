@@ -2,6 +2,7 @@ using System;
 using Imui.Controls;
 using Imui.Core;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
+using TNRD.Zeepkist.GTR.UI;
 using UnityEngine;
 using ZeepSDK.UI;
 
@@ -42,7 +43,13 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
 
         var open = true;
         ImSize windowSize = GetWindowSize(gui);
-        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowSize))
+        ImRect windowRect = ImWindowPlacement.GetRect(
+            gui,
+            WindowTitle.AsSpan(),
+            windowSize.Width,
+            windowSize.Height,
+            ImWindowAnchor.MiddleLeft);
+        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowRect))
             return;
 
         try

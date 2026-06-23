@@ -3,6 +3,7 @@ using Imui.Controls;
 using Imui.Core;
 using Imui.Rendering;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
+using TNRD.Zeepkist.GTR.UI;
 using UnityEngine;
 using ZeepSDK.UI;
 
@@ -39,7 +40,13 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         var duration = _playbackService.Duration;
         var open = true;
         ImSize windowSize = GetTimelineWindowSize(gui, duration > 0f);
-        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowSize))
+        ImRect windowRect = ImWindowPlacement.GetRect(
+            gui,
+            WindowTitle.AsSpan(),
+            windowSize.Width,
+            windowSize.Height,
+            ImWindowAnchor.BottomRight);
+        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowRect))
             return;
 
         try
