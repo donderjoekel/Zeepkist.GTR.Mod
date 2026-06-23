@@ -30,12 +30,8 @@ public class CursorDebugService : IEagerService, IDisposable
         if (!Input.GetKeyDown(_configService.ToggleCursorEnabled.Value))
             return;
 
-        var cursorManager = PlayerManager.Instance?.cursorManager;
-        if (cursorManager == null)
-            return;
-
-        cursorManager.SetEnabled(!cursorManager.IsEnabled);
-        _messengerService.Log(cursorManager.IsEnabled ? "Cursor enabled" : "Cursor disabled");
+        Cursor.visible = !Cursor.visible;
+        _messengerService.Log(Cursor.visible ? "Cursor visible" : "Cursor hidden");
     }
 
     public void Dispose()
