@@ -51,9 +51,10 @@ public class GhostPlaybackService : IEagerService
 
         if (State == GhostPlaybackState.Stopped)
         {
+            var startTime = CurrentTime;
             _ghostPlayer.StartManualPlayback();
-            _timingService.SetTime(0f);
-            _ghostPlayer.SeekAllGhosts(0f);
+            _timingService.SetTime(startTime);
+            _ghostPlayer.SeekAllGhosts(startTime);
         }
         else if (State == GhostPlaybackState.Paused)
         {
