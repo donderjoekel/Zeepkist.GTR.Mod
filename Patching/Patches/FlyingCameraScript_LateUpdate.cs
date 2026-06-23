@@ -11,7 +11,7 @@ public static class FlyingCameraScript_LateUpdate
         if (__instance.GameMaster == null || !__instance.GameMaster.isPhotoMode)
             return true;
 
-        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+        if (!Input.GetKey(KeyCode.CapsLock))
             return true;
 
         return false;
