@@ -18,6 +18,7 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
     private readonly GhostSpectateService _spectateService;
     private readonly GhostSpectateState _spectateState;
     private readonly PhotoModeTimelineService _photoModeTimelineService;
+    private readonly PlaybackUiInputState _playbackUiInputState;
 
     private bool _mouseOverWindow;
     private int _selectedListIndex;
@@ -26,12 +27,14 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
         GhostPlayer ghostPlayer,
         GhostSpectateService spectateService,
         GhostSpectateState spectateState,
-        PhotoModeTimelineService photoModeTimelineService)
+        PhotoModeTimelineService photoModeTimelineService,
+        PlaybackUiInputState playbackUiInputState)
     {
         _ghostPlayer = ghostPlayer;
         _spectateService = spectateService;
         _spectateState = spectateState;
         _photoModeTimelineService = photoModeTimelineService;
+        _playbackUiInputState = playbackUiInputState;
     }
 
     public void OnZeepGUI(ImGui gui)
@@ -60,6 +63,9 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
         {
             gui.EndWindow();
         }
+
+        if (_mouseOverWindow)
+            _playbackUiInputState.NotifyPointerOverGtrWindow();
 
         if (!open)
             _spectateState.SetVisible(false);
@@ -121,12 +127,16 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
             _spectateService.SetCameraMode(GhostSpectateCameraMode.FirstPerson);
 
         var thirdPerson = mode == GhostSpectateCameraMode.ThirdPersonStrict;
-        if (gui.Radio(ref thirdPerson, "Third person".AsSpan()))
+        if (gui.Radio(ref thirdPerson, "Third person (Strict)".AsSpan()))
             _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonStrict);
 
         var smoothThirdPerson = mode == GhostSpectateCameraMode.ThirdPersonSmooth;
-        if (gui.Radio(ref smoothThirdPerson, "Smooth".AsSpan()))
+        if (gui.Radio(ref smoothThirdPerson, "Third person (Smooth)".AsSpan()))
             _spectateService.SetCameraMode(GhostSpectateCameraMode.ThirdPersonSmooth);
+
+        var topDown = mode == GhostSpectateCameraMode.TopDown;
+        if (gui.Radio(ref topDown, "Top down".AsSpan()))
+            _spectateService.SetCameraMode(GhostSpectateCameraMode.TopDown);
     }
 
     private void SyncSelectedListIndex()
@@ -152,7 +162,7 @@ public class GhostSpectateDrawer : IZeepGUIDrawer
 
     private static ImSize GetWindowSize(ImGui gui)
     {
-        const int labelRows = 4;
+        const int labelRows = 5;
         var labelHeight = gui.GetRowsHeightWithSpacing(labelRows);
         var listHeight = ImList.GetEnclosingHeight(gui, ListHeight);
         var windowPadding = gui.Style.Window.ContentPadding.Vertical;

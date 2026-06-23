@@ -108,6 +108,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<GhostPlaybackService>();
         services.AddEagerService<PhotoModeTimelineService>();
         services.AddEagerService<GhostSpectateService>();
+        services.AddEagerService<PlaybackUiInputState>();
         services.AddSingleton<GhostTimelineState>();
         services.AddSingleton<GhostTimelineDrawer>();
         services.AddSingleton<GtrToolbarDrawer>();

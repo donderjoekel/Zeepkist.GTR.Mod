@@ -16,6 +16,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
     private readonly GhostTimelineState _timelineState;
+    private readonly PlaybackUiInputState _playbackUiInputState;
 
     private bool _mouseOverWindow;
     private float _scrubTime;
@@ -25,11 +26,13 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     public GhostTimelineDrawer(
         PhotoModeTimelineService photoModeTimelineService,
         GhostPlaybackService playbackService,
-        GhostTimelineState timelineState)
+        GhostTimelineState timelineState,
+        PlaybackUiInputState playbackUiInputState)
     {
         _photoModeTimelineService = photoModeTimelineService;
         _playbackService = playbackService;
         _timelineState = timelineState;
+        _playbackUiInputState = playbackUiInputState;
     }
 
     public void OnZeepGUI(ImGui gui)
@@ -57,6 +60,9 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         {
             gui.EndWindow();
         }
+
+        if (_mouseOverWindow)
+            _playbackUiInputState.NotifyPointerOverGtrWindow();
 
         if (!open)
             _timelineState.SetVisible(false);

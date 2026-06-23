@@ -4,5 +4,6 @@ public enum GhostSpectateCameraMode
 {
     FirstPerson,
     ThirdPersonStrict,
-    ThirdPersonSmooth
+    ThirdPersonSmooth,
+    TopDown
 }

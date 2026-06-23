@@ -62,6 +62,8 @@ public class ConfigService : IEagerService
     public ConfigEntry<float> SpectateThirdPersonHeight { get; private set; }
     public ConfigEntry<float> SpectateThirdPersonLookHeight { get; private set; }
     public ConfigEntry<float> SpectateThirdPersonSmoothTime { get; private set; }
+    public ConfigEntry<float> SpectateTopDownHeight { get; private set; }
+    public ConfigEntry<float> SpectateTopDownPitch { get; private set; }
 
     public ConfigService(ConfigFile config)
     {
@@ -306,5 +308,16 @@ public class ConfigService : IEagerService
             "6. Third Person Smooth Time",
             0.12f,
             "Smoothing time in seconds for smooth third-person spectate camera");
+        SpectateTopDownHeight = config.Bind(
+            "7. Playback",
+            "7. Top Down Height",
+            25f,
+            "Height above the ghost for top-down spectate camera");
+        SpectateTopDownPitch = config.Bind(
+            "7. Playback",
+            "8. Top Down Pitch",
+            20f,
+            "Pitch angle in degrees for top-down spectate camera\n" +
+            "0 = straight down, higher values tilt the camera behind the ghost");
     }
 }
