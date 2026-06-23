@@ -11,10 +11,12 @@ public class PhotoModeTimelineService : IEagerService
 
     public bool IsPhotoModeActive { get; private set; }
 
-    public bool IsTimelineAvailable =>
+    public bool IsPhotoModeGhostsAvailable =>
         !MultiplayerApi.IsPlayingOnline &&
         IsPhotoModeActive &&
         _ghostPlayer.GetLoadedGhostIds().Count > 0;
+
+    public bool IsTimelineAvailable => IsPhotoModeGhostsAvailable;
 
     public PhotoModeTimelineService(GhostPlayer ghostPlayer, GhostPlaybackService ghostPlaybackService)
     {
