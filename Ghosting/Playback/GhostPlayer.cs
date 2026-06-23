@@ -187,12 +187,14 @@ public partial class GhostPlayer : IEagerService, IDisposable
     public IReadOnlyList<LoadedGhostEntry> GetLoadedGhosts()
     {
         return _ghosts.Keys
-            .OrderBy(recordId => _ghostData[recordId].DisplayName)
             .Select(recordId => new LoadedGhostEntry(
                 recordId,
                 _ghostData[recordId].DisplayName,
+                _ghosts[recordId].Duration,
                 _ghostData[recordId],
                 _ghosts[recordId]))
+            .OrderBy(entry => entry.Duration)
+            .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
