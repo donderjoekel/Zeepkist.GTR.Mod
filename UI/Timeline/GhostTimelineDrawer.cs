@@ -10,6 +10,8 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 
 public class GhostTimelineDrawer : IZeepGUIDrawer
 {
+    private const string WindowTitle = "GTR Playback";
+    private const float DefaultWindowWidth = 960f;
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
     private readonly GhostTimelineState _timelineState;
@@ -34,14 +36,15 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         if (!_timelineState.IsVisible || !_photoModeTimelineService.IsTimelineAvailable)
             return;
 
+        var duration = _playbackService.Duration;
         var open = true;
-        ImSize windowSize = new Vector2(960f, 128f);
-        if (!gui.BeginWindow("GTR Timeline", ref open, ref _mouseOverWindow, windowSize))
+        ImSize windowSize = GetTimelineWindowSize(gui, duration > 0f);
+        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowSize))
             return;
 
         try
         {
-            DrawTimeline(gui);
+            DrawTimeline(gui, duration);
         }
         finally
         {
@@ -52,13 +55,27 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             _timelineState.SetVisible(false);
     }
 
-    private void DrawTimeline(ImGui gui)
+    private static ImSize GetTimelineWindowSize(ImGui gui, bool hasPlaybackData)
     {
-        var duration = _playbackService.Duration;
+        const int playbackContentRows = 5;
+        var contentRows = hasPlaybackData ? playbackContentRows : 1;
+        var contentHeight = gui.GetRowsHeightWithSpacing(contentRows);
+        var windowPadding = gui.Style.Window.ContentPadding.Vertical;
+        var height = contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
+
+        var width = DefaultWindowWidth;
+        var windowId = gui.GetControlId(WindowTitle.AsSpan());
+        if (gui.WindowManager.TryFindWindow(windowId) >= 0)
+            width = gui.WindowManager.GetWindowState(windowId).Rect.W;
+
+        return new Vector2(width, height);
+    }
+
+    private void DrawTimeline(ImGui gui, float duration)
+    {
         if (duration <= 0f)
         {
-            gui.Text("No ghost playback data available".AsSpan(),
-                new Color32(255, 255, 255, 255));
+            gui.Text("No ghost playback data available".AsSpan());
             return;
         }
 
