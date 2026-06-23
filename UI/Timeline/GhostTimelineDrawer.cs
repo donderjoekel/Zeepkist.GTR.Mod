@@ -99,23 +99,36 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         using (gui.Horizontal())
         {
             var rowHeight = gui.GetRowHeight();
-            ImSize buttonSize = new Vector2(72f, rowHeight);
+            const float buttonWidth = 72f;
+            const int buttonCount = 4;
+            const float speedWidth = 120f;
+            var playbackButtonsWidth = buttonWidth * buttonCount;
+            var availableWidth = gui.GetLayoutWidth();
+            var sideSpacing = Mathf.Max(0f, (availableWidth - playbackButtonsWidth - speedWidth) * 0.5f);
 
-            if (gui.Button("-5s".AsSpan(), buttonSize))
-                _playbackService.SkipBackward();
-
-            var playPauseLabel = _playbackService.IsPlaying ? "Pause" : "Play";
-            if (gui.Button(playPauseLabel.AsSpan(), buttonSize))
-                _playbackService.TogglePlayPause();
-
-            if (gui.Button("Stop".AsSpan(), buttonSize))
-                _playbackService.Stop();
-
-            if (gui.Button("+5s".AsSpan(), buttonSize))
-                _playbackService.SkipForward();
-
+            gui.AddSpacing(sideSpacing);
+            DrawPlaybackButtons(gui, rowHeight, buttonWidth);
+            gui.AddSpacing(sideSpacing);
             DrawSpeedControl(gui, rowHeight);
         }
+    }
+
+    private void DrawPlaybackButtons(ImGui gui, float rowHeight, float buttonWidth)
+    {
+        ImSize buttonSize = new Vector2(buttonWidth, rowHeight);
+
+        if (gui.Button("-5s".AsSpan(), buttonSize))
+            _playbackService.SkipBackward();
+
+        var playPauseLabel = _playbackService.IsPlaying ? "Pause" : "Play";
+        if (gui.Button(playPauseLabel.AsSpan(), buttonSize))
+            _playbackService.TogglePlayPause();
+
+        if (gui.Button("Stop".AsSpan(), buttonSize))
+            _playbackService.Stop();
+
+        if (gui.Button("+5s".AsSpan(), buttonSize))
+            _playbackService.SkipForward();
     }
 
     private void DrawSpeedControl(ImGui gui, float rowHeight)
