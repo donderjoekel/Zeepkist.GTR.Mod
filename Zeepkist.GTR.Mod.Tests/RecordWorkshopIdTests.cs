@@ -50,6 +50,7 @@ public class RecordWorkshopIdTests
         RecordPostResource resource = new()
         {
             Level = "hash",
+            Hash = "xxhash",
             WorkshopId = null
         };
 
@@ -58,3 +59,4 @@ public class RecordWorkshopIdTests
         Assert.DoesNotContain("\"WorkshopId\"", json);
     }
 }
+

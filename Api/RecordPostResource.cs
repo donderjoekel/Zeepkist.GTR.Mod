@@ -6,6 +6,7 @@ namespace TNRD.Zeepkist.GTR.Api;
 public class RecordPostResource
 {
     public string Level { get; set; } = null!;
+    public string Hash { get; set; } = null!;
     public float Time { get; set; }
     public List<float> Splits { get; set; } = null!;
     public List<float> Speeds { get; set; } = null!;
@@ -16,3 +17,4 @@ public class RecordPostResource
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string WorkshopId { get; set; }
 }
+

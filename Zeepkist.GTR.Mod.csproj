@@ -46,7 +46,8 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
         <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
-        <PackageReference Include="ZeepSDK" Version="1.45.4" PrivateAssets="all" />
+        <ProjectReference Include="..\ZeepSDK\ZeepSDK\ZeepSDK.csproj" PrivateAssets="all" Condition="Exists('..\ZeepSDK\ZeepSDK\ZeepSDK.csproj')" />
+        <PackageReference Include="ZeepSDK" Version="2.2.0" PrivateAssets="all" Condition="!Exists('..\ZeepSDK\ZeepSDK\ZeepSDK.csproj')" />
     </ItemGroup>
 
     <ItemGroup>
@@ -99,3 +100,4 @@
         <CallTarget Targets="PDB;Package;Compress"/>
     </Target>
 </Project>
+

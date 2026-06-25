@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -99,6 +99,7 @@ public class RecordingService : IEagerService, IDisposable
 
         _logger.LogInformation("Collecting extra information");
         string hash = LevelApi.CurrentHash;
+        string canonicalHash = LevelApi.CurrentHashV2?.Hash;
         LevelScriptableObject currentLevel = LevelApi.CurrentLevel;
         string workshopId = RecordWorkshopId.ToWireValue(
             ZeepkistNetwork.CurrentLobby?.WorkshopID ?? 0,
@@ -112,7 +113,7 @@ public class RecordingService : IEagerService, IDisposable
             ZeepkistNetwork.CurrentLobby?.WorkshopID ?? 0,
             currentLevel?.WorkshopID ?? 0);
 
-        if (string.IsNullOrEmpty(hash))
+        if (string.IsNullOrEmpty(hash) || string.IsNullOrEmpty(canonicalHash))
         {
             _messengerService.LogError("Unable to figure out level, discarding record :(");
             _logger.LogError("Unable to get the level hash");
@@ -138,7 +139,7 @@ public class RecordingService : IEagerService, IDisposable
             return;
         }
 
-        await Submit(hash, workshopId, time, splits, speeds, ghostData);
+        await Submit(hash, canonicalHash, workshopId, time, splits, speeds, ghostData);
     }
 
     private async UniTask<string> ProcessGhostRecorder(GhostRecorder ghostRecorder)
@@ -176,6 +177,7 @@ public class RecordingService : IEagerService, IDisposable
 
     private async UniTask Submit(
         string hash,
+        string canonicalHash,
         string workshopId,
         float time,
         List<float> splits,
@@ -186,6 +188,7 @@ public class RecordingService : IEagerService, IDisposable
         RecordPostResource resource = new()
         {
             Level = hash,
+            Hash = canonicalHash,
             WorkshopId = workshopId,
             Time = time,
             Splits = splits,
@@ -241,3 +244,7 @@ public class RecordingService : IEagerService, IDisposable
         RacingApi.RoundEnded -= OnRoundEnded;
     }
 }
+
+
+
+
