@@ -245,6 +245,3 @@ public class RecordingService : IEagerService, IDisposable
     }
 }
 
-
-
-
