@@ -88,11 +88,14 @@ public class ApiHttpClient
         }
     }
 
-    public async UniTask<bool> Login()
+    public async UniTask<bool> Login(bool force = false)
     {
         await _authenticationLock.WaitAsync();
         try
         {
+            if (force)
+                ResetData();
+
             if (!NeedsLogin && !NeedsRefresh)
                 return true;
             return await LoginCore();
