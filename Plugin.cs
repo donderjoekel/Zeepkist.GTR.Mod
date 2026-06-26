@@ -31,7 +31,7 @@ using ZeepSDK.Storage;
 namespace TNRD.Zeepkist.GTR;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency("ZeepSDK", "1.44.3")]
+[BepInDependency("ZeepSDK", "2.3.1")]
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
