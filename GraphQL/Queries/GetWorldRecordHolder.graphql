@@ -1,6 +1,18 @@
-﻿query GetWorldRecordHolder($hash: String) {
+query GetWorldRecordHolder($xxHash: String!, $hash: String!) {
     worldRecordGlobals(
-        filter: { level: { hash: { equalTo: $hash } } }
+        filter: {
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
+        }
     ) {
         nodes {
             record {

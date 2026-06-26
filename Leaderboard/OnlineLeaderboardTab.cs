@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
@@ -71,7 +72,11 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 
     private async UniTaskVoid InitializeAsync()
     {
-        Result<int?> levelPointsResult = await _graphqlService.GetLevelPoints(LevelApi.CurrentHash);
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+            return;
+
+        Result<int?> levelPointsResult = await _graphqlService.GetLevelPoints(level);
         if (levelPointsResult.IsFailed)
         {
             Logger.LogError("Failed to get level points");
@@ -83,7 +88,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
             _levelPoints = levelPointsResult.Value;
         }
 
-        Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(LevelApi.CurrentHash);
+        Result<int> personalBestCount = await _graphqlService.GetPersonalBestCount(level);
         if (personalBestCount.IsFailed)
         {
             Logger.LogError("Failed to get count");
@@ -110,8 +115,12 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
         _items.Clear();
         Draw();
 
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+            return;
+
         UniTask<Result<IGetPersonalBestsResult>> recordsTask =
-            _graphqlService.GetLeaderboardRecords(LevelApi.CurrentHash, page, ct);
+            _graphqlService.GetLeaderboardRecords(level, page, ct);
         UniTask<Result<int>> userCountTask = _graphqlService.GetTotalUserCount(ct);
 
         (Result<IGetPersonalBestsResult> recordsResult, Result<int> userCountResult) =

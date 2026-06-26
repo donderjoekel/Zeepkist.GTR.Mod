@@ -1,6 +1,18 @@
-query GetPersonalBestCount($hash: String) {
+query GetPersonalBestCount($xxHash: String!, $hash: String!) {
     personalBestGlobals(
-        filter: { level: { hash: { equalTo: $hash } } }
+        filter: {
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
+        }
     ) {
         totalCount
     }

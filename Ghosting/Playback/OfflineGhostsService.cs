@@ -7,6 +7,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -33,8 +34,8 @@ public class OfflineGhostsService : IEagerService
     private readonly ConcurrentQueue<PendingGhostOperation> _pendingOperations = new();
 
     private CancellationTokenSource _cts;
-    private string _bulkLevelHash;
-    private string _loadedLevelHash;
+    private string _bulkLevelCacheKey;
+    private string _loadedLevelCacheKey;
     private int _loadGeneration;
     private int _progressGeneration;
     private int _progressTotal;
@@ -93,8 +94,11 @@ public class OfflineGhostsService : IEagerService
         if (MultiplayerApi.IsPlayingOnline || !_configService.EnableGhosts.Value)
             return;
 
-        PrepareLevel();
-        if (IsShowingAllGhosts && _bulkLevelHash == LevelApi.CurrentHash)
+        LevelGraphqlIdentity level = PrepareLevel();
+        if (!level.IsAvailable)
+            return;
+
+        if (IsShowingAllGhosts && _bulkLevelCacheKey == level.CacheKey)
             LoadAllGhosts();
         else
             LoadGhosts();
@@ -107,8 +111,8 @@ public class OfflineGhostsService : IEagerService
 
         CancelLoad();
         SetBulkMode(false);
-        _loadedLevelHash = null;
-        _bulkLevelHash = null;
+        _loadedLevelCacheKey = null;
+        _bulkLevelCacheKey = null;
         _bulkGhostIds.Clear();
         _ghostPlayer.ClearGhosts();
     }
@@ -163,8 +167,11 @@ public class OfflineGhostsService : IEagerService
         if (IsShowingAllGhosts)
             return;
 
-        PrepareLevel();
-        _bulkLevelHash = LevelApi.CurrentHash;
+        LevelGraphqlIdentity level = PrepareLevel();
+        if (!level.IsAvailable)
+            return;
+
+        _bulkLevelCacheKey = level.CacheKey;
         SetBulkMode(true);
         LoadAllGhosts();
     }
@@ -173,11 +180,11 @@ public class OfflineGhostsService : IEagerService
     {
         CancelLoad();
         _bulkGhostIds.Clear();
-        _bulkLevelHash = null;
+        _bulkLevelCacheKey = null;
         SetBulkMode(false);
         _ghostPlayer.ClearGhosts();
 
-        if (_configService.EnableGhosts.Value && !string.IsNullOrEmpty(LevelApi.CurrentHash))
+        if (_configService.EnableGhosts.Value && CurrentLevelGraphqlIdentity.Create().IsAvailable)
             LoadGhosts();
     }
 
@@ -189,15 +196,19 @@ public class OfflineGhostsService : IEagerService
 
     private async UniTaskVoid LoadAllGhostsAsync(CancellationToken ct, int generation)
     {
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+            return;
+
         int? first = OfflineGhostLimit.ToGraphQlFirst(_configService.MaximumVisibleOfflineGhosts.Value);
         (
             Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> pbResult,
             Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> additionalResult,
             Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>> allResult
         ) = await UniTask.WhenAll(
-            LoadPersonalBestsAsync(ct),
-            LoadAdditionalGhostsAsync(ct),
-            _graphqlService.GetAllPersonalBestGhosts(LevelApi.CurrentHash, first, ct));
+            LoadPersonalBestsAsync(level, ct),
+            LoadAdditionalGhostsAsync(level, ct),
+            _graphqlService.GetAllPersonalBestGhosts(level, first, ct));
 
         if (ct.IsCancellationRequested ||
             !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)) ||
@@ -251,8 +262,17 @@ public class OfflineGhostsService : IEagerService
     private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
         LoadPersonalBestsAsync(CancellationToken ct)
     {
+        return await LoadPersonalBestsAsync(CurrentLevelGraphqlIdentity.Create(), ct);
+    }
+
+    private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
+        LoadPersonalBestsAsync(LevelGraphqlIdentity level, CancellationToken ct)
+    {
+        if (!level.IsAvailable)
+            return Result.Ok<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>([]);
+
         Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
-            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
+            await _graphqlService.GetPersonalBests(level, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
@@ -264,8 +284,17 @@ public class OfflineGhostsService : IEagerService
     private async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>>
         LoadAdditionalGhostsAsync(CancellationToken ct)
     {
+        return await LoadAdditionalGhostsAsync(CurrentLevelGraphqlIdentity.Create(), ct);
+    }
+
+    private async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>>
+        LoadAdditionalGhostsAsync(LevelGraphqlIdentity level, CancellationToken ct)
+    {
+        if (!level.IsAvailable)
+            return Result.Ok<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>([]);
+
         Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> result =
-            await _graphqlService.GetAdditionalGhosts(_additionalGhosts, LevelApi.CurrentHash, ct);
+            await _graphqlService.GetAdditionalGhosts(_additionalGhosts, level, ct);
 
         if (ct.IsCancellationRequested)
             return Result.Ok();
@@ -394,15 +423,19 @@ public class OfflineGhostsService : IEagerService
         cts.Dispose();
     }
 
-    private void PrepareLevel()
+    private LevelGraphqlIdentity PrepareLevel()
     {
-        string currentLevelHash = LevelApi.CurrentHash;
-        if (_loadedLevelHash == currentLevelHash)
-            return;
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+            return level;
+
+        if (_loadedLevelCacheKey == level.CacheKey)
+            return level;
 
         CancelLoad();
         _ghostPlayer.ClearGhosts();
-        _loadedLevelHash = currentLevelHash;
+        _loadedLevelCacheKey = level.CacheKey;
+        return level;
     }
 
     private void EnqueueReconciliation(HashSet<int> desiredIds, int generation)

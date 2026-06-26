@@ -1,7 +1,17 @@
-query GetAllPersonalBestGhosts($hash: String, $first: Int = null) {
+query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
   records(
     filter: {
-      level: { hash: { equalTo: $hash } }
+      level: {
+        or: [
+          { xxHash: { equalTo: $xxHash } }
+          {
+            and: [
+              { hash: { equalTo: $hash } }
+              { adventure: { equalTo: true } }
+            ]
+          }
+        ]
+      }
       personalBestGlobalsExist: true
     }
     first: $first

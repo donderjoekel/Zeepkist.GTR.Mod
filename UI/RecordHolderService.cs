@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
@@ -70,7 +71,8 @@ public class RecordHolderService : IEagerService
 
     private async UniTaskVoid GetRecordHoldersAsync(CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(LevelApi.CurrentHash))
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
         {
             _logger.LogError("Unable to get level hash");
             _worldRecordHolder = null;
@@ -79,9 +81,9 @@ public class RecordHolderService : IEagerService
         }
 
         UniTask<Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>> worldRecordTask =
-            _recordHolderGraphqlService.GetWorldRecordHolder(LevelApi.CurrentHash, ct);
+            _recordHolderGraphqlService.GetWorldRecordHolder(level, ct);
         UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> personalBestTask =
-            _recordHolderGraphqlService.GetPersonalBestHolder(LevelApi.CurrentHash, SteamClient.SteamId.Value, ct);
+            _recordHolderGraphqlService.GetPersonalBestHolder(level, SteamClient.SteamId.Value, ct);
 
         (Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes> worldRecordResult,
                 Result<IGetPersonalBest_PersonalBestGlobals_Nodes> personalBestResult) =
@@ -117,7 +119,7 @@ public class RecordHolderService : IEagerService
         if (_personalBestHolder != null && _personalBestHolder.Record != null)
         {
             Result<int> rankResult =
-                await _recordHolderGraphqlService.GetRank(LevelApi.CurrentHash,
+                await _recordHolderGraphqlService.GetRank(level,
                     _personalBestHolder.Record.Time,
                     ct);
 

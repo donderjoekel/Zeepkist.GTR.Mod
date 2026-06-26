@@ -4,6 +4,7 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -107,8 +108,12 @@ public class OnlineGhostsService : IEagerService
     {
         _logger.LogInformation("Loading personal best...");
 
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+            return;
+
         Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
-            await _graphqlService.GetPersonalBests(LevelApi.CurrentHash, ct);
+            await _graphqlService.GetPersonalBests(level, ct);
 
         if (ct.IsCancellationRequested)
             return;

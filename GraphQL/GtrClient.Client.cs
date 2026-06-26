@@ -3446,8 +3446,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -3458,7 +3458,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -3527,6 +3527,24 @@ namespace TNRD.Zeepkist.GTR
             0x2c,
             0x20,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -3539,6 +3557,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x29,
             0x20,
             0x7b,
@@ -3582,6 +3601,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -3606,6 +3676,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x2c,
@@ -3833,7 +3945,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "fa68c6efdf192bbdd762b07bd2887a07");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "4c89535904a2ada92ab914c46dd5f58b");
 
         public override global::System.String ToString()
         {
@@ -3848,8 +3960,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -3860,7 +3972,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -3889,22 +4001,23 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetAdditionalGhostsResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> ExecuteAsync(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> ExecuteAsync(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(ids, hash);
+            var request = CreateRequest(ids, xxHash, hash);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> Watch(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> Watch(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(ids, hash);
+            var request = CreateRequest(ids, xxHash, hash);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String? hash)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String xxHash, global::System.String hash)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
             variables.Add("ids", FormatIds(ids));
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             return CreateRequest(variables);
         }
@@ -3937,16 +4050,24 @@ namespace TNRD.Zeepkist.GTR
             }
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
@@ -3958,8 +4079,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAdditionalGhosts GraphQL operation
     /// <code>
-    /// query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { in: $ids } } }) {
+    /// query GetAdditionalGhosts($ids: [BigInt!], $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { in: $ids } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -3970,7 +4091,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -3987,15 +4108,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetAdditionalGhostsQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> ExecuteAsync(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> Watch(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> ExecuteAsync(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAdditionalGhostsResult>> Watch(global::System.Collections.Generic.IReadOnlyList<global::System.String>? ids, global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetAllPersonalBestGhosts($hash: String, $first: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4060,6 +4181,24 @@ namespace TNRD.Zeepkist.GTR
             0x73,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -4072,6 +4211,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x2c,
             0x20,
             0x24,
@@ -4123,6 +4263,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -4147,6 +4338,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x2c,
@@ -4385,7 +4618,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "1d373d02050041f7939198777fa9179b");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "ad510ab434578d77986a65ce26806139");
 
         public override global::System.String ToString()
         {
@@ -4400,8 +4633,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetAllPersonalBestGhosts($hash: String, $first: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4438,21 +4671,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetAllPersonalBestGhostsResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> ExecuteAsync(global::System.String? hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash, first);
+            var request = CreateRequest(xxHash, hash, first);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> Watch(global::System.String? hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash, first);
+            var request = CreateRequest(xxHash, hash, first);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash, global::System.Int32? first)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash, global::System.Int32? first)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             variables.Add("first", FormatFirst(first));
             return CreateRequest(variables);
@@ -4463,16 +4697,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetAllPersonalBestGhostsQueryDocument.Instance.Hash.Value, name: "GetAllPersonalBestGhosts", document: GetAllPersonalBestGhostsQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         private global::System.Object? FormatFirst(global::System.Int32? value)
@@ -4496,8 +4738,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetAllPersonalBestGhosts($hash: String, $first: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4522,15 +4764,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetAllPersonalBestGhostsQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> ExecuteAsync(global::System.String? hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> Watch(global::System.String? hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetAllPersonalBestGhostsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetLevelPoints GraphQL operation
     /// <code>
-    /// query GetLevelPoints($hash: String) {
-    ///   levelPoints(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetLevelPoints($xxHash: String!, $hash: String!) {
+    ///   levelPoints(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4573,6 +4815,24 @@ namespace TNRD.Zeepkist.GTR
             0x73,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -4585,6 +4845,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x29,
             0x20,
             0x7b,
@@ -4620,6 +4881,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -4644,6 +4956,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x20,
@@ -4695,7 +5049,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "5f571fbc8770bea00a58b8ad0e8c93f8");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "026f68c94b6c3d56307a098cf0c05ae9");
 
         public override global::System.String ToString()
         {
@@ -4710,8 +5064,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetLevelPoints GraphQL operation
     /// <code>
-    /// query GetLevelPoints($hash: String) {
-    ///   levelPoints(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetLevelPoints($xxHash: String!, $hash: String!) {
+    ///   levelPoints(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4734,21 +5088,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetLevelPointsResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             return CreateRequest(variables);
         }
@@ -4758,16 +5113,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetLevelPointsQueryDocument.Instance.Hash.Value, name: "GetLevelPoints", document: GetLevelPointsQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
@@ -4779,8 +5142,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetLevelPoints GraphQL operation
     /// <code>
-    /// query GetLevelPoints($hash: String) {
-    ///   levelPoints(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetLevelPoints($xxHash: String!, $hash: String!) {
+    ///   levelPoints(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4793,15 +5156,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetLevelPointsQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetLevelPointsResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBest($xxHash: String!, $hash: String!, $steamId: BigInt) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4848,6 +5211,24 @@ namespace TNRD.Zeepkist.GTR
             0x74,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -4860,6 +5241,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x2c,
             0x20,
             0x24,
@@ -4921,6 +5303,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -4945,6 +5378,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x2c,
@@ -5058,7 +5533,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "1b61d5faa346832d89e8e2de69d63d4c");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "70482c9e40e26bcb7c07841d88910dec");
 
         public override global::System.String ToString()
         {
@@ -5073,8 +5548,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBest($xxHash: String!, $hash: String!, $steamId: BigInt) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -5102,21 +5577,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPersonalBestResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> ExecuteAsync(global::System.String? hash, global::System.String? steamId, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.String? steamId, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash, steamId);
+            var request = CreateRequest(xxHash, hash, steamId);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> Watch(global::System.String? hash, global::System.String? steamId, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.String? steamId, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash, steamId);
+            var request = CreateRequest(xxHash, hash, steamId);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash, global::System.String? steamId)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash, global::System.String? steamId)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             variables.Add("steamId", FormatSteamId(steamId));
             return CreateRequest(variables);
@@ -5127,16 +5603,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetPersonalBestQueryDocument.Instance.Hash.Value, name: "GetPersonalBest", document: GetPersonalBestQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         private global::System.Object? FormatSteamId(global::System.String? value)
@@ -5160,8 +5644,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBest GraphQL operation
     /// <code>
-    /// query GetPersonalBest($hash: String, $steamId: BigInt) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBest($xxHash: String!, $hash: String!, $steamId: BigInt) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -5177,15 +5661,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetPersonalBestQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> ExecuteAsync(global::System.String? hash, global::System.String? steamId, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> Watch(global::System.String? hash, global::System.String? steamId, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.String? steamId, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.String? steamId, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetPersonalBestCount GraphQL operation
     /// <code>
-    /// query GetPersonalBestCount($hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetPersonalBestCount($xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -5231,6 +5715,24 @@ namespace TNRD.Zeepkist.GTR
             0x74,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -5243,6 +5745,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x29,
             0x20,
             0x7b,
@@ -5286,6 +5789,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -5310,6 +5864,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x20,
@@ -5344,7 +5940,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "d8a53f6911fa2fe727989d0ac2fe76d4");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "3ddca3ab3ff03355f2ce5a5811946051");
 
         public override global::System.String ToString()
         {
@@ -5359,8 +5955,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestCount GraphQL operation
     /// <code>
-    /// query GetPersonalBestCount($hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetPersonalBestCount($xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -5380,21 +5976,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPersonalBestCountResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             return CreateRequest(variables);
         }
@@ -5404,16 +6001,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetPersonalBestCountQueryDocument.Instance.Hash.Value, name: "GetPersonalBestCount", document: GetPersonalBestCountQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
@@ -5425,8 +6030,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestCount GraphQL operation
     /// <code>
-    /// query GetPersonalBestCount($hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetPersonalBestCount($xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -5436,15 +6041,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetPersonalBestCountQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestCountResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -5527,6 +6132,24 @@ namespace TNRD.Zeepkist.GTR
             0x2c,
             0x20,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -5539,6 +6162,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x29,
             0x20,
             0x7b,
@@ -5582,6 +6206,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -5606,6 +6281,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x2c,
@@ -5842,7 +6559,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "a3deea5a27d8571b5bdea0a035490226");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "214b8f9e0bbf026bc8bfc815198a618d");
 
         public override global::System.String ToString()
         {
@@ -5857,8 +6574,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -5898,22 +6615,23 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPersonalBestGhostsResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> ExecuteAsync(global::System.String? steamId, global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> ExecuteAsync(global::System.String? steamId, global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(steamId, hash);
+            var request = CreateRequest(steamId, xxHash, hash);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> Watch(global::System.String? steamId, global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> Watch(global::System.String? steamId, global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(steamId, hash);
+            var request = CreateRequest(steamId, xxHash, hash);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? steamId, global::System.String? hash)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? steamId, global::System.String xxHash, global::System.String hash)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
             variables.Add("steamId", FormatSteamId(steamId));
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             return CreateRequest(variables);
         }
@@ -5935,16 +6653,24 @@ namespace TNRD.Zeepkist.GTR
             }
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
@@ -5956,8 +6682,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBestGhosts GraphQL operation
     /// <code>
-    /// query GetPersonalBestGhosts($steamId: BigInt, $hash: String) {
-    ///   personalBestGlobals(filter: { level: { hash: { equalTo: $hash } }, user: { steamId: { equalTo: $steamId } } }) {
+    /// query GetPersonalBestGhosts($steamId: BigInt, $xxHash: String!, $hash: String!) {
+    ///   personalBestGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, user: { steamId: { equalTo: $steamId } } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -5985,15 +6711,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetPersonalBestGhostsQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> ExecuteAsync(global::System.String? steamId, global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> Watch(global::System.String? steamId, global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> ExecuteAsync(global::System.String? steamId, global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestGhostsResult>> Watch(global::System.String? steamId, global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetPersonalBests GraphQL operation
     /// <code>
-    /// query GetPersonalBests($hash: String, $first: Int = null, $offset: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
+    /// query GetPersonalBests($xxHash: String!, $hash: String!, $first: Int = null, $offset: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -6043,6 +6769,24 @@ namespace TNRD.Zeepkist.GTR
             0x73,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -6055,6 +6799,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x2c,
             0x20,
             0x24,
@@ -6127,6 +6872,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -6151,6 +6947,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x2c,
@@ -6321,7 +7159,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "c0017b751eb2be54d9328104823052fd");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "7e073385b607e8076a6fc8e30afb83cd");
 
         public override global::System.String ToString()
         {
@@ -6336,8 +7174,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBests GraphQL operation
     /// <code>
-    /// query GetPersonalBests($hash: String, $first: Int = null, $offset: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
+    /// query GetPersonalBests($xxHash: String!, $hash: String!, $first: Int = null, $offset: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -6367,21 +7205,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPersonalBestsResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> ExecuteAsync(global::System.String? hash, global::System.Int32? first, global::System.Int32? offset, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Int32? offset, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash, first, offset);
+            var request = CreateRequest(xxHash, hash, first, offset);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> Watch(global::System.String? hash, global::System.Int32? first, global::System.Int32? offset, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Int32? offset, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash, first, offset);
+            var request = CreateRequest(xxHash, hash, first, offset);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash, global::System.Int32? first, global::System.Int32? offset)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Int32? offset)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             variables.Add("first", FormatFirst(first));
             variables.Add("offset", FormatOffset(offset));
@@ -6393,16 +7232,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetPersonalBestsQueryDocument.Instance.Hash.Value, name: "GetPersonalBests", document: GetPersonalBestsQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         private global::System.Object? FormatFirst(global::System.Int32? value)
@@ -6438,8 +7285,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPersonalBests GraphQL operation
     /// <code>
-    /// query GetPersonalBests($hash: String, $first: Int = null, $offset: Int = null) {
-    ///   records(filter: { level: { hash: { equalTo: $hash } }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
+    /// query GetPersonalBests($xxHash: String!, $hash: String!, $first: Int = null, $offset: Int = null) {
+    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, offset: $offset, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -6457,15 +7304,15 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetPersonalBestsQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> ExecuteAsync(global::System.String? hash, global::System.Int32? first, global::System.Int32? offset, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> Watch(global::System.String? hash, global::System.Int32? first, global::System.Int32? offset, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Int32? offset, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPersonalBestsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Int32? offset, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
     /// Represents the operation service of the GetPlayerRankOnLevel GraphQL operation
     /// <code>
-    /// query GetPlayerRankOnLevel($hash: String!, $time: Float!) {
-    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { hash: { equalTo: $hash } } }, orderBy: TIME_ASC) {
+    /// query GetPlayerRankOnLevel($xxHash: String!, $hash: String!, $time: Float!) {
+    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, orderBy: TIME_ASC) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -6510,6 +7357,24 @@ namespace TNRD.Zeepkist.GTR
             0x65,
             0x6c,
             0x28,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
             0x24,
             0x68,
             0x61,
@@ -6629,6 +7494,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -6653,6 +7569,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x20,
@@ -6706,7 +7664,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "db142150c3be76b3d25e7e28eeabfed6");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "8d39cdef8d9f8b2b0c5d5c364446a337");
 
         public override global::System.String ToString()
         {
@@ -6721,8 +7679,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPlayerRankOnLevel GraphQL operation
     /// <code>
-    /// query GetPlayerRankOnLevel($hash: String!, $time: Float!) {
-    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { hash: { equalTo: $hash } } }, orderBy: TIME_ASC) {
+    /// query GetPlayerRankOnLevel($xxHash: String!, $hash: String!, $time: Float!) {
+    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, orderBy: TIME_ASC) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -6744,21 +7702,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetPlayerRankOnLevelResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> ExecuteAsync(global::System.String hash, global::System.Double time, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Double time, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash, time);
+            var request = CreateRequest(xxHash, hash, time);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> Watch(global::System.String hash, global::System.Double time, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Double time, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash, time);
+            var request = CreateRequest(xxHash, hash, time);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String hash, global::System.Double time)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash, global::System.Double time)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             variables.Add("time", FormatTime(time));
             return CreateRequest(variables);
@@ -6767,6 +7726,16 @@ namespace TNRD.Zeepkist.GTR
         private global::StrawberryShake.OperationRequest CreateRequest(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
         {
             return new global::StrawberryShake.OperationRequest(id: GetPlayerRankOnLevelQueryDocument.Instance.Hash.Value, name: "GetPlayerRankOnLevel", document: GetPlayerRankOnLevelQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
+        }
+
+        private global::System.Object? FormatXxHash(global::System.String value)
+        {
+            if (value is null)
+            {
+                throw new global::System.ArgumentNullException(nameof(value));
+            }
+
+            return _stringFormatter.Format(value);
         }
 
         private global::System.Object? FormatHash(global::System.String value)
@@ -6793,8 +7762,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetPlayerRankOnLevel GraphQL operation
     /// <code>
-    /// query GetPlayerRankOnLevel($hash: String!, $time: Float!) {
-    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { hash: { equalTo: $hash } } }, orderBy: TIME_ASC) {
+    /// query GetPlayerRankOnLevel($xxHash: String!, $hash: String!, $time: Float!) {
+    ///   records(filter: { personalBestGlobalsExist: true, time: { lessThan: $time }, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, orderBy: TIME_ASC) {
     ///     __typename
     ///     totalCount
     ///   }
@@ -6804,8 +7773,8 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetPlayerRankOnLevelQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> ExecuteAsync(global::System.String hash, global::System.Double time, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> Watch(global::System.String hash, global::System.Double time, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Double time, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetPlayerRankOnLevelResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Double time, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
@@ -6973,8 +7942,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetWorldRecordHolder GraphQL operation
     /// <code>
-    /// query GetWorldRecordHolder($hash: String) {
-    ///   worldRecordGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetWorldRecordHolder($xxHash: String!, $hash: String!) {
+    ///   worldRecordGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -7030,6 +7999,24 @@ namespace TNRD.Zeepkist.GTR
             0x72,
             0x28,
             0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
             0x68,
             0x61,
             0x73,
@@ -7042,6 +8029,7 @@ namespace TNRD.Zeepkist.GTR
             0x69,
             0x6e,
             0x67,
+            0x21,
             0x29,
             0x20,
             0x7b,
@@ -7084,6 +8072,57 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
             0x68,
             0x61,
             0x73,
@@ -7108,6 +8147,48 @@ namespace TNRD.Zeepkist.GTR
             0x68,
             0x20,
             0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
             0x20,
             0x7d,
             0x20,
@@ -7209,7 +8290,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "87e79ca9f2561ac397002d14803684af");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "34fddc07bae4247f3ef59cfcb4203cb7");
 
         public override global::System.String ToString()
         {
@@ -7224,8 +8305,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetWorldRecordHolder GraphQL operation
     /// <code>
-    /// query GetWorldRecordHolder($hash: String) {
-    ///   worldRecordGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetWorldRecordHolder($xxHash: String!, $hash: String!) {
+    ///   worldRecordGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -7255,21 +8336,22 @@ namespace TNRD.Zeepkist.GTR
 
         global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetWorldRecordHolderResult);
 
-        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default)
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null)
         {
-            var request = CreateRequest(hash);
+            var request = CreateRequest(xxHash, hash);
             return _operationExecutor.Watch(request, strategy);
         }
 
-        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String? hash)
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash)
         {
             var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
             variables.Add("hash", FormatHash(hash));
             return CreateRequest(variables);
         }
@@ -7279,16 +8361,24 @@ namespace TNRD.Zeepkist.GTR
             return new global::StrawberryShake.OperationRequest(id: GetWorldRecordHolderQueryDocument.Instance.Hash.Value, name: "GetWorldRecordHolder", document: GetWorldRecordHolderQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
         }
 
-        private global::System.Object? FormatHash(global::System.String? value)
+        private global::System.Object? FormatXxHash(global::System.String value)
         {
             if (value is null)
             {
-                return value;
+                throw new global::System.ArgumentNullException(nameof(value));
             }
-            else
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
             {
-                return _stringFormatter.Format(value);
+                throw new global::System.ArgumentNullException(nameof(value));
             }
+
+            return _stringFormatter.Format(value);
         }
 
         global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
@@ -7300,8 +8390,8 @@ namespace TNRD.Zeepkist.GTR
     /// <summary>
     /// Represents the operation service of the GetWorldRecordHolder GraphQL operation
     /// <code>
-    /// query GetWorldRecordHolder($hash: String) {
-    ///   worldRecordGlobals(filter: { level: { hash: { equalTo: $hash } } }) {
+    /// query GetWorldRecordHolder($xxHash: String!, $hash: String!) {
+    ///   worldRecordGlobals(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -7321,8 +8411,8 @@ namespace TNRD.Zeepkist.GTR
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetWorldRecordHolderQuery : global::StrawberryShake.IOperationRequestFactory
     {
-        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> ExecuteAsync(global::System.String? hash, global::System.Threading.CancellationToken cancellationToken = default);
-        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> Watch(global::System.String? hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetWorldRecordHolderResult>> Watch(global::System.String xxHash, global::System.String hash, global::StrawberryShake.ExecutionStrategy? strategy = null);
     }
 
     /// <summary>
