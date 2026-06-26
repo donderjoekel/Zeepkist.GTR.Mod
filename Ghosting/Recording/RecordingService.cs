@@ -98,8 +98,9 @@ public class RecordingService : IEagerService
         ghostRecorder.Stop();
 
         _logger.LogInformation("Collecting extra information");
-        string hash = LevelApi.CurrentHash;
-        string canonicalHash = LevelApi.CurrentHashV2?.Hash;
+        LevelHashV2 currentHash = LevelApi.CurrentHashV2;
+        string hash = currentHash?.ZeepHash;
+        string canonicalHash = currentHash?.Hash;
         LevelScriptableObject currentLevel = LevelApi.CurrentLevel;
         string workshopId = RecordWorkshopId.ToWireValue(
             ZeepkistNetwork.CurrentLobby?.WorkshopID ?? 0,

@@ -119,7 +119,7 @@ public class VotingService : IEagerService
 
     private async UniTaskVoid VoteAsync(int voteValue, Action onSuccess, Action onFail)
     {
-        string currentHash = LevelApi.CurrentHash;
+        string currentHash = LevelApi.CurrentHashV2?.Hash;
 
         if (string.IsNullOrEmpty(currentHash))
         {
@@ -132,7 +132,7 @@ public class VotingService : IEagerService
             $"vote/submit",
             new VoteResource
             {
-                Level = currentHash,
+                Hash = currentHash,
                 Value = voteValue
             }
         );

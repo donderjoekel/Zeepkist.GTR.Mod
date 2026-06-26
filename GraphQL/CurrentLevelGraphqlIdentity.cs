@@ -7,9 +7,10 @@ public static class CurrentLevelGraphqlIdentity
     public static LevelGraphqlIdentity Create()
     {
         LevelScriptableObject currentLevel = LevelApi.CurrentLevel;
+        LevelHashV2 currentHash = LevelApi.CurrentHashV2;
         return LevelGraphqlIdentity.FromValues(
-            LevelApi.CurrentHashV2?.Hash,
-            LevelApi.CurrentHash,
+            currentHash?.Hash,
+            currentHash?.ZeepHash,
             currentLevel?.IsAdventureLevel ?? false,
             currentLevel?.UseAvonturenLevel ?? false);
     }
