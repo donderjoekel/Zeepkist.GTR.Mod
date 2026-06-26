@@ -1,7 +1,17 @@
-query GetAdditionalGhosts($ids: [BigInt!], $hash: String) {
+query GetAdditionalGhosts($ids: [BigInt!], $xxHash: String!, $hash: String!) {
   personalBestGlobals(
     filter: {
-      level: { hash: { equalTo: $hash } }
+      level: {
+        or: [
+          { xxHash: { equalTo: $xxHash } }
+          {
+            and: [
+              { hash: { equalTo: $hash } }
+              { adventure: { equalTo: true } }
+            ]
+          }
+        ]
+      }
       user: { steamId: { in: $ids } }
     }
   ) {

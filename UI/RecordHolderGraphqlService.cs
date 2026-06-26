@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using StrawberryShake;
+using TNRD.Zeepkist.GTR.GraphQL;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -23,11 +24,11 @@ public class RecordHolderGraphqlService
     }
 
     public async UniTask<Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>> GetWorldRecordHolder(
-        string levelHash,
+        LevelGraphqlIdentity level,
         CancellationToken ct)
     {
         IOperationResult<IGetWorldRecordHolderResult> result =
-            await _gtrClient.GetWorldRecordHolder.ExecuteAsync(levelHash, ct);
+            await _gtrClient.GetWorldRecordHolder.ExecuteAsync(level.XxHash, level.Hash, ct);
 
         try
         {
@@ -44,11 +45,11 @@ public class RecordHolderGraphqlService
         return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
 
-    public async UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> GetPersonalBestHolder(string levelHash,
+    public async UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> GetPersonalBestHolder(LevelGraphqlIdentity level,
         ulong steamId, CancellationToken ct)
     {
         IOperationResult<IGetPersonalBestResult> result =
-            await _gtrClient.GetPersonalBest.ExecuteAsync(levelHash, steamId.ToString(), ct);
+            await _gtrClient.GetPersonalBest.ExecuteAsync(level.XxHash, level.Hash, steamId.ToString(), ct);
 
         try
         {
@@ -64,10 +65,10 @@ public class RecordHolderGraphqlService
         return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
 
-    public async UniTask<Result<int>> GetRank(string levelHash, double time, CancellationToken ct)
+    public async UniTask<Result<int>> GetRank(LevelGraphqlIdentity level, double time, CancellationToken ct)
     {
         IOperationResult<IGetPlayerRankOnLevelResult> result =
-            await _gtrClient.GetPlayerRankOnLevel.ExecuteAsync(levelHash, time, ct);
+            await _gtrClient.GetPlayerRankOnLevel.ExecuteAsync(level.XxHash, level.Hash, time, ct);
 
         try
         {

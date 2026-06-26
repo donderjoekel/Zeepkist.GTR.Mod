@@ -25,8 +25,6 @@ public class Patcher : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Unpatching");
-        _harmony.UnpatchSelf();
         return Task.CompletedTask;
     }
 }

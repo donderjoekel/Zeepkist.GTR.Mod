@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Steamworks;
 using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
+using TNRD.Zeepkist.GTR.GraphQL;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using Result = ZeepSDK.External.FluentResults.Result;
@@ -27,13 +28,14 @@ public class OnlineGhostGraphqlService
     }
 
     public async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>> GetPersonalBests(
-        string levelHash,
+        LevelGraphqlIdentity level,
         CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetPersonalBestGhostsResult> result =
             await _gtrClient.GetPersonalBestGhosts.ExecuteAsync(
                 SteamClient.SteamId.ToString(),
-                levelHash,
+                level.XxHash,
+                level.Hash,
                 cancellationToken);
 
         try

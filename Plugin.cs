@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Threading;
 using BepInEx;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -37,27 +35,18 @@ namespace TNRD.Zeepkist.GTR;
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
-    private readonly CancellationTokenSource _lifetimeCts = new();
 
     private void Awake()
     {
         StartHost().Forget();
     }
 
-    private void OnDestroy()
-    {
-        _lifetimeCts.Cancel();
-        StopHost().Forget();
-    }
-
     private async UniTaskVoid StartHost()
     {
         try
         {
-            await UniTask.WaitUntil(
-                () => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn,
-                cancellationToken: _lifetimeCts.Token);
-            
+            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
             builder.UseSerilog((context, provider, configuration) =>
@@ -68,7 +57,7 @@ public class Plugin : BaseUnityPlugin
             });
             builder.ConfigureServices(ConfigureServices);
             _host = builder.Build();
-            await _host.StartAsync(_lifetimeCts.Token);
+            await _host.StartAsync();
 
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -88,10 +77,12 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton(Config);
         services.AddSingleton(Logger);
         services.AddSingleton(Info);
+        services.AddSingleton<IHostLifetime, NoopHostLifetime>();
         services.AddMemoryCache();
         services.AddEagerService<AuthenticationService>();
         services.AddEagerService<CommandsService>();
         services.AddEagerService<ConfigService>();
+        services.AddEagerService<LevelRequestService>();
         services.AddEagerService<OfflineGhostsService>();
         services.AddEagerService<OnlineGhostsService>();
         services.AddEagerService<RecordingService>();
@@ -164,25 +155,5 @@ public class Plugin : BaseUnityPlugin
         client.DefaultRequestHeaders.Add("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
         client.DefaultRequestHeaders.Add("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
         client.DefaultRequestHeaders.Add("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
-    }
-
-    private async UniTaskVoid StopHost()
-    {
-        IHost host = _host;
-        _host = null;
-        if (host != null)
-        {
-            try
-            {
-                using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
-                await host.StopAsync(timeout.Token);
-            }
-            finally
-            {
-                host.Dispose();
-            }
-        }
-
-        _lifetimeCts.Dispose();
     }
 }

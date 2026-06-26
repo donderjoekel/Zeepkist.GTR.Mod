@@ -2,6 +2,6 @@
 
 public class VoteResource
 {
-    public string Level { get; set; } = null!;
+    public string Hash { get; set; } = null!;
     public int Value { get; set; }
 }

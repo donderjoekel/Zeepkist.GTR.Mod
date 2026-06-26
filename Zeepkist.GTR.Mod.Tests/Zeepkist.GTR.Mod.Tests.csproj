@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />
     <Compile Include="..\Api\RecordWorkshopId.cs" Link="Source\RecordWorkshopId.cs" />
     <Compile Include="..\Configuration\ServiceUriValidator.cs" Link="Source\ServiceUriValidator.cs" />
@@ -34,5 +35,6 @@
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
     <Compile Include="..\Ghosting\Readers\LimitedMemoryStream.cs" Link="Source\LimitedMemoryStream.cs" />
+    <Compile Include="..\GraphQL\LevelGraphqlIdentity.cs" Link="Source\LevelGraphqlIdentity.cs" />
   </ItemGroup>
 </Project>

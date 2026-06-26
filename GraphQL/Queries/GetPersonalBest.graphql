@@ -1,7 +1,17 @@
-﻿query GetPersonalBest($hash: String, $steamId: BigInt) {
+query GetPersonalBest($xxHash: String!, $hash: String!, $steamId: BigInt) {
     personalBestGlobals(
         filter: {
-            level: { hash: { equalTo: $hash } }
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
             user: { steamId: { equalTo: $steamId } }
         }
     ) {

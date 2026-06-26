@@ -1,5 +1,19 @@
-﻿query GetLevelPoints($hash: String) {
-    levelPoints(filter: { level: { hash: { equalTo: $hash } } }) {
+query GetLevelPoints($xxHash: String!, $hash: String!) {
+    levelPoints(
+        filter: {
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
+        }
+    ) {
         nodes {
             points
         }

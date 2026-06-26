@@ -6,14 +6,13 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostMaterialService : IEagerService, System.IDisposable
+public class GhostMaterialService : IEagerService
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
     private readonly BulkGhostModeState _bulkModeState;
-    private readonly PlayerLoopSubscription _updateSubscription;
 
     public GhostMaterialService(
         PlayerLoopService playerLoopService,
@@ -28,7 +27,7 @@ public class GhostMaterialService : IEagerService, System.IDisposable
         _messengerService = messengerService;
         _bulkModeState = bulkModeState;
 
-        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
+        _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
         _bulkModeState.Changed += ApplyMaterialMode;
     }
@@ -154,12 +153,5 @@ public class GhostMaterialService : IEagerService, System.IDisposable
                 ghostData.Renderer.SetFade(1);
             }
         }
-    }
-
-    public void Dispose()
-    {
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
-        _ghostPlayer.GhostAdded -= OnGhostAdded;
-        _bulkModeState.Changed -= ApplyMaterialMode;
     }
 }

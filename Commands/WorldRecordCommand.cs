@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.Utilities;
 using ZeepSDK.Chat;
@@ -36,8 +37,16 @@ public class WorldRecordCommand : ILocalChatCommand
 
     private async UniTaskVoid HandleAsync(string arguments)
     {
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (!level.IsAvailable)
+        {
+            ChatApi.AddLocalMessage("[GTR] Failed to get world record");
+            _logger.LogError("Unable to get level hash");
+            return;
+        }
+
         Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes> result =
-            await _recordHolderGraphqlService.GetWorldRecordHolder(LevelApi.CurrentHash, CancellationToken.None);
+            await _recordHolderGraphqlService.GetWorldRecordHolder(level, CancellationToken.None);
 
         if (result.IsFailed)
         {

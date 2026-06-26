@@ -249,6 +249,6 @@ public class ConfigService : IEagerService
             "Use Local Development Backend",
             false,
             "Use http://localhost:3000 instead of production backend\n" +
-            "Changing this requires a restart of the game");
+            "Changing this logs in again against the selected backend");
     }
 }

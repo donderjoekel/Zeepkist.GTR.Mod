@@ -10,9 +10,8 @@ using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Discord;
 
-public class DiscordService : IEagerService, IDisposable
+public class DiscordService : IEagerService
 {
-    private readonly ConfigService _configService;
     private readonly UserService _userService;
     private readonly Wrapper.Discord _discordClient;
     private readonly ILogger<DiscordService> _logger;
@@ -25,7 +24,6 @@ public class DiscordService : IEagerService, IDisposable
         ILogger<DiscordService> logger,
         MessengerService messengerService)
     {
-        _configService = configService;
         _userService = userService;
         _logger = logger;
         _messengerService = messengerService;
@@ -126,12 +124,5 @@ public class DiscordService : IEagerService, IDisposable
             _discordClient.RunCallbacks();
             await UniTask.DelayFrame(1);
         }
-    }
-
-    public void Dispose()
-    {
-        _configService.ButtonLinkDiscord.SettingChanged -= OnLinkDiscord;
-        _configService.ButtonUnlinkDiscord.SettingChanged -= OnUnlinkDiscord;
-        _discordClient?.Dispose();
     }
 }

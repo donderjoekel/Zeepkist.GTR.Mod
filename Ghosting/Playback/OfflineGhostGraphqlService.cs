@@ -5,6 +5,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using StrawberryShake;
 using TNRD.Zeepkist.GTR.Configuration;
+using TNRD.Zeepkist.GTR.GraphQL;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -19,11 +20,11 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
 
     public async UniTask<Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>>> GetAdditionalGhosts(
         List<string> steamIds,
-        string levelHash,
+        LevelGraphqlIdentity level,
         CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetAdditionalGhostsResult> result =
-            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, levelHash, cancellationToken);
+            await GtrClient.GetAdditionalGhosts.ExecuteAsync(steamIds, level.XxHash, level.Hash, cancellationToken);
 
         try
         {
@@ -39,12 +40,12 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
     }
 
     public async UniTask<Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>>> GetAllPersonalBestGhosts(
-        string levelHash,
+        LevelGraphqlIdentity level,
         int? first,
         CancellationToken cancellationToken = default)
     {
         IOperationResult<IGetAllPersonalBestGhostsResult> result =
-            await GtrClient.GetAllPersonalBestGhosts.ExecuteAsync(levelHash, first, cancellationToken);
+            await GtrClient.GetAllPersonalBestGhosts.ExecuteAsync(level.XxHash, level.Hash, first, cancellationToken);
 
         try
         {

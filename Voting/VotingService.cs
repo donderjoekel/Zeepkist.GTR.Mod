@@ -16,14 +16,13 @@ using ZeepSDK.Racing;
 namespace TNRD.Zeepkist.GTR.Voting;
 
 [UsedImplicitly]
-public class VotingService : IEagerService, IDisposable
+public class VotingService : IEagerService
 {
     private const string TIME_LEFT = "00:30";
 
     private readonly PlayerLoopService _playerLoopService;
     private readonly ILogger<VotingService> _logger;
     private readonly ApiHttpClient _apiHttpClient;
-    private readonly PlayerLoopSubscription _updateSubscription;
 
     private string _previousTimeLeft;
 
@@ -33,7 +32,7 @@ public class VotingService : IEagerService, IDisposable
         _playerLoopService = playerLoopService;
         _logger = logger;
         _apiHttpClient = apiHttpClient;
-        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
+        _playerLoopService.SubscribeUpdate(OnUpdate);
     }
 
     private void OnUpdate()
@@ -46,7 +45,7 @@ public class VotingService : IEagerService, IDisposable
         if (currentTimeLeft == TIME_LEFT && _previousTimeLeft != TIME_LEFT)
         {
             ChatApi.AddLocalMessage(
-                "<color=#FFFF00>Cast your vote for ZeepCentraal:</color><br>" +
+                "<size=80%><color=#FFFF00>Cast your vote for ZeepCentraal:</color></size><br>" +
                 "<size=75%>" +
                 "<size=50%><i>(hated it)</i></size> " +
                 "<b><color=#FF0000>--</color></b> " +
@@ -120,7 +119,7 @@ public class VotingService : IEagerService, IDisposable
 
     private async UniTaskVoid VoteAsync(int voteValue, Action onSuccess, Action onFail)
     {
-        string currentHash = LevelApi.CurrentHash;
+        string currentHash = LevelApi.CurrentHashV2?.Hash;
 
         if (string.IsNullOrEmpty(currentHash))
         {
@@ -133,7 +132,7 @@ public class VotingService : IEagerService, IDisposable
             $"vote/submit",
             new VoteResource
             {
-                Level = currentHash,
+                Hash = currentHash,
                 Value = voteValue
             }
         );
@@ -150,10 +149,5 @@ public class VotingService : IEagerService, IDisposable
         }
 
         onSuccess();
-    }
-
-    public void Dispose()
-    {
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
     }
 }

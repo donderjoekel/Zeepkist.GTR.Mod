@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Caching.Memory;
 using StrawberryShake;
+using TNRD.Zeepkist.GTR.GraphQL;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 
@@ -19,12 +20,12 @@ public class LeaderboardGraphqlService
         _cache = cache;
     }
 
-    public async UniTask<Result<int>> GetPersonalBestCount(string levelHash, CancellationToken ct = default)
+    public async UniTask<Result<int>> GetPersonalBestCount(LevelGraphqlIdentity level, CancellationToken ct = default)
     {
         try
         {
             IOperationResult<IGetPersonalBestCountResult> result =
-                await _gtrClient.GetPersonalBestCount.ExecuteAsync(levelHash, ct);
+                await _gtrClient.GetPersonalBestCount.ExecuteAsync(level.XxHash, level.Hash, ct);
             try
             {
                 result.EnsureNoErrors();
@@ -74,12 +75,13 @@ public class LeaderboardGraphqlService
         }
     }
 
-    public async UniTask<Result<int?>> GetLevelPoints(string levelHash, CancellationToken ct = default)
+    public async UniTask<Result<int?>> GetLevelPoints(LevelGraphqlIdentity level, CancellationToken ct = default)
     {
         if (_cache.TryGetValue(CreateKey(), out int? cachedPoints))
             return cachedPoints;
 
-        IOperationResult<IGetLevelPointsResult> result = await _gtrClient.GetLevelPoints.ExecuteAsync(levelHash, ct);
+        IOperationResult<IGetLevelPointsResult> result =
+            await _gtrClient.GetLevelPoints.ExecuteAsync(level.XxHash, level.Hash, ct);
         try
         {
             result.EnsureNoErrors();
@@ -102,18 +104,18 @@ public class LeaderboardGraphqlService
 
         string CreateKey()
         {
-            return $"LevelPoints-{levelHash}";
+            return $"LevelPoints-{level.CacheKey}";
         }
     }
 
     public async UniTask<Result<IGetPersonalBestsResult>> GetLeaderboardRecords(
-        string levelHash,
+        LevelGraphqlIdentity level,
         int page = 0,
         CancellationToken ct = default,
         int pageSize = 16)
     {
         IOperationResult<IGetPersonalBestsResult> result =
-            await _gtrClient.GetPersonalBests.ExecuteAsync(levelHash, pageSize, page * pageSize, ct);
+            await _gtrClient.GetPersonalBests.ExecuteAsync(level.XxHash, level.Hash, pageSize, page * pageSize, ct);
 
         try
         {

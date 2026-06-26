@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public partial class GhostPlayer : IEagerService, IDisposable
+public partial class GhostPlayer : IEagerService
 {
     private readonly ObjectPool<GhostData> _fullPool;
     private readonly ObjectPool<GhostData> _bulkPool;
@@ -23,10 +23,7 @@ public partial class GhostPlayer : IEagerService, IDisposable
     private readonly Dictionary<int, IGhost> _ghosts = new();
     private readonly Dictionary<int, GhostData> _ghostData = new();
     private readonly HashSet<int> _ghostsToRemove = new();
-    private readonly PlayerLoopService _playerLoopService;
     private readonly BulkGhostRenderService _bulkGhostRenderService;
-    private readonly PlayerLoopSubscription _updateSubscription;
-    private readonly PlayerLoopSubscription _fixedUpdateSubscription;
 
     private bool _roundStarted;
     private bool _paused;
@@ -42,7 +39,6 @@ public partial class GhostPlayer : IEagerService, IDisposable
         ILogger<GhostPlayer> logger)
     {
         _logger = logger;
-        _playerLoopService = playerLoopService;
         _bulkGhostRenderService = bulkGhostRenderService;
         _fullPool = new ObjectPool<GhostData>(
             CreateFullGhost,
@@ -55,8 +51,8 @@ public partial class GhostPlayer : IEagerService, IDisposable
             ReleaseGhost,
             DestroyGhost);
 
-        _updateSubscription = playerLoopService.SubscribeUpdate(Update);
-        _fixedUpdateSubscription = playerLoopService.SubscribeFixedUpdate(FixedUpdate);
+        playerLoopService.SubscribeUpdate(Update);
+        playerLoopService.SubscribeFixedUpdate(FixedUpdate);
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
@@ -332,20 +328,6 @@ public partial class GhostPlayer : IEagerService, IDisposable
         {
             RemoveGhost(id);
         }
-    }
-
-    public void Dispose()
-    {
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
-        _playerLoopService.UnsubscribeFixedUpdate(_fixedUpdateSubscription);
-        RacingApi.RoundStarted -= OnRoundStarted;
-        RacingApi.RoundEnded -= OnRoundEnded;
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        RacingApi.QuickReset -= OnQuickReset;
-        RacingApi.Quit -= OnQuit;
-        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
-        ClearGhosts();
-        ClearPools();
     }
 
     private ObjectPool<GhostData> GetPool(GhostVisualProfile visualProfile)
