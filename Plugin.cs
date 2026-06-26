@@ -77,6 +77,7 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton(Config);
         services.AddSingleton(Logger);
         services.AddSingleton(Info);
+        services.AddSingleton<IHostLifetime, NoopHostLifetime>();
         services.AddMemoryCache();
         services.AddEagerService<AuthenticationService>();
         services.AddEagerService<CommandsService>();
