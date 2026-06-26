@@ -58,5 +58,20 @@ public class RecordWorkshopIdTests
 
         Assert.DoesNotContain("\"WorkshopId\"", json);
     }
-}
 
+    [Fact]
+    public void LevelRequestResourceSerializesPascalCasePayload()
+    {
+        LevelRequestResource resource = new()
+        {
+            WorkshopId = "3749321871",
+            Hash = "0123456789ABCDEF0123456789ABCDEF"
+        };
+
+        string json = JsonConvert.SerializeObject(resource);
+
+        Assert.Equal(
+            "{\"WorkshopId\":\"3749321871\",\"Hash\":\"0123456789ABCDEF0123456789ABCDEF\"}",
+            json);
+    }
+}

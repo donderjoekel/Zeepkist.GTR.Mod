@@ -47,7 +47,7 @@
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
         <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
         <ProjectReference Include="..\ZeepSDK\ZeepSDK\ZeepSDK.csproj" PrivateAssets="all" Condition="Exists('..\ZeepSDK\ZeepSDK\ZeepSDK.csproj')" />
-        <PackageReference Include="ZeepSDK" Version="2.3.0" PrivateAssets="all" Condition="!Exists('..\ZeepSDK\ZeepSDK\ZeepSDK.csproj')" />
+        <PackageReference Include="ZeepSDK" Version="2.3.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

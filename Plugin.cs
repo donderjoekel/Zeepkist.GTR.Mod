@@ -82,6 +82,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<AuthenticationService>();
         services.AddEagerService<CommandsService>();
         services.AddEagerService<ConfigService>();
+        services.AddEagerService<LevelRequestService>();
         services.AddEagerService<OfflineGhostsService>();
         services.AddEagerService<OnlineGhostsService>();
         services.AddEagerService<RecordingService>();
