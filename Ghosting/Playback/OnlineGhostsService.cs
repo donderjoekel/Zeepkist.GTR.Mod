@@ -16,7 +16,7 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class OnlineGhostsService : IEagerService, System.IDisposable
+public class OnlineGhostsService : IEagerService
 {
     private readonly ILogger<OnlineGhostsService> _logger;
     private readonly OnlineGhostGraphqlService _graphqlService;
@@ -24,8 +24,6 @@ public class OnlineGhostsService : IEagerService, System.IDisposable
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
-    private readonly PlayerLoopService _playerLoopService;
-    private readonly PlayerLoopSubscription _updateSubscription;
 
     private CancellationTokenSource _cts;
 
@@ -44,9 +42,7 @@ public class OnlineGhostsService : IEagerService, System.IDisposable
         _configService = configService;
         _messengerService = messengerService;
         _graphqlService = graphqlService;
-        _playerLoopService = playerLoopService;
-
-        _updateSubscription = playerLoopService.SubscribeUpdate(OnUpdate);
+        playerLoopService.SubscribeUpdate(OnUpdate);
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
@@ -171,14 +167,5 @@ public class OnlineGhostsService : IEagerService, System.IDisposable
             return;
         cts.Cancel();
         cts.Dispose();
-    }
-
-    public void Dispose()
-    {
-        CancelLoad();
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        RacingApi.RoundEnded -= OnRoundEnded;
-        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
     }
 }

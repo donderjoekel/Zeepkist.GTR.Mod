@@ -16,14 +16,13 @@ using ZeepSDK.Racing;
 namespace TNRD.Zeepkist.GTR.Voting;
 
 [UsedImplicitly]
-public class VotingService : IEagerService, IDisposable
+public class VotingService : IEagerService
 {
     private const string TIME_LEFT = "00:30";
 
     private readonly PlayerLoopService _playerLoopService;
     private readonly ILogger<VotingService> _logger;
     private readonly ApiHttpClient _apiHttpClient;
-    private readonly PlayerLoopSubscription _updateSubscription;
 
     private string _previousTimeLeft;
 
@@ -33,7 +32,7 @@ public class VotingService : IEagerService, IDisposable
         _playerLoopService = playerLoopService;
         _logger = logger;
         _apiHttpClient = apiHttpClient;
-        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
+        _playerLoopService.SubscribeUpdate(OnUpdate);
     }
 
     private void OnUpdate()
@@ -150,10 +149,5 @@ public class VotingService : IEagerService, IDisposable
         }
 
         onSuccess();
-    }
-
-    public void Dispose()
-    {
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
     }
 }

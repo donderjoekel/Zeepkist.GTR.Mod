@@ -16,7 +16,7 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
-public class RecordingService : IEagerService, IDisposable
+public class RecordingService : IEagerService
 {
     private readonly MessengerService _messengerService;
     private readonly ILogger<RecordingService> _logger;
@@ -232,16 +232,4 @@ public class RecordingService : IEagerService, IDisposable
             _messengerService.LogError("Failed to submit record");
         }
     }
-
-    public void Dispose()
-    {
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
-        _activeGhostRecorder?.Stop();
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        RacingApi.RoundStarted -= OnRoundStarted;
-        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
-        RacingApi.RoundEnded -= OnRoundEnded;
-    }
 }
-

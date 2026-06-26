@@ -1,5 +1,4 @@
-﻿using System;
-using Serilog.Context;
+﻿using Serilog.Context;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Core;
@@ -10,7 +9,7 @@ using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Authentication;
 
-public class AuthenticationService : IEagerService, IDisposable
+public class AuthenticationService : IEagerService
 {
     private readonly MessengerService _messengerService;
     private readonly ApiHttpClient _apiHttpClient;
@@ -51,10 +50,5 @@ public class AuthenticationService : IEagerService, IDisposable
         {
             _messengerService.LogError("Failed to log in");
         }
-    }
-
-    public void Dispose()
-    {
-        MainMenuUi_Awake.Postfixed -= OnMainMenuAwake;
     }
 }

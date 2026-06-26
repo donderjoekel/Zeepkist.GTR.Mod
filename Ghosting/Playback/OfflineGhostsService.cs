@@ -18,15 +18,13 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class OfflineGhostsService : IEagerService, IDisposable
+public class OfflineGhostsService : IEagerService
 {
     private readonly ILogger<OfflineGhostsService> _logger;
     private readonly OfflineGhostGraphqlService _graphqlService;
     private readonly GhostRepository _ghostRepository;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
-    private readonly PlayerLoopService _playerLoopService;
-    private readonly PlayerLoopSubscription _updateSubscription;
     private readonly BulkGhostModeState _bulkModeState;
     private readonly MessengerService _messengerService;
 
@@ -63,11 +61,10 @@ public class OfflineGhostsService : IEagerService, IDisposable
         _ghostRepository = ghostRepository;
         _ghostPlayer = ghostPlayer;
         _configService = configService;
-        _playerLoopService = playerLoopService;
         _messengerService = messengerService;
         _bulkModeState = bulkModeState;
 
-        _updateSubscription = playerLoopService.SubscribeUpdate(OnUpdate);
+        playerLoopService.SubscribeUpdate(OnUpdate);
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.Quit += OnQuit;
@@ -533,17 +530,6 @@ public class OfflineGhostsService : IEagerService, IDisposable
                 $"Loading ghosts: 100% ({loaded}/{total})",
                 2);
         }
-    }
-
-    public void Dispose()
-    {
-        CancelLoad();
-        SetBulkMode(false);
-        BulkModeChanged = null;
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        RacingApi.RoundEnded -= OnRoundEnded;
-        RacingApi.Quit -= OnQuit;
     }
 
     private sealed class PendingGhostOperation

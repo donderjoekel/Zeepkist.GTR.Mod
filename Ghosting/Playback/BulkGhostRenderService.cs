@@ -11,12 +11,10 @@ using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public sealed class BulkGhostRenderService : IEagerService, IDisposable
+public sealed class BulkGhostRenderService : IEagerService
 {
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
-    private readonly PlayerLoopService _playerLoopService;
-    private readonly PlayerLoopSubscription _lateUpdateSubscription;
     private readonly HashSet<Transform> _instances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
@@ -31,8 +29,7 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
     {
         _logger = logger;
         _configService = configService;
-        _playerLoopService = playerLoopService;
-        _lateUpdateSubscription = playerLoopService.SubscribeLateUpdate(Draw);
+        playerLoopService.SubscribeLateUpdate(Draw);
     }
 
     public bool CanUseInstancing()
@@ -269,14 +266,6 @@ public sealed class BulkGhostRenderService : IEagerService, IDisposable
         _renderParts.Clear();
         _initialized = false;
     }
-
-    public void Dispose()
-    {
-        _playerLoopService.UnsubscribeLateUpdate(_lateUpdateSubscription);
-        _instances.Clear();
-        DisposeResources();
-    }
-
     private sealed class RenderPart
     {
         public RenderPart(Mesh mesh, Material material)
