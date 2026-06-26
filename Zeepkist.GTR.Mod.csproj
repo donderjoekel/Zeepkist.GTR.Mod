@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>1.1.0</Version>
+        <Version>1.1.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -46,7 +46,7 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
         <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
-        <PackageReference Include="ZeepSDK" Version="2.3.0" PrivateAssets="all" />
+        <PackageReference Include="ZeepSDK" Version="2.3.1" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
