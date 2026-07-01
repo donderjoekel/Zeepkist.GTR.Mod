@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="protobuf-net" Version="3.2.56" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
@@ -32,6 +33,8 @@
     <Compile Include="..\Ghosting\Playback\GhostLoadBudget.cs" Link="Source\GhostLoadBudget.cs" />
     <Compile Include="..\Ghosting\Playback\GhostLoadProgress.cs" Link="Source\GhostLoadProgress.cs" />
     <Compile Include="..\Ghosting\Playback\GhostReconciliation.cs" Link="Source\GhostReconciliation.cs" />
+    <Compile Include="..\Ghosting\Recording\GhostStatistics.cs" Link="Source\GhostStatistics.cs" />
+    <Compile Include="..\Ghosting\Recording\SurfaceKeyNormalizer.cs" Link="Source\SurfaceKeyNormalizer.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
     <Compile Include="..\Ghosting\Readers\LimitedMemoryStream.cs" Link="Source\LimitedMemoryStream.cs" />

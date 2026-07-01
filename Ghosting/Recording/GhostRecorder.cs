@@ -107,7 +107,32 @@ public partial class GhostRecorder
                 Horn = _isHorn,
                 SoapboxState = cc.currentZeepkistState,
                 WheelState = GetWheelState(cc),
+                Surface = GetSurfaceKey(cc),
             });
+    }
+
+    private static string GetSurfaceKey(New_ControlCar cc)
+    {
+        List<string> surfaceNames = new();
+        foreach (var surfaceAndSlippin in cc.GetSlipAndSurfaceList())
+        {
+            string surfaceName = GetSurfaceName(surfaceAndSlippin.whichSurface);
+            if (!string.IsNullOrWhiteSpace(surfaceName))
+                surfaceNames.Add(surfaceName);
+        }
+
+        return SurfaceKeyNormalizer.ChooseMostCommonSurfaceKey(surfaceNames);
+    }
+
+    private static string GetSurfaceName(object surface)
+    {
+        if (surface == null)
+            return null;
+
+        if (surface is UnityEngine.Object unityObject)
+            return unityObject.name;
+
+        return surface.ToString();
     }
 
     private static WheelState GetWheelState(New_ControlCar cc)
@@ -179,7 +204,8 @@ public partial class GhostRecorder
         GameSettingsScriptableObject gameSettings = PlayerManager.Instance.instellingen.GlobalSettings;
 
         Ghost ghost = new();
-        ghost.Version = 5;
+        ghost.Version = 6;
+        ghost.Statistics = CalculateStatistics(_frames);
         ghost.SteamId = SteamClient.SteamId.Value;
         ghost.TaggedUsername = PlayerManager.Instance.GetNameTag() + SteamClient.Name;
         ghost.Color = ColorUtilities.ToHexString(

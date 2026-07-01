@@ -118,6 +118,7 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V3Reader>();
         services.AddTransient<V4Reader>();
         services.AddTransient<V5Reader>();
+        services.AddTransient<V6Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
         services.AddHttpClient(GhostRepository.ClientKey, client =>

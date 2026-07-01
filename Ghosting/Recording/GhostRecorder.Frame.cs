@@ -14,5 +14,6 @@ public partial class GhostRecorder
         public bool Horn { get; set; }
         public byte SoapboxState { get; set; }
         public WheelState WheelState { get; set; }
+        public string Surface { get; set; }
     }
 }
