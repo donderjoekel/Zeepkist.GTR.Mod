@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using EasyCompressor;
 using Microsoft.Extensions.Logging;
 using ProtoBuf;
-using SevenZip.Compression.LZMA;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Ghosting.Recording.Data;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -15,12 +14,16 @@ using UnityEngine;
 using ZeepkistNetworking;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using Vector3 = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3;
+using Vector2Int = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector2Int;
 using Vector3Int = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3Int;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
 public partial class GhostRecorder
 {
+    private const int PositionMultiplier = 100_000;
+    private const int RotationMultiplier = 100;
+
     private readonly PlayerLoopService _playerLoopService;
     private readonly List<Frame> _frames = new();
     private readonly ILogger<GhostRecorder> _logger;
@@ -93,12 +96,23 @@ public partial class GhostRecorder
 
         Transform carTransform = _setupCar.transform;
         New_ControlCar cc = _setupCar.cc;
+        float time = _readyToReset.ticker.what_ticker;
+        UnityEngine.Vector3 localVelocity = cc.GetLocalVelocity();
+        UnityEngine.Vector3 localAngularVelocity = cc.GetLocalAngularVelocity();
+        UnityEngine.Vector2 localGForce = cc.GetGForce();
+        float speed = localVelocity.magnitude * 3.6f;
+        WheelState wheelState = GetWheelState(cc);
+        GroundedWheelState groundedWheelState = GetGroundedWheelState(cc);
+        SlippingWheelState slippingWheelState = GetSlippingWheelState(cc);
+        SurfaceState surfaceState = GetSurfaceState(cc);
+        bool parkingBlockState = cc.IsAnyWheelOnParkingBlock();
+        bool monorailState = cc.IsCarOnMonorail();
 
         _frames.Add(
             new Frame()
             {
-                Time = _readyToReset.ticker.what_ticker,
-                Speed = cc.GetLocalVelocity().magnitude * 3.6f,
+                Time = time,
+                Speed = speed,
                 Position = carTransform.position,
                 Rotation = carTransform.rotation.eulerAngles,
                 Steering = cc.lerpedSteering,
@@ -106,33 +120,51 @@ public partial class GhostRecorder
                 Braking = _isBraking,
                 Horn = _isHorn,
                 SoapboxState = cc.currentZeepkistState,
-                WheelState = GetWheelState(cc),
-                Surface = GetSurfaceKey(cc),
+                WheelState = wheelState,
+                GroundedWheelState = groundedWheelState,
+                SlippingWheelState = slippingWheelState,
+                SurfaceState = surfaceState,
+                LocalVelocity = localVelocity,
+                LocalAngularVelocity = localAngularVelocity,
+                LocalGForce = localGForce,
+                ParkingBlockState = parkingBlockState,
+                MonorailState = monorailState,
             });
     }
 
-    private static string GetSurfaceKey(New_ControlCar cc)
+    private static SurfaceState GetSurfaceState(New_ControlCar cc)
     {
-        List<string> surfaceNames = new();
+        SurfaceState surfaceState = SurfaceState.None;
         foreach (var surfaceAndSlippin in cc.GetSlipAndSurfaceList())
         {
-            string surfaceName = GetSurfaceName(surfaceAndSlippin.whichSurface);
-            if (!string.IsNullOrWhiteSpace(surfaceName))
-                surfaceNames.Add(surfaceName);
+            surfaceState |= GetSurfaceState(surfaceAndSlippin.whichSurface);
         }
 
-        return SurfaceKeyNormalizer.ChooseMostCommonSurfaceKey(surfaceNames);
+        return surfaceState == SurfaceState.None ? SurfaceState.Tarmac : surfaceState;
     }
 
-    private static string GetSurfaceName(object surface)
+    private static SurfaceState GetSurfaceState(object surface)
     {
         if (surface == null)
-            return null;
+            return SurfaceState.Tarmac;
+
+        string name;
 
         if (surface is UnityEngine.Object unityObject)
-            return unityObject.name;
+            name = unityObject.name;
+        else
+            name = surface.ToString();
 
-        return surface.ToString();
+        return SurfaceKeyNormalizer.NormalizeSurfaceKey(name) switch
+        {
+            "grass" => SurfaceState.Grass,
+            "sand" => SurfaceState.Sand,
+            "snow" => SurfaceState.Snow,
+            "ice" => SurfaceState.Ice,
+            "soap" => SurfaceState.Soap,
+            "metal" => SurfaceState.Metal,
+            _ => SurfaceState.Tarmac
+        };
     }
 
     private static WheelState GetWheelState(New_ControlCar cc)
@@ -164,6 +196,68 @@ public partial class GhostRecorder
         }
 
         return wheelState;
+    }
+
+    private static GroundedWheelState GetGroundedWheelState(New_ControlCar cc)
+    {
+        GroundedWheelState groundedWheelState = GroundedWheelState.HasNone;
+
+        foreach (New_CustomWheel wheel in cc.wheels)
+        {
+            string name = wheel.transform.name;
+            switch (name)
+            {
+                case "LF":
+                    if (wheel.IsGrounded())
+                        groundedWheelState |= GroundedWheelState.HasFrontLeft;
+                    break;
+                case "RF":
+                    if (wheel.IsGrounded())
+                        groundedWheelState |= GroundedWheelState.HasFrontRight;
+                    break;
+                case "LR":
+                    if (wheel.IsGrounded())
+                        groundedWheelState |= GroundedWheelState.HasRearLeft;
+                    break;
+                case "RR":
+                    if (wheel.IsGrounded())
+                        groundedWheelState |= GroundedWheelState.HasRearRight;
+                    break;
+            }
+        }
+
+        return groundedWheelState;
+    }
+
+    private static SlippingWheelState GetSlippingWheelState(New_ControlCar cc)
+    {
+        SlippingWheelState slippingWheelState = SlippingWheelState.HasNone;
+
+        foreach (New_CustomWheel wheel in cc.wheels)
+        {
+            string name = wheel.transform.name;
+            switch (name)
+            {
+                case "LF":
+                    if (wheel.IsSlipping())
+                        slippingWheelState |= SlippingWheelState.HasFrontLeft;
+                    break;
+                case "RF":
+                    if (wheel.IsSlipping())
+                        slippingWheelState |= SlippingWheelState.HasFrontRight;
+                    break;
+                case "LR":
+                    if (wheel.IsSlipping())
+                        slippingWheelState |= SlippingWheelState.HasRearLeft;
+                    break;
+                case "RR":
+                    if (wheel.IsSlipping())
+                        slippingWheelState |= SlippingWheelState.HasRearRight;
+                    break;
+            }
+        }
+
+        return slippingWheelState;
     }
 
     public async UniTask<bool> Write(Stream stream)
@@ -246,27 +340,35 @@ public partial class GhostRecorder
                         ClampToByte(frame.Speed),
                         RemapToByte(frame.Steering, -1, 1),
                         (Data.InputFlags)(byte)CreateInputFlags(frame),
-                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
+                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame),
+                        frame.GroundedWheelState,
+                        frame.SlippingWheelState,
+                        frame.SurfaceState,
+                        ToScaledVector3Int(frame.LocalVelocity, PositionMultiplier),
+                        ToScaledVector3Int(frame.LocalAngularVelocity, RotationMultiplier),
+                        ToScaledVector2Int(frame.LocalGForce, PositionMultiplier),
+                        frame.ParkingBlockState,
+                        frame.MonorailState);
                 }
                 else
                 {
-                    const int positionMultiplier = 100_000;
-                    const int rotationMultiplier = 100;
                     UnityEngine.Vector3 deltaPosition = frame.Position - previousFrame.Position;
                     DeltaFrame deltaFrame = new(
                         frame.Time,
-                        new Vector3Int(
-                            Mathf.RoundToInt(deltaPosition.x * positionMultiplier),
-                            Mathf.RoundToInt(deltaPosition.y * positionMultiplier),
-                            Mathf.RoundToInt(deltaPosition.z * positionMultiplier)),
-                        new Vector3Int(
-                            Mathf.RoundToInt(frame.Rotation.x * rotationMultiplier),
-                            Mathf.RoundToInt(frame.Rotation.y * rotationMultiplier),
-                            Mathf.RoundToInt(frame.Rotation.z * rotationMultiplier)),
+                        ToScaledVector3Int(deltaPosition, PositionMultiplier),
+                        ToScaledVector3Int(frame.Rotation, RotationMultiplier),
                         ClampToByte(frame.Speed),
                         RemapToByte(frame.Steering, -1, 1),
                         (Data.InputFlags)(byte)CreateInputFlags(frame),
-                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame));
+                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame),
+                        frame.GroundedWheelState,
+                        frame.SlippingWheelState,
+                        frame.SurfaceState,
+                        ToScaledVector3Int(frame.LocalVelocity, PositionMultiplier),
+                        ToScaledVector3Int(frame.LocalAngularVelocity, RotationMultiplier),
+                        ToScaledVector2Int(frame.LocalGForce, PositionMultiplier),
+                        frame.ParkingBlockState,
+                        frame.MonorailState);
                     deltaFrames.Add(deltaFrame);
                 }
 
@@ -288,6 +390,21 @@ public partial class GhostRecorder
     private static byte ClampToByte(float value)
     {
         return (byte)Mathf.Clamp(value, 0, 255);
+    }
+
+    private static Vector3Int ToScaledVector3Int(UnityEngine.Vector3 value, int multiplier)
+    {
+        return new Vector3Int(
+            Mathf.RoundToInt(value.x * multiplier),
+            Mathf.RoundToInt(value.y * multiplier),
+            Mathf.RoundToInt(value.z * multiplier));
+    }
+
+    private static Vector2Int ToScaledVector2Int(UnityEngine.Vector2 value, int multiplier)
+    {
+        return new Vector2Int(
+            Mathf.RoundToInt(value.x * multiplier),
+            Mathf.RoundToInt(value.y * multiplier));
     }
 
     private static void Encode(Stream inputStream, Stream outStream)

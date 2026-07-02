@@ -120,13 +120,27 @@ public partial class GhostRecorder
 
     private static bool IsInAir(Frame frame)
     {
-        return frame.WheelState == WheelState.HasNone;
+        return frame.GroundedWheelState == GroundedWheelState.HasNone;
     }
 
     private static string GetSurfaceKey(Frame frame)
     {
-        if (!string.IsNullOrWhiteSpace(frame.Surface))
-            return frame.Surface;
+        SurfaceState surfaceState = frame.SurfaceState == SurfaceState.None
+            ? SurfaceState.Tarmac
+            : frame.SurfaceState;
+
+        if (surfaceState.HasFlag(SurfaceState.Grass))
+            return "grass";
+        if (surfaceState.HasFlag(SurfaceState.Sand))
+            return "sand";
+        if (surfaceState.HasFlag(SurfaceState.Snow))
+            return "snow";
+        if (surfaceState.HasFlag(SurfaceState.Ice))
+            return "ice";
+        if (surfaceState.HasFlag(SurfaceState.Soap))
+            return "soap";
+        if (surfaceState.HasFlag(SurfaceState.Metal))
+            return "metal";
 
         return "tarmac";
     }

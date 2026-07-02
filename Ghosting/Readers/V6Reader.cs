@@ -17,6 +17,9 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Readers;
 
 public class V6Reader : GhostReaderBase<V5Ghost>
 {
+    private const float PositionMultiplier = 100_000;
+    private const float RotationMultiplier = 100;
+
     private readonly ILogger<V6Reader> _logger;
 
     public V6Reader(IServiceProvider provider, ILogger<V6Reader> logger) : base(provider)
@@ -78,21 +81,12 @@ public class V6Reader : GhostReaderBase<V5Ghost>
 
         foreach (DeltaFrame deltaFrame in deserializedGhost.DeltaFrames)
         {
-            const float positionMultiplier = 100_000;
-            const float rotationMultiplier = 100;
-            Vector3 deltaPosition = new(
-                deltaFrame.Position.X / positionMultiplier,
-                deltaFrame.Position.Y / positionMultiplier,
-                deltaFrame.Position.Z / positionMultiplier);
+            Vector3 deltaPosition = FromScaledVector3Int(deltaFrame.Position, PositionMultiplier);
             Vector3 totalPosition = previousFrame.Position + deltaPosition;
             V5Ghost.Frame frame = new(
                 deltaFrame.Time,
                 totalPosition,
-                Quaternion.Euler(
-                    new Vector3(
-                        deltaFrame.Rotation.X / rotationMultiplier,
-                        deltaFrame.Rotation.Y / rotationMultiplier,
-                        deltaFrame.Rotation.Z / rotationMultiplier)),
+                Quaternion.Euler(FromScaledVector3Int(deltaFrame.Rotation, RotationMultiplier)),
                 deltaFrame.Speed,
                 deltaFrame.Steering,
                 (InputFlags)(byte)deltaFrame.InputFlags,
@@ -107,5 +101,20 @@ public class V6Reader : GhostReaderBase<V5Ghost>
             deserializedGhost.SteamId,
             cosmetics,
             frames);
+    }
+
+    private static Vector3 FromScaledVector3Int(TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3Int value, float multiplier)
+    {
+        return new Vector3(
+            value.X / multiplier,
+            value.Y / multiplier,
+            value.Z / multiplier);
+    }
+
+    private static UnityEngine.Vector2 FromScaledVector2Int(TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector2Int value, float multiplier)
+    {
+        return new UnityEngine.Vector2(
+            value.X / multiplier,
+            value.Y / multiplier);
     }
 }

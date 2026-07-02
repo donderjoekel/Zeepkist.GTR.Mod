@@ -14,6 +14,13 @@ public partial class GhostRecorder
         public bool Horn { get; set; }
         public byte SoapboxState { get; set; }
         public WheelState WheelState { get; set; }
-        public string Surface { get; set; }
+        public GroundedWheelState GroundedWheelState { get; set; }
+        public SlippingWheelState SlippingWheelState { get; set; }
+        public SurfaceState SurfaceState { get; set; }
+        public UnityEngine.Vector3 LocalVelocity { get; set; }
+        public UnityEngine.Vector3 LocalAngularVelocity { get; set; }
+        public UnityEngine.Vector2 LocalGForce { get; set; }
+        public bool ParkingBlockState { get; set; }
+        public bool MonorailState { get; set; }
     }
 }
