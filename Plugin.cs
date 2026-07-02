@@ -133,18 +133,15 @@ public class Plugin : BaseUnityPlugin
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();
-            string backendUrl = configService.BackendUrl.Value
-                ? ConfigService.LocalDevelopmentBackendUrl
-                : ConfigService.ProductionBackendUrl;
-            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(backendUrl, "Backend API URL");
+            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedBackendUrl, "Backend API URL");
             client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
         services.AddGtrClient()
             .ConfigureHttpClient((provider,client) =>
             {
-                client.BaseAddress =
-                    ServiceUriValidator.ParseBaseAddress(ConfigService.GraphQLUrl, "GraphQL URL");
+                var configService = provider.GetRequiredService<ConfigService>();
+                client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedGraphQLUrl, "GraphQL URL");
                 client.Timeout = TimeSpan.FromSeconds(30);
                 AddDefaultHeaders(client);
             });

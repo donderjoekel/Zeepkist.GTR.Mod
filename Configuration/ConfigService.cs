@@ -9,7 +9,8 @@ public class ConfigService : IEagerService
     public const string ProductionBackendUrl = "https://backend.zeepki.st";
     public const string LocalDevelopmentBackendUrl = "http://localhost:3000";
     public const string CdnUrl = "https://cdn.zeepki.st";
-    public const string GraphQLUrl = "https://graphql.zeepki.st";
+    public const string ProductionGraphQLUrl = "https://graphql.zeepki.st";
+    public const string LocalDevelopmentGraphQLUrl = "http://127.0.0.1:5000/";
 
     public ConfigEntry<bool> SubmitRecords { get; private set; }
     public ConfigEntry<bool> SubmitAnyPercentRecords { get; private set; }
@@ -51,7 +52,16 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ButtonLinkDiscord { get; private set; }
     public ConfigEntry<bool> ButtonUnlinkDiscord { get; private set; }
 
-    public ConfigEntry<bool> BackendUrl { get; private set; }
+    public ConfigEntry<bool> UseLocalDevelopmentBackend { get; private set; }
+    public ConfigEntry<bool> UseLocalDevelopmentGraphQL { get; private set; }
+
+    public string SelectedBackendUrl => UseLocalDevelopmentBackend.Value
+        ? LocalDevelopmentBackendUrl
+        : ProductionBackendUrl;
+
+    public string SelectedGraphQLUrl => UseLocalDevelopmentGraphQL.Value
+        ? LocalDevelopmentGraphQLUrl
+        : ProductionGraphQLUrl;
 
     public ConfigService(ConfigFile config)
     {
@@ -244,11 +254,17 @@ public class ConfigService : IEagerService
 
     private void ConfigUrls(ConfigFile config)
     {
-        BackendUrl = config.Bind(
+        UseLocalDevelopmentBackend = config.Bind(
             "5. URLs",
-            "Use Local Development Backend",
+            "Local Backend",
             false,
             "Use http://localhost:3000 instead of production backend\n" +
             "Changing this logs in again against the selected backend");
+
+        UseLocalDevelopmentGraphQL = config.Bind(
+            "5. URLs",
+            "Local GraphQL",
+            false,
+            "Use http://127.0.0.1:5000/ instead of production GraphQL");
     }
 }
