@@ -299,7 +299,6 @@ public partial class GhostRecorder
 
         Ghost ghost = new();
         ghost.Version = 6;
-        ghost.Statistics = CalculateStatistics(_frames);
         ghost.SteamId = SteamClient.SteamId.Value;
         ghost.TaggedUsername = PlayerManager.Instance.GetNameTag() + SteamClient.Name;
         ghost.Color = ColorUtilities.ToHexString(

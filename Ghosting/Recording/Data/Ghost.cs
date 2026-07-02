@@ -13,5 +13,4 @@ public class Ghost
     [ProtoMember(5)] public List<DeltaFrame> DeltaFrames { get; set; }
     [ProtoMember(6)] public string TaggedUsername { get; set; }
     [ProtoMember(7)] public string Color { get; set; }
-    [ProtoMember(8)] public GhostStatistics Statistics { get; set; }
 }

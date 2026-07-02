@@ -33,7 +33,6 @@
     <Compile Include="..\Ghosting\Playback\GhostLoadBudget.cs" Link="Source\GhostLoadBudget.cs" />
     <Compile Include="..\Ghosting\Playback\GhostLoadProgress.cs" Link="Source\GhostLoadProgress.cs" />
     <Compile Include="..\Ghosting\Playback\GhostReconciliation.cs" Link="Source\GhostReconciliation.cs" />
-    <Compile Include="..\Ghosting\Recording\GhostStatistics.cs" Link="Source\GhostStatistics.cs" />
     <Compile Include="..\Ghosting\Recording\SurfaceKeyNormalizer.cs" Link="Source\SurfaceKeyNormalizer.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
