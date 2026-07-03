@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -71,7 +71,17 @@ public partial class GhostPlayer : IEagerService
         if (_bulkGhostRenderService.CanUseInstancing())
         {
             var gameObject = new GameObject("Instanced Bulk Ghost");
-            return new GhostData(gameObject, null, GhostVisualProfile.Bulk, true);
+            var bulkCharacterGameObject = new GameObject("Instanced Bulk Character Ghost");
+            var instancedGhostData = new GhostData(
+                gameObject,
+                null,
+                GhostVisualProfile.Bulk,
+                true,
+                bulkCharacterGameObject);
+            instancedGhostData.SetBulkCharacterLocalTransform(
+                _bulkGhostRenderService.CharacterLocalPosition,
+                _bulkGhostRenderService.CharacterLocalRotation);
+            return instancedGhostData;
         }
 
         GhostData ghostData = CreateVisualGhost(GhostVisualProfile.Bulk);
@@ -108,10 +118,14 @@ public partial class GhostPlayer : IEagerService
     private static void DestroyGhost(GhostData ghostData)
     {
         ghostData.DisposeRenderer();
+        ghostData.CharacterRig?.Destroy();
         if (ghostData.Visuals != null && ghostData.Visuals.gameObject != null)
             Object.Destroy(ghostData.Visuals.gameObject);
         else if (ghostData.GameObject != null)
             Object.Destroy(ghostData.GameObject);
+
+        if (ghostData.BulkCharacterGameObject != null)
+            Object.Destroy(ghostData.BulkCharacterGameObject);
     }
 
     private void OnRoundStarted()
@@ -220,7 +234,10 @@ public partial class GhostPlayer : IEagerService
         }
 
         if (ghostData.IsInstanced)
+        {
             _bulkGhostRenderService.Register(ghostData.GameObject.transform);
+            _bulkGhostRenderService.RegisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+        }
 
         if (!hadExistingGhost)
         {
@@ -245,7 +262,10 @@ public partial class GhostPlayer : IEagerService
         if (_ghostData.TryGetValue(recordId, out GhostData ghostData))
         {
             if (ghostData.IsInstanced)
+            {
                 _bulkGhostRenderService.Unregister(ghostData.GameObject.transform);
+                _bulkGhostRenderService.UnregisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+            }
 
             GetPool(ghostData.VisualProfile).Release(ghostData);
             GhostRemoved?.Invoke(this, new GhostRemovedEventArgs(recordId));

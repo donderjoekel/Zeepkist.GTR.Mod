@@ -10,10 +10,21 @@ public partial class GhostRenderer : IDisposable
     private readonly List<RendererData> _rendererData = new();
 
     public GhostRenderer(GameObject gameObject, GhostVisualProfile visualProfile)
+        : this(new[] { gameObject }, visualProfile)
+    {
+    }
+
+    public GhostRenderer(IEnumerable<GameObject> gameObjects, GhostVisualProfile visualProfile)
     {
         bool includeInactive = visualProfile == GhostVisualProfile.Full;
-        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
-        renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer, visualProfile)));
+        foreach (GameObject gameObject in gameObjects)
+        {
+            if (gameObject == null)
+                continue;
+
+            Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
+            renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer, visualProfile)));
+        }
     }
 
     public void SwitchToNormal()

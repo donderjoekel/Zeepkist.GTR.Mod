@@ -32,7 +32,10 @@ public class DeltaFrame
             new Vector3Int(),
             new Vector2Int(),
             false,
-            false)
+            false,
+            false,
+            new Vector3Int(),
+            new Vector3Int())
     {
     }
 
@@ -51,7 +54,10 @@ public class DeltaFrame
         Vector3Int localAngularVelocity,
         Vector2Int localGForce,
         bool parkingBlockState,
-        bool monorailState)
+        bool monorailState,
+        bool ragdollState,
+        Vector3Int ragdollPosition,
+        Vector3Int ragdollRotation)
     {
         Time = time;
         Position = position;
@@ -68,6 +74,9 @@ public class DeltaFrame
         LocalGForce = localGForce;
         ParkingBlockState = parkingBlockState;
         MonorailState = monorailState;
+        RagdollState = ragdollState;
+        RagdollPosition = ragdollPosition;
+        RagdollRotation = ragdollRotation;
     }
 
     [ProtoMember(1)] public float Time { get; set; }
@@ -85,4 +94,7 @@ public class DeltaFrame
     [ProtoMember(13)] public Vector2Int LocalGForce { get; set; }
     [ProtoMember(14)] public bool ParkingBlockState { get; set; }
     [ProtoMember(15)] public bool MonorailState { get; set; }
+    [ProtoMember(16)] public bool RagdollState { get; set; }
+    [ProtoMember(17)] public Vector3Int RagdollPosition { get; set; }
+    [ProtoMember(18)] public Vector3Int RagdollRotation { get; set; }
 }

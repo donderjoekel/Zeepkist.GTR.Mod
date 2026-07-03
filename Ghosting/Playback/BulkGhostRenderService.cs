@@ -16,9 +16,14 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
     private readonly HashSet<Transform> _instances = new();
+    private readonly HashSet<Transform> _characterInstances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
+    private readonly List<RenderPart> _characterRenderParts = new();
+    public Vector3 CharacterLocalPosition { get; private set; }
+    public Quaternion CharacterLocalRotation { get; private set; } = Quaternion.identity;
+
     private bool _initializationAttempted;
     private bool _initialized;
 
@@ -70,6 +75,18 @@ public sealed class BulkGhostRenderService : IEagerService
             _instances.Remove(transform);
     }
 
+    public void RegisterCharacter(Transform transform)
+    {
+        if (transform != null)
+            _characterInstances.Add(transform);
+    }
+
+    public void UnregisterCharacter(Transform transform)
+    {
+        if (transform != null)
+            _characterInstances.Remove(transform);
+    }
+
     private void Draw()
     {
         if (!_initialized ||
@@ -79,8 +96,14 @@ public sealed class BulkGhostRenderService : IEagerService
             return;
         }
 
+        DrawInstances(_instances, _renderParts);
+        DrawInstances(_characterInstances, _characterRenderParts);
+    }
+
+    private void DrawInstances(IEnumerable<Transform> instances, IReadOnlyList<RenderPart> renderParts)
+    {
         int count = 0;
-        foreach (Transform instance in _instances)
+        foreach (Transform instance in instances)
         {
             if (instance == null || !instance.gameObject.activeInHierarchy)
                 continue;
@@ -89,17 +112,17 @@ public sealed class BulkGhostRenderService : IEagerService
             if (count != BulkGhostBatching.MaximumInstancesPerBatch)
                 continue;
 
-            DrawBatch(count);
+            DrawBatch(renderParts, count);
             count = 0;
         }
 
         if (count > 0)
-            DrawBatch(count);
+            DrawBatch(renderParts, count);
     }
 
-    private void DrawBatch(int count)
+    private void DrawBatch(IReadOnlyList<RenderPart> renderParts, int count)
     {
-        foreach (RenderPart part in _renderParts)
+        foreach (RenderPart part in renderParts)
         {
             Graphics.DrawMeshInstanced(
                 part.Mesh,
@@ -130,73 +153,61 @@ public sealed class BulkGhostRenderService : IEagerService
             GhostVisuals.ConfigureBulkModel(model);
 
             Matrix4x4 rootInverse = templateRoot.transform.worldToLocalMatrix;
-            var materialGroups = new Dictionary<Material, List<CombineInstance>>();
+            CharacterLocalPosition = Vector3.zero;
+            CharacterLocalRotation = Quaternion.identity;
+
+            var soapboxMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
+            var characterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
 
             foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
             {
                 MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
                 if (renderer == null || !renderer.enabled || filter.sharedMesh == null)
                     continue;
+                if (IsBatchHatRenderer(renderer, model))
+                    continue;
 
-                AddSubMeshesByMaterial(
-                    materialGroups,
-                    filter.sharedMesh,
-                    rootInverse * filter.transform.localToWorldMatrix,
-                    renderer.sharedMaterials);
+                if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                {
+                    AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+                }
+                else
+                {
+                    AddMeshFilterByMaterial(soapboxMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+                }
             }
 
             foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
             {
-                if (!renderer.enabled || renderer.sharedMesh == null)
+                if (IsBatchHatRenderer(renderer, model))
                     continue;
 
-                var bakedMesh = new Mesh();
-                renderer.BakeMesh(bakedMesh, true);
-                bakedMeshes.Add(bakedMesh);
-
-                Matrix4x4 transform = rootInverse * Matrix4x4.TRS(
-                    renderer.transform.position,
-                    renderer.transform.rotation,
-                    Vector3.one);
-                Bounds bakedWorldBounds = TransformBounds(
-                    bakedMesh.bounds,
-                    Matrix4x4.TRS(
-                        renderer.transform.position,
-                        renderer.transform.rotation,
-                        Vector3.one));
-                float correction = BulkGhostMeshScale.CalculateUniformScale(
-                    MaximumComponent(renderer.bounds.size),
-                    MaximumComponent(bakedWorldBounds.size));
-                transform *= Matrix4x4.Scale(Vector3.one * correction);
-
-                AddSubMeshesByMaterial(
-                    materialGroups,
-                    bakedMesh,
-                    transform,
-                    renderer.sharedMaterials);
+                if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                {
+                    AddCorrectedSkinnedRendererByMaterial(
+                        characterMaterialGroups,
+                        renderer,
+                        rootInverse,
+                        bakedMeshes,
+                        true);
+                }
+                else
+                {
+                    AddCorrectedSkinnedRendererByMaterial(
+                        soapboxMaterialGroups,
+                        renderer,
+                        rootInverse,
+                        bakedMeshes,
+                        true);
+                }
             }
 
-            if (materialGroups.Count == 0)
+            if (soapboxMaterialGroups.Count == 0)
                 throw new InvalidOperationException("Bulk ghost template contains no active meshes.");
 
-            int partIndex = 0;
-            foreach (KeyValuePair<Material, List<CombineInstance>> materialGroup in materialGroups)
-            {
-                var mesh = new Mesh
-                {
-                    name = $"GTR Instanced Bulk Ghost {partIndex++}",
-                    indexFormat = IndexFormat.UInt32
-                };
-                mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
-                mesh.RecalculateBounds();
-
-                var material = new Material(materialGroup.Key)
-                {
-                    enableInstancing = true,
-                    name = $"GTR Instanced {materialGroup.Key.name}"
-                };
-                _renderParts.Add(new RenderPart(mesh, material));
-            }
+            AddRenderParts(_renderParts, soapboxMaterialGroups, "GTR Instanced Bulk Ghost");
+            if (characterMaterialGroups.Count > 0)
+                AddRenderParts(_characterRenderParts, characterMaterialGroups, "GTR Instanced Bulk Character");
         }
         finally
         {
@@ -205,6 +216,103 @@ public sealed class BulkGhostRenderService : IEagerService
 
             templateRoot.SetActive(false);
             Object.Destroy(templateRoot);
+        }
+    }
+
+    private static bool IsBatchHatRenderer(Renderer renderer, SetupModelCar model)
+    {
+        if (renderer == null)
+            return false;
+
+        if (model?.hatParent != null && renderer.transform.IsChildOf(model.hatParent))
+            return true;
+
+        Transform current = renderer.transform;
+        while (current != null && current != model?.transform)
+        {
+            if (current.name.IndexOf("hat", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    private static void AddMeshFilterByMaterial(
+        IDictionary<Material, List<CombineInstance>> destination,
+        MeshFilter filter,
+        Matrix4x4 rootInverse,
+        IReadOnlyList<Material> materials)
+    {
+        AddSubMeshesByMaterial(
+            destination,
+            filter.sharedMesh,
+            rootInverse * filter.transform.localToWorldMatrix,
+            materials);
+    }
+
+    private static void AddCorrectedSkinnedRendererByMaterial(
+        IDictionary<Material, List<CombineInstance>> destination,
+        SkinnedMeshRenderer renderer,
+        Matrix4x4 rootInverse,
+        ICollection<Mesh> bakedMeshes,
+        bool applyScaleCorrection)
+    {
+        if (renderer == null || !renderer.enabled || renderer.sharedMesh == null)
+            return;
+
+        var bakedMesh = new Mesh();
+        renderer.BakeMesh(bakedMesh, true);
+        bakedMeshes.Add(bakedMesh);
+
+        Matrix4x4 transform = rootInverse * Matrix4x4.TRS(
+            renderer.transform.position,
+            renderer.transform.rotation,
+            Vector3.one);
+        Bounds bakedWorldBounds = TransformBounds(
+            bakedMesh.bounds,
+            Matrix4x4.TRS(
+                renderer.transform.position,
+                renderer.transform.rotation,
+                Vector3.one));
+        if (applyScaleCorrection)
+        {
+            float correction = BulkGhostMeshScale.CalculateUniformScale(
+                MaximumComponent(renderer.bounds.size),
+                MaximumComponent(bakedWorldBounds.size));
+            transform *= Matrix4x4.Scale(Vector3.one * correction);
+        }
+
+        AddSubMeshesByMaterial(
+            destination,
+            bakedMesh,
+            transform,
+            renderer.sharedMaterials);
+    }
+
+    private static void AddRenderParts(
+        ICollection<RenderPart> destination,
+        IReadOnlyDictionary<Material, List<CombineInstance>> materialGroups,
+        string name)
+    {
+        int partIndex = 0;
+        foreach (KeyValuePair<Material, List<CombineInstance>> materialGroup in materialGroups)
+        {
+            var mesh = new Mesh
+            {
+                name = $"{name} {partIndex++}",
+                indexFormat = IndexFormat.UInt32
+            };
+            mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
+            mesh.RecalculateBounds();
+
+            var material = new Material(materialGroup.Key)
+            {
+                enableInstancing = true,
+                name = $"GTR Instanced {materialGroup.Key.name}"
+            };
+            destination.Add(new RenderPart(mesh, material));
         }
     }
 
@@ -264,8 +372,17 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         _renderParts.Clear();
+
+        foreach (RenderPart part in _characterRenderParts)
+        {
+            Object.Destroy(part.Mesh);
+            Object.Destroy(part.Material);
+        }
+
+        _characterRenderParts.Clear();
         _initialized = false;
     }
+
     private sealed class RenderPart
     {
         public RenderPart(Mesh mesh, Material material)

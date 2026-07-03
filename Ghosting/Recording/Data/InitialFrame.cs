@@ -30,7 +30,10 @@ public class InitialFrame
             new Vector3Int(),
             new Vector2Int(),
             false,
-            false)
+            false,
+            false,
+            new Vector3Int(),
+            new Vector3Int())
     {
     }
 
@@ -48,7 +51,10 @@ public class InitialFrame
         Vector3Int localAngularVelocity,
         Vector2Int localGForce,
         bool parkingBlockState,
-        bool monorailState)
+        bool monorailState,
+        bool ragdollState,
+        Vector3Int ragdollPosition,
+        Vector3Int ragdollRotation)
     {
         Position = position;
         Rotation = rotation;
@@ -64,6 +70,9 @@ public class InitialFrame
         LocalGForce = localGForce;
         ParkingBlockState = parkingBlockState;
         MonorailState = monorailState;
+        RagdollState = ragdollState;
+        RagdollPosition = ragdollPosition;
+        RagdollRotation = ragdollRotation;
     }
 
     [ProtoMember(1)] public Vector3 Position { get; set; }
@@ -80,4 +89,7 @@ public class InitialFrame
     [ProtoMember(12)] public Vector2Int LocalGForce { get; set; }
     [ProtoMember(13)] public bool ParkingBlockState { get; set; }
     [ProtoMember(14)] public bool MonorailState { get; set; }
+    [ProtoMember(15)] public bool RagdollState { get; set; }
+    [ProtoMember(16)] public Vector3Int RagdollPosition { get; set; }
+    [ProtoMember(17)] public Vector3Int RagdollRotation { get; set; }
 }

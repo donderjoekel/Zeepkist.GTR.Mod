@@ -1,4 +1,4 @@
-﻿namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
+namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
 public partial class GhostRecorder
 {
@@ -22,5 +22,8 @@ public partial class GhostRecorder
         public UnityEngine.Vector2 LocalGForce { get; set; }
         public bool ParkingBlockState { get; set; }
         public bool MonorailState { get; set; }
+        public bool RagdollState { get; set; }
+        public UnityEngine.Vector3 RagdollPosition { get; set; }
+        public UnityEngine.Vector3 RagdollRotation { get; set; }
     }
 }
