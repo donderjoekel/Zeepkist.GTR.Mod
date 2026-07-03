@@ -43,7 +43,7 @@ public class GhostNamePositioniongService : IEagerService
             return;
 
         ghostData.Visuals.NameDisplay.gameObject.SetActive(
-            _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
+            ghostData.PlaybackVisible && _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
 
         if (_bulkModeState.IsActive)
             SetNameAlpha(ghostData, 1);
@@ -57,6 +57,7 @@ public class GhostNamePositioniongService : IEagerService
             if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
                 continue;
 
+            UpdateVisibility(ghostData);
             UpdateName(ghostData, cameraPosition);
         }
 
@@ -109,8 +110,12 @@ public class GhostNamePositioniongService : IEagerService
 
     private static void UpdateName(GhostData ghostData, Vector3 cameraPosition)
     {
+        if (!ghostData.PlaybackVisible)
+            return;
+
         Transform nameDisplayTransform = ghostData.Visuals.NameDisplay.transform;
-        nameDisplayTransform.position = ghostData.GameObject.transform.position + Vector3.up * 2.5f;
+        Transform anchor = ghostData.NameAnchor != null ? ghostData.NameAnchor : ghostData.GameObject.transform;
+        nameDisplayTransform.position = anchor.position + Vector3.up * 2.5f;
         nameDisplayTransform.LookAt(cameraPosition);
         nameDisplayTransform.LookAt(nameDisplayTransform.position - nameDisplayTransform.forward);
     }

@@ -39,20 +39,20 @@ public partial class V6Ghost : GhostBase
         SetupCosmetics(cosmetics, steamName, _steamId);
         if (Ghost.VisualProfile == GhostVisualProfile.Full)
             Ghost.SetCharacterRig(GhostCharacterRig.Create(Ghost.Visuals?.GhostModel));
-        AlignCharacterToSeated();
+        AlignCharacterToSeated(false);
     }
 
     public override void Start()
     {
         base.Start();
-        AlignCharacterToSeated();
+        AlignCharacterToSeated(false);
         ApplyRagdollPlaybackState(V6RagdollPlaybackState.Reset);
     }
 
     public override void Stop()
     {
         base.Stop();
-        AlignCharacterToSeated();
+        AlignCharacterToSeated(false);
         ApplyRagdollPlaybackState(V6RagdollPlaybackState.Reset);
     }
 
@@ -72,7 +72,7 @@ public partial class V6Ghost : GhostBase
         ApplyRagdollPlaybackState(playbackState);
         if (!playbackState.RagdollVisible)
         {
-            AlignCharacterToSeated();
+            AlignCharacterToSeated(next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
             return;
         }
 
@@ -103,33 +103,41 @@ public partial class V6Ghost : GhostBase
         HandleParaglider(previousFrame, frame);
     }
 
-    private void AlignCharacterToSeated()
+    private void AlignCharacterToSeated(bool armsUp)
     {
-        Ghost?.CharacterRig?.ApplySeatedPose();
+        Ghost?.CharacterRig?.ApplySeatedPose(armsUp);
         Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
+        Ghost?.SetNameAnchor(Ghost.GameObject.transform);
         AlignBulkCharacterToGhost();
     }
 
     private void AlignCharacterToWorld(Vector3 position, Quaternion rotation)
     {
-        Ghost?.CharacterRig?.ApplyRagdollTPose();
+        Ghost?.CharacterRig?.ApplyStandingRagdollPose();
         if (Ghost?.CharacterRig != null)
+        {
             Ghost.CharacterRig.AlignToWorld(position, rotation);
+            Ghost.SetNameAnchor(Ghost.CharacterRig.Root.transform);
+        }
+        else
+        {
+            Ghost?.SetNameAnchor(Ghost.GameObject.transform);
+        }
 
-        if (Ghost?.BulkCharacterGameObject != null)
-            Ghost.BulkCharacterGameObject.transform.SetPositionAndRotation(position, rotation);
+        if (Ghost?.BulkRagdollCharacterGameObject != null)
+            Ghost.BulkRagdollCharacterGameObject.transform.SetPositionAndRotation(position, rotation);
     }
 
     private void ApplyRagdollPlaybackState(V6RagdollPlaybackState playbackState)
     {
-        SetCharacterActive(true);
+        Ghost?.SetBulkCharacterRagdollVisible(playbackState.RagdollVisible);
+        if (Ghost?.PlaybackVisible == true)
+            SetCharacterActive(true);
     }
 
     private void SetCharacterActive(bool active)
     {
         Ghost?.CharacterRig?.SetActive(active);
-        if (Ghost?.BulkCharacterGameObject != null)
-            Ghost.BulkCharacterGameObject.SetActive(active);
     }
 
 

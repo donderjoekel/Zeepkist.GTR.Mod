@@ -84,33 +84,17 @@ public sealed class GhostCharacterRig
         _root.transform.SetPositionAndRotation(position, rotation);
     }
 
-    public void ApplySeatedPose()
+    public void ApplySeatedPose(bool armsUp = false)
     {
         ApplyPose(_poseSnapshots);
+        if (armsUp)
+            ApplyArmsUpPose(_poseSnapshots);
     }
 
-    public void ApplyRagdollTPose()
+    public void ApplyStandingRagdollPose()
     {
         ApplySeatedPose();
-
-        foreach (PoseSnapshot snapshot in _poseSnapshots)
-        {
-            if (snapshot.Transform == null)
-                continue;
-
-            if (IsLeftArm(snapshot.Name))
-            {
-                snapshot.Transform.localRotation = Quaternion.Euler(0, 0, 90);
-            }
-            else if (IsRightArm(snapshot.Name))
-            {
-                snapshot.Transform.localRotation = Quaternion.Euler(0, 0, -90);
-            }
-            else if (IsLeg(snapshot.Name) || IsTorso(snapshot.Name))
-            {
-                snapshot.Transform.localRotation = Quaternion.identity;
-            }
-        }
+        ApplyStandingPose(_poseSnapshots);
     }
 
     public void SetActive(bool active)
@@ -147,6 +131,7 @@ public sealed class GhostCharacterRig
         AddPart(parts, model.rightArm);
         AddPart(parts, model.leftLeg);
         AddPart(parts, model.rightLeg);
+        AddPart(parts, model.hatParent);
         AddSkinnedRigParts(parts, model);
 
         foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
@@ -166,6 +151,43 @@ public sealed class GhostCharacterRig
     {
         if (renderer != null)
             parts.Add(renderer.transform);
+    }
+
+    private static void AddPart(ISet<Transform> parts, Transform transform)
+    {
+        if (transform != null)
+            parts.Add(transform);
+    }
+
+    public static void ApplyStandingRagdollPose(SetupModelCar model)
+    {
+        if (model == null)
+            return;
+
+        var snapshots = new List<PoseSnapshot>();
+        foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                continue;
+
+            snapshots.Add(new PoseSnapshot(renderer.transform));
+        }
+
+        foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                continue;
+
+            if (renderer.rootBone != null)
+                snapshots.Add(new PoseSnapshot(renderer.rootBone));
+            foreach (Transform bone in renderer.bones)
+            {
+                if (bone != null)
+                    snapshots.Add(new PoseSnapshot(bone));
+            }
+        }
+
+        ApplyStandingPose(snapshots);
     }
 
     private static IReadOnlyList<PoseSnapshot> CapturePose(Transform root)
@@ -190,6 +212,32 @@ public sealed class GhostCharacterRig
             snapshot.Transform.localPosition = snapshot.LocalPosition;
             snapshot.Transform.localRotation = snapshot.LocalRotation;
             snapshot.Transform.localScale = snapshot.LocalScale;
+        }
+    }
+
+    private static void ApplyStandingPose(IEnumerable<PoseSnapshot> snapshots)
+    {
+        foreach (PoseSnapshot snapshot in snapshots)
+        {
+            if (snapshot.Transform == null)
+                continue;
+
+            if (IsLeg(snapshot.Name) || IsTorso(snapshot.Name))
+                snapshot.Transform.localRotation = Quaternion.identity;
+        }
+    }
+
+    private static void ApplyArmsUpPose(IEnumerable<PoseSnapshot> snapshots)
+    {
+        foreach (PoseSnapshot snapshot in snapshots)
+        {
+            if (snapshot.Transform == null)
+                continue;
+
+            if (IsLeftArm(snapshot.Name))
+                snapshot.Transform.localRotation = snapshot.LocalRotation * Quaternion.Euler(-75, 0, 0);
+            else if (IsRightArm(snapshot.Name))
+                snapshot.Transform.localRotation = snapshot.LocalRotation * Quaternion.Euler(-75, 0, 0);
         }
     }
 

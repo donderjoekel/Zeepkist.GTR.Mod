@@ -17,10 +17,12 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly ConfigService _configService;
     private readonly HashSet<Transform> _instances = new();
     private readonly HashSet<Transform> _characterInstances = new();
+    private readonly HashSet<Transform> _ragdollCharacterInstances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
     private readonly List<RenderPart> _characterRenderParts = new();
+    private readonly List<RenderPart> _ragdollCharacterRenderParts = new();
     public Vector3 CharacterLocalPosition { get; private set; }
     public Quaternion CharacterLocalRotation { get; private set; } = Quaternion.identity;
 
@@ -87,6 +89,18 @@ public sealed class BulkGhostRenderService : IEagerService
             _characterInstances.Remove(transform);
     }
 
+    public void RegisterRagdollCharacter(Transform transform)
+    {
+        if (transform != null)
+            _ragdollCharacterInstances.Add(transform);
+    }
+
+    public void UnregisterRagdollCharacter(Transform transform)
+    {
+        if (transform != null)
+            _ragdollCharacterInstances.Remove(transform);
+    }
+
     private void Draw()
     {
         if (!_initialized ||
@@ -98,6 +112,7 @@ public sealed class BulkGhostRenderService : IEagerService
 
         DrawInstances(_instances, _renderParts);
         DrawInstances(_characterInstances, _characterRenderParts);
+        DrawInstances(_ragdollCharacterInstances, _ragdollCharacterRenderParts);
     }
 
     private void DrawInstances(IEnumerable<Transform> instances, IReadOnlyList<RenderPart> renderParts)
@@ -158,49 +173,21 @@ public sealed class BulkGhostRenderService : IEagerService
 
             var soapboxMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
             var characterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
+            var ragdollCharacterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
 
-            foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
-            {
-                MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
-                if (renderer == null || !renderer.enabled || filter.sharedMesh == null)
-                    continue;
-                if (IsBatchHatRenderer(renderer, model))
-                    continue;
+            AddModelRenderersByMaterial(
+                model,
+                rootInverse,
+                soapboxMaterialGroups,
+                characterMaterialGroups,
+                bakedMeshes);
 
-                if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
-                {
-                    AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
-                }
-                else
-                {
-                    AddMeshFilterByMaterial(soapboxMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
-                }
-            }
-
-            foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
-            {
-                if (IsBatchHatRenderer(renderer, model))
-                    continue;
-
-                if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
-                {
-                    AddCorrectedSkinnedRendererByMaterial(
-                        characterMaterialGroups,
-                        renderer,
-                        rootInverse,
-                        bakedMeshes,
-                        true);
-                }
-                else
-                {
-                    AddCorrectedSkinnedRendererByMaterial(
-                        soapboxMaterialGroups,
-                        renderer,
-                        rootInverse,
-                        bakedMeshes,
-                        true);
-                }
-            }
+            GhostCharacterRig.ApplyStandingRagdollPose(model);
+            AddCharacterRenderersByMaterial(
+                model,
+                rootInverse,
+                ragdollCharacterMaterialGroups,
+                bakedMeshes);
 
             if (soapboxMaterialGroups.Count == 0)
                 throw new InvalidOperationException("Bulk ghost template contains no active meshes.");
@@ -208,6 +195,11 @@ public sealed class BulkGhostRenderService : IEagerService
             AddRenderParts(_renderParts, soapboxMaterialGroups, "GTR Instanced Bulk Ghost");
             if (characterMaterialGroups.Count > 0)
                 AddRenderParts(_characterRenderParts, characterMaterialGroups, "GTR Instanced Bulk Character");
+            if (ragdollCharacterMaterialGroups.Count > 0)
+                AddRenderParts(
+                    _ragdollCharacterRenderParts,
+                    ragdollCharacterMaterialGroups,
+                    "GTR Instanced Bulk Ragdoll Character");
         }
         finally
         {
@@ -237,6 +229,88 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         return false;
+    }
+
+    private static void AddModelRenderersByMaterial(
+        SetupModelCar model,
+        Matrix4x4 rootInverse,
+        IDictionary<Material, List<CombineInstance>> soapboxMaterialGroups,
+        IDictionary<Material, List<CombineInstance>> characterMaterialGroups,
+        ICollection<Mesh> bakedMeshes)
+    {
+        foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
+        {
+            MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
+            if (renderer == null || !renderer.enabled || filter.sharedMesh == null)
+                continue;
+            if (IsBatchHatRenderer(renderer, model))
+                continue;
+
+            if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+            else
+                AddMeshFilterByMaterial(soapboxMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+        }
+
+        foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
+        {
+            if (IsBatchHatRenderer(renderer, model))
+                continue;
+
+            if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+            {
+                AddCorrectedSkinnedRendererByMaterial(
+                    characterMaterialGroups,
+                    renderer,
+                    rootInverse,
+                    bakedMeshes,
+                    true);
+            }
+            else
+            {
+                AddCorrectedSkinnedRendererByMaterial(
+                    soapboxMaterialGroups,
+                    renderer,
+                    rootInverse,
+                    bakedMeshes,
+                    true);
+            }
+        }
+    }
+
+    private static void AddCharacterRenderersByMaterial(
+        SetupModelCar model,
+        Matrix4x4 rootInverse,
+        IDictionary<Material, List<CombineInstance>> characterMaterialGroups,
+        ICollection<Mesh> bakedMeshes)
+    {
+        foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
+        {
+            MeshRenderer renderer = filter.GetComponent<MeshRenderer>();
+            if (renderer == null || !renderer.enabled || filter.sharedMesh == null)
+                continue;
+            if (IsBatchHatRenderer(renderer, model))
+                continue;
+            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                continue;
+
+            AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+        }
+
+        foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
+        {
+            if (IsBatchHatRenderer(renderer, model))
+                continue;
+            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
+                continue;
+
+            AddCorrectedSkinnedRendererByMaterial(
+                characterMaterialGroups,
+                renderer,
+                rootInverse,
+                bakedMeshes,
+                true);
+        }
     }
 
     private static void AddMeshFilterByMaterial(
@@ -380,6 +454,14 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         _characterRenderParts.Clear();
+
+        foreach (RenderPart part in _ragdollCharacterRenderParts)
+        {
+            Object.Destroy(part.Mesh);
+            Object.Destroy(part.Material);
+        }
+
+        _ragdollCharacterRenderParts.Clear();
         _initialized = false;
     }
 

@@ -72,12 +72,14 @@ public partial class GhostPlayer : IEagerService
         {
             var gameObject = new GameObject("Instanced Bulk Ghost");
             var bulkCharacterGameObject = new GameObject("Instanced Bulk Character Ghost");
+            var bulkRagdollCharacterGameObject = new GameObject("Instanced Bulk Ragdoll Character Ghost");
             var instancedGhostData = new GhostData(
                 gameObject,
                 null,
                 GhostVisualProfile.Bulk,
                 true,
-                bulkCharacterGameObject);
+                bulkCharacterGameObject,
+                bulkRagdollCharacterGameObject);
             instancedGhostData.SetBulkCharacterLocalTransform(
                 _bulkGhostRenderService.CharacterLocalPosition,
                 _bulkGhostRenderService.CharacterLocalRotation);
@@ -105,6 +107,7 @@ public partial class GhostPlayer : IEagerService
     private static void GetGhost(GhostData ghostData)
     {
         ghostData.SetActive(true);
+        ghostData.SetPlaybackVisible(false);
     }
 
     private static void ReleaseGhost(GhostData ghostData)
@@ -112,6 +115,7 @@ public partial class GhostPlayer : IEagerService
         ghostData.CurrentHorn?.Stop();
         ghostData.CurrentHorn?.Cleanup();
         ghostData.CurrentHorn = null;
+        ghostData.ResetRenderState();
         ghostData.SetActive(false);
     }
 
@@ -126,6 +130,8 @@ public partial class GhostPlayer : IEagerService
 
         if (ghostData.BulkCharacterGameObject != null)
             Object.Destroy(ghostData.BulkCharacterGameObject);
+        if (ghostData.BulkRagdollCharacterGameObject != null)
+            Object.Destroy(ghostData.BulkRagdollCharacterGameObject);
     }
 
     private void OnRoundStarted()
@@ -237,6 +243,7 @@ public partial class GhostPlayer : IEagerService
         {
             _bulkGhostRenderService.Register(ghostData.GameObject.transform);
             _bulkGhostRenderService.RegisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+            _bulkGhostRenderService.RegisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
         }
 
         if (!hadExistingGhost)
@@ -265,6 +272,7 @@ public partial class GhostPlayer : IEagerService
             {
                 _bulkGhostRenderService.Unregister(ghostData.GameObject.transform);
                 _bulkGhostRenderService.UnregisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+                _bulkGhostRenderService.UnregisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
             }
 
             GetPool(ghostData.VisualProfile).Release(ghostData);

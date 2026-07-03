@@ -60,12 +60,14 @@ public abstract class GhostBase : IGhost
         IFrame frame = GetFrame(0);
         Ghost.GameObject.transform.SetPositionAndRotation(frame.Position, frame.Rotation);
         AlignBulkCharacterToGhost();
+        Ghost.SetPlaybackVisible(true);
     }
 
     public virtual void Stop()
     {
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
+        Ghost.SetPlaybackVisible(false);
     }
 
     public void Update()
@@ -102,6 +104,7 @@ public abstract class GhostBase : IGhost
         Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
         Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
         AlignBulkCharacterToGhost();
+        Ghost.SetPlaybackVisible(true);
 
         OnUpdate(previousFrame, nextFrame, t);
     }
