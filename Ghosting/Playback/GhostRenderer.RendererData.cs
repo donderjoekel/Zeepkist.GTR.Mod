@@ -10,6 +10,9 @@ public partial class GhostRenderer
     private class RendererData : IDisposable
     {
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
+        private static readonly int ColorTintId = Shader.PropertyToID("_ColorTint");
         private static Material _bulkGhostMaterial;
 
         private readonly Renderer _renderer;
@@ -93,15 +96,7 @@ public partial class GhostRenderer
                 return;
 
             foreach (Material normalMaterial in _normalMaterials)
-            {
-                if (!normalMaterial.HasProperty(ColorId))
-                    continue;
-
-                normalMaterial.color = normalMaterial.color with
-                {
-                    a = fade
-                };
-            }
+                SetMaterialAlpha(normalMaterial, fade);
         }
 
         public void SetGhostColor(Color color)
@@ -116,12 +111,7 @@ public partial class GhostRenderer
             }
 
             foreach (Material ghostMaterial in _ghostMaterials)
-            {
-                if (!ghostMaterial.HasProperty(ColorId))
-                    continue;
-
-                ghostMaterial.color = color;
-            }
+                SetMaterialColor(ghostMaterial, color);
         }
 
         public void Dispose()
@@ -163,6 +153,34 @@ public partial class GhostRenderer
                 color = Color.white with { a = 0.3f }
             };
             return _bulkGhostMaterial;
+        }
+
+        private static void SetMaterialAlpha(Material material, float alpha)
+        {
+            if (material == null)
+                return;
+
+            SetMaterialAlpha(material, ColorId, alpha);
+            SetMaterialAlpha(material, BaseColorId, alpha);
+            SetMaterialAlpha(material, TintColorId, alpha);
+            SetMaterialAlpha(material, ColorTintId, alpha);
+        }
+
+        private static bool SetMaterialAlpha(Material material, int propertyId, float alpha)
+        {
+            if (!material.HasProperty(propertyId))
+                return false;
+
+            Color color = material.GetColor(propertyId);
+            color.a = alpha;
+            material.SetColor(propertyId, color);
+            return true;
+        }
+
+        private static void SetMaterialColor(Material material, Color color)
+        {
+            if (material != null && material.HasProperty(ColorId))
+                material.color = color;
         }
     }
 }

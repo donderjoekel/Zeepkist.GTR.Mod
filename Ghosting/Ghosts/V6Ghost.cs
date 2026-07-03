@@ -45,15 +45,15 @@ public partial class V6Ghost : GhostBase
     public override void Start()
     {
         base.Start();
+        ApplyCharacterPlaybackState(V6CharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
-        ApplyRagdollPlaybackState(V6RagdollPlaybackState.Reset);
     }
 
     public override void Stop()
     {
         base.Stop();
+        ApplyCharacterPlaybackState(V6CharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
-        ApplyRagdollPlaybackState(V6RagdollPlaybackState.Reset);
     }
 
     protected override IFrame GetFrame(int index)
@@ -69,10 +69,13 @@ public partial class V6Ghost : GhostBase
         V6RagdollPlaybackState playbackState = V6RagdollPlaybackState.FromSegment(
             previous.RagdollState,
             next.RagdollState);
-        ApplyRagdollPlaybackState(playbackState);
+        V6CharacterPlaybackState characterState = V6CharacterPlaybackState.FromSegment(
+            previous.RagdollState,
+            next.RagdollState,
+            next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
         if (!playbackState.RagdollVisible)
         {
-            AlignCharacterToSeated(next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
+            AlignCharacterToSeated(characterState.ArmsUpVisible);
             return;
         }
 
@@ -109,6 +112,7 @@ public partial class V6Ghost : GhostBase
         Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
         Ghost?.SetNameAnchor(Ghost.GameObject.transform);
         AlignBulkCharacterToGhost();
+        ApplyCharacterPlaybackState(V6CharacterPlaybackState.FromSegment(false, false, armsUp));
     }
 
     private void AlignCharacterToWorld(Vector3 position, Quaternion rotation)
@@ -126,13 +130,14 @@ public partial class V6Ghost : GhostBase
 
         if (Ghost?.BulkRagdollCharacterGameObject != null)
             Ghost.BulkRagdollCharacterGameObject.transform.SetPositionAndRotation(position, rotation);
+
+        ApplyCharacterPlaybackState(V6CharacterPlaybackState.FromSegment(true, true, false));
     }
 
-    private void ApplyRagdollPlaybackState(V6RagdollPlaybackState playbackState)
+    private void ApplyCharacterPlaybackState(V6CharacterPlaybackState playbackState)
     {
-        Ghost?.SetBulkCharacterRagdollVisible(playbackState.RagdollVisible);
-        if (Ghost?.PlaybackVisible == true)
-            SetCharacterActive(true);
+        Ghost?.SetBulkCharacterState(playbackState.ArmsUpVisible, playbackState.RagdollVisible);
+        SetCharacterActive(Ghost?.PlaybackVisible == true);
     }
 
     private void SetCharacterActive(bool active)

@@ -28,17 +28,20 @@ public sealed class GhostCharacterRig
     private readonly Vector3 _localPosition;
     private readonly Quaternion _localRotation;
     private readonly IReadOnlyList<PoseSnapshot> _poseSnapshots;
+    private readonly GhostLimbPoseController _limbPoseController;
 
     private GhostCharacterRig(
         GameObject root,
         Vector3 localPosition,
         Quaternion localRotation,
-        IReadOnlyList<PoseSnapshot> poseSnapshots)
+        IReadOnlyList<PoseSnapshot> poseSnapshots,
+        GhostLimbPoseController limbPoseController)
     {
         _root = root;
         _localPosition = localPosition;
         _localRotation = localRotation;
         _poseSnapshots = poseSnapshots;
+        _limbPoseController = limbPoseController;
     }
 
     public GameObject Root => _root;
@@ -56,12 +59,20 @@ public sealed class GhostCharacterRig
         Object.DontDestroyOnLoad(root.transform.root.gameObject);
         root.transform.SetPositionAndRotation(sourceRoot.position, sourceRoot.rotation);
 
+        GhostLimbPoseController limbPoseController = GhostLimbPoseController.Create(model);
         foreach (Transform part in GetTopLevelCharacterParts(model))
             part.SetParent(root.transform, true);
 
         Vector3 localPosition = model.transform.InverseTransformPoint(sourceRoot.position);
         Quaternion localRotation = Quaternion.Inverse(model.transform.rotation) * sourceRoot.rotation;
-        return new GhostCharacterRig(root, localPosition, localRotation, CapturePose(root.transform));
+        IReadOnlyList<PoseSnapshot> poseSnapshots = CapturePose(root.transform);
+        limbPoseController.CaptureSeatedPose();
+        return new GhostCharacterRig(
+            root,
+            localPosition,
+            localRotation,
+            poseSnapshots,
+            limbPoseController);
     }
 
     public void AlignToSeated(Transform soapbox)
@@ -87,14 +98,13 @@ public sealed class GhostCharacterRig
     public void ApplySeatedPose(bool armsUp = false)
     {
         ApplyPose(_poseSnapshots);
-        if (armsUp)
-            ApplyArmsUpPose(_poseSnapshots);
+        _limbPoseController?.ApplySeated(armsUp);
     }
 
     public void ApplyStandingRagdollPose()
     {
         ApplySeatedPose();
-        ApplyStandingPose(_poseSnapshots);
+        _limbPoseController?.ApplyStandingRagdollPose();
     }
 
     public void SetActive(bool active)
@@ -132,6 +142,8 @@ public sealed class GhostCharacterRig
         AddPart(parts, model.leftLeg);
         AddPart(parts, model.rightLeg);
         AddPart(parts, model.hatParent);
+        foreach (Transform poseTarget in GhostLimbPoseController.GetPoseTargets(model))
+            AddPart(parts, poseTarget);
         AddSkinnedRigParts(parts, model);
 
         foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
@@ -159,35 +171,14 @@ public sealed class GhostCharacterRig
             parts.Add(transform);
     }
 
-    public static void ApplyStandingRagdollPose(SetupModelCar model)
+    public static bool ApplySeatedArmsUpPose(SetupModelCar model)
     {
-        if (model == null)
-            return;
+        return GhostLimbPoseController.ApplySeatedArmsUpPose(model);
+    }
 
-        var snapshots = new List<PoseSnapshot>();
-        foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
-        {
-            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
-                continue;
-
-            snapshots.Add(new PoseSnapshot(renderer.transform));
-        }
-
-        foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-        {
-            if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
-                continue;
-
-            if (renderer.rootBone != null)
-                snapshots.Add(new PoseSnapshot(renderer.rootBone));
-            foreach (Transform bone in renderer.bones)
-            {
-                if (bone != null)
-                    snapshots.Add(new PoseSnapshot(bone));
-            }
-        }
-
-        ApplyStandingPose(snapshots);
+    public static bool ApplyStandingRagdollPose(SetupModelCar model)
+    {
+        return GhostLimbPoseController.ApplyStandingRagdollPose(model);
     }
 
     private static IReadOnlyList<PoseSnapshot> CapturePose(Transform root)
@@ -214,58 +205,6 @@ public sealed class GhostCharacterRig
             snapshot.Transform.localScale = snapshot.LocalScale;
         }
     }
-
-    private static void ApplyStandingPose(IEnumerable<PoseSnapshot> snapshots)
-    {
-        foreach (PoseSnapshot snapshot in snapshots)
-        {
-            if (snapshot.Transform == null)
-                continue;
-
-            if (IsLeg(snapshot.Name) || IsTorso(snapshot.Name))
-                snapshot.Transform.localRotation = Quaternion.identity;
-        }
-    }
-
-    private static void ApplyArmsUpPose(IEnumerable<PoseSnapshot> snapshots)
-    {
-        foreach (PoseSnapshot snapshot in snapshots)
-        {
-            if (snapshot.Transform == null)
-                continue;
-
-            if (IsLeftArm(snapshot.Name))
-                snapshot.Transform.localRotation = snapshot.LocalRotation * Quaternion.Euler(-75, 0, 0);
-            else if (IsRightArm(snapshot.Name))
-                snapshot.Transform.localRotation = snapshot.LocalRotation * Quaternion.Euler(-75, 0, 0);
-        }
-    }
-
-    private static bool IsTorso(string name) =>
-        name.Contains("torso") ||
-        name.Contains("body") ||
-        name.Contains("chest") ||
-        name.Contains("spine");
-
-    private static bool IsLeftArm(string name) =>
-        name.Contains("leftarm") ||
-        name.Contains("left arm") ||
-        name.Contains("l_arm") ||
-        name.Contains("arm_l") ||
-        name.Contains("left_arm");
-
-    private static bool IsRightArm(string name) =>
-        name.Contains("rightarm") ||
-        name.Contains("right arm") ||
-        name.Contains("r_arm") ||
-        name.Contains("arm_r") ||
-        name.Contains("right_arm");
-
-    private static bool IsLeg(string name) =>
-        name.Contains("leg") ||
-        name.Contains("thigh") ||
-        name.Contains("shin") ||
-        name.Contains("foot");
 
     private static void AddSkinnedRigParts(ISet<Transform> parts, SetupModelCar model)
     {

@@ -72,6 +72,7 @@ public partial class GhostPlayer : IEagerService
         {
             var gameObject = new GameObject("Instanced Bulk Ghost");
             var bulkCharacterGameObject = new GameObject("Instanced Bulk Character Ghost");
+            var bulkArmsUpCharacterGameObject = new GameObject("Instanced Bulk Arms Up Character Ghost");
             var bulkRagdollCharacterGameObject = new GameObject("Instanced Bulk Ragdoll Character Ghost");
             var instancedGhostData = new GhostData(
                 gameObject,
@@ -79,6 +80,7 @@ public partial class GhostPlayer : IEagerService
                 GhostVisualProfile.Bulk,
                 true,
                 bulkCharacterGameObject,
+                bulkArmsUpCharacterGameObject,
                 bulkRagdollCharacterGameObject);
             instancedGhostData.SetBulkCharacterLocalTransform(
                 _bulkGhostRenderService.CharacterLocalPosition,
@@ -130,6 +132,8 @@ public partial class GhostPlayer : IEagerService
 
         if (ghostData.BulkCharacterGameObject != null)
             Object.Destroy(ghostData.BulkCharacterGameObject);
+        if (ghostData.BulkArmsUpCharacterGameObject != null)
+            Object.Destroy(ghostData.BulkArmsUpCharacterGameObject);
         if (ghostData.BulkRagdollCharacterGameObject != null)
             Object.Destroy(ghostData.BulkRagdollCharacterGameObject);
     }
@@ -243,6 +247,7 @@ public partial class GhostPlayer : IEagerService
         {
             _bulkGhostRenderService.Register(ghostData.GameObject.transform);
             _bulkGhostRenderService.RegisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+            _bulkGhostRenderService.RegisterArmsUpCharacter(ghostData.BulkArmsUpCharacterGameObject?.transform);
             _bulkGhostRenderService.RegisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
         }
 
@@ -272,6 +277,7 @@ public partial class GhostPlayer : IEagerService
             {
                 _bulkGhostRenderService.Unregister(ghostData.GameObject.transform);
                 _bulkGhostRenderService.UnregisterCharacter(ghostData.BulkCharacterGameObject?.transform);
+                _bulkGhostRenderService.UnregisterArmsUpCharacter(ghostData.BulkArmsUpCharacterGameObject?.transform);
                 _bulkGhostRenderService.UnregisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
             }
 

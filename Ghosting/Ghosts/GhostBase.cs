@@ -115,10 +115,19 @@ public abstract class GhostBase : IGhost
 
     protected void AlignBulkCharacterToGhost()
     {
-        if (Ghost?.BulkCharacterGameObject == null)
+        if (Ghost == null)
             return;
 
-        Ghost.BulkCharacterGameObject.transform.SetPositionAndRotation(
+        AlignBulkCharacterTransform(Ghost.BulkCharacterGameObject?.transform);
+        AlignBulkCharacterTransform(Ghost.BulkArmsUpCharacterGameObject?.transform);
+    }
+
+    private void AlignBulkCharacterTransform(Transform transform)
+    {
+        if (transform == null)
+            return;
+
+        transform.SetPositionAndRotation(
             Ghost.GameObject.transform.position,
             Ghost.GameObject.transform.rotation);
     }

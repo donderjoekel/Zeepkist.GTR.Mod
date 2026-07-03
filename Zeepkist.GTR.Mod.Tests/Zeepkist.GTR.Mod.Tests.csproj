@@ -28,6 +28,7 @@
     <Compile Include="..\Ghosting\Playback\GhostVisualProfile.cs" Link="Source\GhostVisualProfile.cs" />
     <Compile Include="..\Ghosting\Playback\GhostVisualProfileResolver.cs" Link="Source\GhostVisualProfileResolver.cs" />
     <Compile Include="..\Ghosting\Ghosts\V6RagdollPlaybackState.cs" Link="Source\V6RagdollPlaybackState.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V6CharacterPlaybackState.cs" Link="Source\V6CharacterPlaybackState.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostBatching.cs" Link="Source\BulkGhostBatching.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostModeState.cs" Link="Source\BulkGhostModeState.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostMeshScale.cs" Link="Source\BulkGhostMeshScale.cs" />

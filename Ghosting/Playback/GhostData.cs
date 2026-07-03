@@ -11,6 +11,7 @@ public class GhostData
         GhostVisualProfile visualProfile,
         bool isInstanced,
         GameObject bulkCharacterGameObject = null,
+        GameObject bulkArmsUpCharacterGameObject = null,
         GameObject bulkRagdollCharacterGameObject = null)
     {
         GameObject = gameObject;
@@ -18,10 +19,13 @@ public class GhostData
         VisualProfile = visualProfile;
         IsInstanced = isInstanced;
         BulkCharacterGameObject = bulkCharacterGameObject;
+        BulkArmsUpCharacterGameObject = bulkArmsUpCharacterGameObject;
         BulkRagdollCharacterGameObject = bulkRagdollCharacterGameObject;
         Object.DontDestroyOnLoad(GameObject.transform.root.gameObject);
         if (BulkCharacterGameObject != null)
             Object.DontDestroyOnLoad(BulkCharacterGameObject.transform.root.gameObject);
+        if (BulkArmsUpCharacterGameObject != null)
+            Object.DontDestroyOnLoad(BulkArmsUpCharacterGameObject.transform.root.gameObject);
         if (BulkRagdollCharacterGameObject != null)
             Object.DontDestroyOnLoad(BulkRagdollCharacterGameObject.transform.root.gameObject);
     }
@@ -62,8 +66,9 @@ public class GhostData
         NameAnchor = nameAnchor != null ? nameAnchor : GameObject.transform;
     }
 
-    public void SetBulkCharacterRagdollVisible(bool ragdollVisible)
+    public void SetBulkCharacterState(bool armsUpVisible, bool ragdollVisible)
     {
+        BulkArmsUpCharacterVisible = armsUpVisible;
         BulkRagdollCharacterVisible = ragdollVisible;
         ApplyPlaybackVisibility();
     }
@@ -80,7 +85,7 @@ public class GhostData
         Renderer?.SwitchToNormal();
         Renderer?.SetFade(1);
         CharacterRig?.SetActive(true);
-        SetBulkCharacterRagdollVisible(false);
+        SetBulkCharacterState(false, false);
         SetNameAnchor(GameObject.transform);
     }
 
@@ -91,10 +96,12 @@ public class GhostData
     public bool Active { get; private set; }
     public GameObject GameObject { get; }
     public GameObject BulkCharacterGameObject { get; }
+    public GameObject BulkArmsUpCharacterGameObject { get; }
     public GameObject BulkRagdollCharacterGameObject { get; }
     public Vector3 BulkCharacterLocalPosition { get; private set; }
     public Quaternion BulkCharacterLocalRotation { get; private set; } = Quaternion.identity;
     public bool PlaybackVisible { get; private set; }
+    public bool BulkArmsUpCharacterVisible { get; private set; }
     public bool BulkRagdollCharacterVisible { get; private set; }
     public Transform NameAnchor { get; private set; }
     public GhostCharacterRig CharacterRig { get; private set; }
@@ -124,17 +131,33 @@ public class GhostData
     {
         bool visible = Active && PlaybackVisible;
 
-        if (GameObject != null)
-            GameObject.SetActive(visible);
+        if (IsInstanced)
+        {
+            if (GameObject != null)
+                GameObject.SetActive(visible);
 
-        if (CharacterRig != null)
-            CharacterRig.SetActive(visible);
+            if (BulkCharacterGameObject != null)
+                BulkCharacterGameObject.SetActive(visible && !BulkArmsUpCharacterVisible && !BulkRagdollCharacterVisible);
 
-        if (BulkCharacterGameObject != null)
-            BulkCharacterGameObject.SetActive(visible && !BulkRagdollCharacterVisible);
+            if (BulkArmsUpCharacterGameObject != null)
+                BulkArmsUpCharacterGameObject.SetActive(visible && BulkArmsUpCharacterVisible && !BulkRagdollCharacterVisible);
 
-        if (BulkRagdollCharacterGameObject != null)
-            BulkRagdollCharacterGameObject.SetActive(visible && BulkRagdollCharacterVisible);
+            if (BulkRagdollCharacterGameObject != null)
+                BulkRagdollCharacterGameObject.SetActive(visible && BulkRagdollCharacterVisible);
+        }
+        else
+        {
+            if (GameObject != null)
+                GameObject.SetActive(Active);
+
+            if (CharacterRig != null)
+                CharacterRig.SetActive(Active);
+
+            if (visible)
+                Renderer?.Enable();
+            else
+                Renderer?.Disable();
+        }
 
         if (!visible && Visuals?.NameDisplay != null)
             Visuals.NameDisplay.gameObject.SetActive(false);

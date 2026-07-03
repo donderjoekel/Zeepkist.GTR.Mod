@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Recording;
 using UnityEngine;
@@ -37,11 +37,41 @@ public partial class V5Ghost : GhostBase
         CosmeticsV16 cosmetics = new();
         cosmetics.IDsToCosmeticsWithSteamID(_cosmeticIds, _steamId);
         SetupCosmetics(cosmetics, steamName, _steamId);
+        if (Ghost.VisualProfile == GhostVisualProfile.Full)
+            Ghost.SetCharacterRig(GhostCharacterRig.Create(Ghost.Visuals?.GhostModel));
+        AlignCharacterToSeated(false);
+    }
+
+    public override void Start()
+    {
+        base.Start();
+        AlignCharacterToSeated(false);
+    }
+
+    public override void Stop()
+    {
+        base.Stop();
+        AlignCharacterToSeated(false);
     }
 
     protected override IFrame GetFrame(int index)
     {
         return _frames[index];
+    }
+
+    protected override void OnUpdate(IFrame previousFrame, IFrame nextFrame, float t)
+    {
+        if (nextFrame is Frame next)
+            AlignCharacterToSeated(next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
+    }
+
+    private void AlignCharacterToSeated(bool armsUp)
+    {
+        Ghost?.CharacterRig?.ApplySeatedPose(armsUp);
+        Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
+        Ghost?.SetNameAnchor(Ghost.GameObject.transform);
+        AlignBulkCharacterToGhost();
+        Ghost?.SetBulkCharacterState(armsUp, false);
     }
 
     protected override void OnFixedUpdate(int fixedUpdateFrame)

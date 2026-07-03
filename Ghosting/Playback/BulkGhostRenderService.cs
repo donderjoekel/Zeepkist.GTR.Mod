@@ -17,11 +17,13 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly ConfigService _configService;
     private readonly HashSet<Transform> _instances = new();
     private readonly HashSet<Transform> _characterInstances = new();
+    private readonly HashSet<Transform> _armsUpCharacterInstances = new();
     private readonly HashSet<Transform> _ragdollCharacterInstances = new();
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
     private readonly List<RenderPart> _characterRenderParts = new();
+    private readonly List<RenderPart> _armsUpCharacterRenderParts = new();
     private readonly List<RenderPart> _ragdollCharacterRenderParts = new();
     public Vector3 CharacterLocalPosition { get; private set; }
     public Quaternion CharacterLocalRotation { get; private set; } = Quaternion.identity;
@@ -89,6 +91,18 @@ public sealed class BulkGhostRenderService : IEagerService
             _characterInstances.Remove(transform);
     }
 
+    public void RegisterArmsUpCharacter(Transform transform)
+    {
+        if (transform != null)
+            _armsUpCharacterInstances.Add(transform);
+    }
+
+    public void UnregisterArmsUpCharacter(Transform transform)
+    {
+        if (transform != null)
+            _armsUpCharacterInstances.Remove(transform);
+    }
+
     public void RegisterRagdollCharacter(Transform transform)
     {
         if (transform != null)
@@ -112,6 +126,7 @@ public sealed class BulkGhostRenderService : IEagerService
 
         DrawInstances(_instances, _renderParts);
         DrawInstances(_characterInstances, _characterRenderParts);
+        DrawInstances(_armsUpCharacterInstances, _armsUpCharacterRenderParts);
         DrawInstances(_ragdollCharacterInstances, _ragdollCharacterRenderParts);
     }
 
@@ -173,6 +188,7 @@ public sealed class BulkGhostRenderService : IEagerService
 
             var soapboxMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
             var characterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
+            var armsUpCharacterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
             var ragdollCharacterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
 
             AddModelRenderersByMaterial(
@@ -182,9 +198,24 @@ public sealed class BulkGhostRenderService : IEagerService
                 characterMaterialGroups,
                 bakedMeshes);
 
-            GhostCharacterRig.ApplyStandingRagdollPose(model);
+            SetupModelCar armsUpModel = Object.Instantiate(
+                ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostModel,
+                templateRoot.transform);
+            GhostVisuals.ConfigureBulkModel(armsUpModel);
+            GhostCharacterRig.ApplySeatedArmsUpPose(armsUpModel);
             AddCharacterRenderersByMaterial(
-                model,
+                armsUpModel,
+                rootInverse,
+                armsUpCharacterMaterialGroups,
+                bakedMeshes);
+
+            SetupModelCar ragdollModel = Object.Instantiate(
+                ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostModel,
+                templateRoot.transform);
+            GhostVisuals.ConfigureBulkModel(ragdollModel);
+            GhostCharacterRig.ApplyStandingRagdollPose(ragdollModel);
+            AddCharacterRenderersByMaterial(
+                ragdollModel,
                 rootInverse,
                 ragdollCharacterMaterialGroups,
                 bakedMeshes);
@@ -195,6 +226,11 @@ public sealed class BulkGhostRenderService : IEagerService
             AddRenderParts(_renderParts, soapboxMaterialGroups, "GTR Instanced Bulk Ghost");
             if (characterMaterialGroups.Count > 0)
                 AddRenderParts(_characterRenderParts, characterMaterialGroups, "GTR Instanced Bulk Character");
+            if (armsUpCharacterMaterialGroups.Count > 0)
+                AddRenderParts(
+                    _armsUpCharacterRenderParts,
+                    armsUpCharacterMaterialGroups,
+                    "GTR Instanced Bulk Arms Up Character");
             if (ragdollCharacterMaterialGroups.Count > 0)
                 AddRenderParts(
                     _ragdollCharacterRenderParts,
@@ -454,6 +490,14 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         _characterRenderParts.Clear();
+
+        foreach (RenderPart part in _armsUpCharacterRenderParts)
+        {
+            Object.Destroy(part.Mesh);
+            Object.Destroy(part.Material);
+        }
+
+        _armsUpCharacterRenderParts.Clear();
 
         foreach (RenderPart part in _ragdollCharacterRenderParts)
         {
