@@ -16,11 +16,16 @@ public partial class GhostRenderer
         private readonly Material[] _normalMaterials;
         private readonly Material[] _ghostMaterials;
         private readonly bool _ownsMaterials;
+        private readonly bool _useNormalMaterialsInGhostMode;
 
-        public RendererData(Renderer renderer, GhostVisualProfile visualProfile)
+        public RendererData(
+            Renderer renderer,
+            GhostVisualProfile visualProfile,
+            bool useNormalMaterialsInGhostMode)
         {
             _renderer = renderer;
             _ownsMaterials = visualProfile == GhostVisualProfile.Full;
+            _useNormalMaterialsInGhostMode = useNormalMaterialsInGhostMode;
             _normalMaterials = _ownsMaterials
                 ? _renderer.materials
                 : _renderer.sharedMaterials;
@@ -57,6 +62,12 @@ public partial class GhostRenderer
         {
             if (_renderer == null)
                 return;
+
+            if (_useNormalMaterialsInGhostMode)
+            {
+                SwitchToNormal();
+                return;
+            }
 
             if (_ownsMaterials)
                 _renderer.materials = _ghostMaterials;
@@ -97,6 +108,12 @@ public partial class GhostRenderer
         {
             if (!_ownsMaterials)
                 return;
+
+            if (_useNormalMaterialsInGhostMode)
+            {
+                SetFade(color.a);
+                return;
+            }
 
             foreach (Material ghostMaterial in _ghostMaterials)
             {

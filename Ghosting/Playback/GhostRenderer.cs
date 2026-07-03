@@ -14,17 +14,32 @@ public partial class GhostRenderer : IDisposable
     {
     }
 
+    public GhostRenderer(GameObject gameObject, GameObject normalMaterialsInGhostGameObject, GhostVisualProfile visualProfile)
+    {
+        AddRenderers(gameObject, visualProfile, false);
+        AddRenderers(normalMaterialsInGhostGameObject, visualProfile, true);
+    }
+
     public GhostRenderer(IEnumerable<GameObject> gameObjects, GhostVisualProfile visualProfile)
     {
-        bool includeInactive = visualProfile == GhostVisualProfile.Full;
         foreach (GameObject gameObject in gameObjects)
-        {
-            if (gameObject == null)
-                continue;
+            AddRenderers(gameObject, visualProfile, false);
+    }
 
-            Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
-            renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(renderer, visualProfile)));
-        }
+    private void AddRenderers(
+        GameObject gameObject,
+        GhostVisualProfile visualProfile,
+        bool useNormalMaterialsInGhostMode)
+    {
+        if (gameObject == null)
+            return;
+
+        bool includeInactive = visualProfile == GhostVisualProfile.Full;
+        Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
+        renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(
+            renderer,
+            visualProfile,
+            useNormalMaterialsInGhostMode)));
     }
 
     public void SwitchToNormal()

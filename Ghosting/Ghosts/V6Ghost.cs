@@ -105,12 +105,14 @@ public partial class V6Ghost : GhostBase
 
     private void AlignCharacterToSeated()
     {
+        Ghost?.CharacterRig?.ApplySeatedPose();
         Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
         AlignBulkCharacterToGhost();
     }
 
     private void AlignCharacterToWorld(Vector3 position, Quaternion rotation)
     {
+        Ghost?.CharacterRig?.ApplyRagdollTPose();
         if (Ghost?.CharacterRig != null)
             Ghost.CharacterRig.AlignToWorld(position, rotation);
 

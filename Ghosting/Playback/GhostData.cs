@@ -37,7 +37,7 @@ public class GhostData
     {
         Renderer?.Dispose();
         Renderer = CharacterRig != null
-            ? new GhostRenderer(new[] { Visuals.GhostModel.gameObject, CharacterRig.Root }, VisualProfile)
+            ? new GhostRenderer(Visuals.GhostModel.gameObject, CharacterRig.Root, VisualProfile)
             : new GhostRenderer(Visuals.GhostModel.gameObject, VisualProfile);
     }
 

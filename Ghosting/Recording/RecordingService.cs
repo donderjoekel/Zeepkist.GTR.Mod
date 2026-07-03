@@ -95,8 +95,6 @@ public class RecordingService : IEagerService
 
     private async UniTaskVoid StartSubmit(GhostRecorder ghostRecorder)
     {
-        ghostRecorder.Stop();
-
         _logger.LogInformation("Collecting extra information");
         LevelHashV2 currentHash = LevelApi.CurrentHashV2;
         string hash = currentHash?.ZeepHash;
@@ -107,6 +105,12 @@ public class RecordingService : IEagerService
             currentLevel?.WorkshopID ?? 0,
             currentLevel?.IsAdventureLevel ?? false,
             currentLevel?.UseAvonturenLevel ?? false);
+        WinCompare.Result result = PlayerManager.Instance.currentMaster.playerResults.First();
+        List<float> splits = result.split_times.Select(x => x.time).ToList();
+        List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
+        float time = result.time;
+        ghostRecorder.CaptureFinishFrame(time);
+        ghostRecorder.Stop();
 
         _logger.LogInformation(
             "Resolved workshop ID {WorkshopId} from lobby {LobbyWorkshopId} and level {LevelWorkshopId}",
@@ -120,11 +124,6 @@ public class RecordingService : IEagerService
             _logger.LogError("Unable to get the level hash");
             return;
         }
-
-        WinCompare.Result result = PlayerManager.Instance.currentMaster.playerResults.First();
-        List<float> splits = result.split_times.Select(x => x.time).ToList();
-        List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
-        float time = result.time;
 
         if (splits.Count != PlayerManager.Instance.currentMaster.racePoints)
         {

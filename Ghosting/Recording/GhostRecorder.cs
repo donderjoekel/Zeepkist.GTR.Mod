@@ -100,6 +100,23 @@ public partial class GhostRecorder
     {
         if (_setupCar == null || _readyToReset == null)
             return;
+
+        CaptureFrame(_readyToReset.ticker.what_ticker, false);
+    }
+
+    public void CaptureFinishFrame(float finishTime)
+    {
+        if (_setupCar == null || _readyToReset == null)
+            return;
+
+        if (_frames.Count > 0 && _frames[^1].Time >= finishTime)
+            return;
+
+        CaptureFrame(finishTime, true);
+    }
+
+    private void CaptureFrame(float time, bool isFinishFrame)
+    {
         if (_frames.Count >= GhostLimits.MaxFrames)
         {
             _logger.LogWarning("Ghost frame limit reached; stopping recording");
@@ -109,7 +126,6 @@ public partial class GhostRecorder
 
         Transform carTransform = _setupCar.transform;
         New_ControlCar cc = _setupCar.cc;
-        float time = _readyToReset.ticker.what_ticker;
         UnityEngine.Vector3 localVelocity = cc.GetLocalVelocity();
         UnityEngine.Vector3 localAngularVelocity = cc.GetLocalAngularVelocity();
         UnityEngine.Vector2 localGForce = cc.GetGForce();
@@ -122,6 +138,17 @@ public partial class GhostRecorder
         bool monorailState = cc.IsCarOnMonorail();
         _isRagdoll |= GetRagdollState(cc);
         RagdollFrameTransform ragdollTransform = GetRagdollFrameTransform(cc);
+
+        if (isFinishFrame)
+        {
+            _logger.LogInformation(
+                "Capturing finish ghost frame. FinishTime={FinishTime} LastFrameTime={LastFrameTime} RagdollState={RagdollState} RagdollPosition={RagdollPosition} SoapboxPosition={SoapboxPosition}",
+                time,
+                _frames.Count > 0 ? _frames[^1].Time : 0,
+                _isRagdoll,
+                ragdollTransform.Position,
+                carTransform.position);
+        }
 
         _frames.Add(
             new Frame()
