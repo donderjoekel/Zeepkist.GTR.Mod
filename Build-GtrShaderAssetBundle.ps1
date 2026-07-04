@@ -14,9 +14,12 @@ $projectPath = Join-Path $PSScriptRoot ".tmp\gtr-shader-bundle-project"
 $projectAssets = Join-Path $projectPath "Assets"
 $projectShaders = Join-Path $projectAssets "Shaders"
 $projectEditor = Join-Path $projectAssets "Editor"
-$sourceShaders = Join-Path $PSScriptRoot "Shaders"
-$bundleOutputDirectory = $sourceShaders
+$unityBundleOutputDirectory = Join-Path $projectPath "AssetBundles"
+$runtimeAssets = Join-Path $PSScriptRoot "RuntimeAssets"
+$sourceShaders = Join-Path $runtimeAssets "Shaders\Source"
+$bundleOutputDirectory = Join-Path $runtimeAssets "Shaders"
 $bundleOutputPath = Join-Path $bundleOutputDirectory $bundleName
+$unityBundleOutputPath = Join-Path $unityBundleOutputDirectory $bundleName
 $buildOutputDirectory = Join-Path $PSScriptRoot "bin\$Configuration\net472"
 $buildOutputPath = Join-Path $buildOutputDirectory $bundleName
 $sideloadDirectory = "D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"
@@ -55,19 +58,30 @@ function Invoke-UnityBuild {
         [switch]$AllowFailure
     )
 
-    & $UnityExe `
-        -batchmode `
-        -quit `
-        -nographics `
-        -projectPath $projectPath `
-        -executeMethod BuildGtrShaderAssetBundle.Build `
-        -logFile (Join-Path $projectPath "Logs\build-gtr-shaders.log")
+    $arguments = @(
+        "-batchmode",
+        "-quit",
+        "-nographics",
+        "-projectPath",
+        $projectPath,
+        "-executeMethod",
+        "BuildGtrShaderAssetBundle.Build",
+        "-logFile",
+        (Join-Path $projectPath "Logs\build-gtr-shaders.log")
+    )
+    $process = Start-Process `
+        -FilePath $UnityExe `
+        -ArgumentList $arguments `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden
+    $exitCode = $process.ExitCode
 
-    if ($LASTEXITCODE -ne 0 -and -not $AllowFailure) {
-        throw "Unity shader bundle build failed with exit code $LASTEXITCODE."
+    if ($exitCode -ne 0 -and -not $AllowFailure) {
+        throw "Unity shader bundle build failed with exit code $exitCode."
     }
 
-    return $LASTEXITCODE
+    return $exitCode
 }
 
 if (-not (Test-Path -LiteralPath $sourceShaders)) {
@@ -79,7 +93,13 @@ if ($shaderFiles.Count -eq 0) {
     throw "No shader files found in $sourceShaders"
 }
 
-New-Item -ItemType Directory -Force -Path $projectShaders, $projectEditor, $bundleOutputDirectory | Out-Null
+New-Item -ItemType Directory -Force -Path $projectShaders, $projectEditor, $bundleOutputDirectory, $unityBundleOutputDirectory | Out-Null
+
+Get-ChildItem -LiteralPath $projectShaders -Filter "*.shader" -File |
+    Remove-Item -Force
+
+Get-ChildItem -LiteralPath $unityBundleOutputDirectory -File |
+    Remove-Item -Force
 
 foreach ($shaderFile in $shaderFiles) {
     Copy-Item -LiteralPath $shaderFile.FullName -Destination (Join-Path $projectShaders $shaderFile.Name) -Force
@@ -97,8 +117,7 @@ public static class BuildGtrShaderAssetBundle
     public static void Build()
     {
         string projectRoot = Directory.GetParent(Application.dataPath).FullName;
-        string repoRoot = Directory.GetParent(Directory.GetParent(projectRoot).FullName).FullName;
-        string outputPath = Path.Combine(repoRoot, "Shaders");
+        string outputPath = Path.Combine(projectRoot, "AssetBundles");
         Directory.CreateDirectory(outputPath);
 
         string[] shaderFiles = Directory.GetFiles(Path.Combine(Application.dataPath, "Shaders"), "*.shader");
@@ -136,13 +155,21 @@ public static class BuildGtrShaderAssetBundle
 $unityExe = Find-Unity
 $exitCode = Invoke-UnityBuild -UnityExe $unityExe -AllowFailure
 
-if ($exitCode -ne 0 -or -not (Test-Path -LiteralPath $bundleOutputPath)) {
+if ($exitCode -ne 0) {
+    Write-Warning "Unity exited with code $exitCode. Continuing because Unity may return a non-zero code after creating the bundle."
+}
+
+if (-not (Test-Path -LiteralPath $unityBundleOutputPath)) {
     Invoke-UnityBuild -UnityExe $unityExe
 }
 
-if (-not (Test-Path -LiteralPath $bundleOutputPath)) {
-    throw "Unity build completed but bundle was not found: $bundleOutputPath"
+if (-not (Test-Path -LiteralPath $unityBundleOutputPath)) {
+    throw "Unity build completed but bundle was not found: $unityBundleOutputPath"
 }
+
+Copy-Item -LiteralPath $unityBundleOutputPath -Destination $bundleOutputPath -Force
+Remove-Item -LiteralPath (Join-Path $bundleOutputDirectory "Shaders") -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $bundleOutputDirectory "Shaders.manifest") -Force -ErrorAction SilentlyContinue
 
 New-Item -ItemType Directory -Force -Path $buildOutputDirectory | Out-Null
 Copy-Item -LiteralPath $bundleOutputPath -Destination $buildOutputPath -Force
@@ -154,3 +181,4 @@ if ($CopyToSideload) {
 
 Write-Host "Built shader asset bundle: $bundleOutputPath"
 Write-Host "Copied shader asset bundle: $buildOutputPath"
+exit 0
