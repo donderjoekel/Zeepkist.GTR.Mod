@@ -101,7 +101,7 @@ public partial class GhostRecorder
         if (_setupCar == null || _readyToReset == null)
             return;
 
-        CaptureFrame(_readyToReset.ticker.what_ticker, false);
+        CaptureFrame(_readyToReset.ticker.what_ticker);
     }
 
     public void CaptureFinishFrame(float finishTime)
@@ -112,10 +112,10 @@ public partial class GhostRecorder
         if (_frames.Count > 0 && _frames[^1].Time >= finishTime)
             return;
 
-        CaptureFrame(finishTime, true);
+        CaptureFrame(finishTime);
     }
 
-    private void CaptureFrame(float time, bool isFinishFrame)
+    private void CaptureFrame(float time)
     {
         if (_frames.Count >= GhostLimits.MaxFrames)
         {
@@ -138,17 +138,6 @@ public partial class GhostRecorder
         bool monorailState = cc.IsCarOnMonorail();
         _isRagdoll |= GetRagdollState(cc);
         RagdollFrameTransform ragdollTransform = GetRagdollFrameTransform(cc);
-
-        if (isFinishFrame)
-        {
-            _logger.LogInformation(
-                "Capturing finish ghost frame. FinishTime={FinishTime} LastFrameTime={LastFrameTime} RagdollState={RagdollState} RagdollPosition={RagdollPosition} SoapboxPosition={SoapboxPosition}",
-                time,
-                _frames.Count > 0 ? _frames[^1].Time : 0,
-                _isRagdoll,
-                ragdollTransform.Position,
-                carTransform.position);
-        }
 
         _frames.Add(
             new Frame()

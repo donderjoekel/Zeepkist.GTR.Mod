@@ -44,7 +44,6 @@ public class GhostReaderFactory
 
     private IGhostReader GetReader(int version)
     {
-        _logger.LogInformation("Ghost version: {Version}", version);
         return version switch
         {
             1 => _provider.GetRequiredService<V1Reader>(),
