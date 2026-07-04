@@ -4,7 +4,7 @@ Shader "GTR_UVFree/StandardMetallic/UnityStandard_FogFix2" {
 		_MainTex ("Albedo (RGB)", 2D) = "white" {}
 	}
 	SubShader {
-		Tags { "RenderType"="Opaque" "Queue"="Geometry" "IgnoreProjector"="True" }
+		Tags { "RenderType"="Opaque" "Queue"="Overlay-50" "IgnoreProjector"="True" }
 		LOD 100
 		ZWrite On
 		ZTest LEqual
@@ -12,6 +12,7 @@ Shader "GTR_UVFree/StandardMetallic/UnityStandard_FogFix2" {
 		BlendOp Add
 		Cull Off
 		ColorMask RGBA
+		Fog { Mode Off }
 
 		Pass {
 			Tags { "LightMode"="ForwardBase" }
@@ -21,6 +22,7 @@ Shader "GTR_UVFree/StandardMetallic/UnityStandard_FogFix2" {
 			BlendOp Add
 			Cull Off
 			ColorMask RGBA
+			Fog { Mode Off }
 
 			CGPROGRAM
 			#pragma target 4.5
@@ -63,7 +65,9 @@ Shader "GTR_UVFree/StandardMetallic/UnityStandard_FogFix2" {
 
 			fixed4 frag(v2f i) : SV_Target {
 				fixed3 albedo = tex2D(_MainTex, i.uv).rgb * i.color.rgb;
-				return fixed4(albedo * i.light, 1);
+				fixed4 color = fixed4(albedo * i.light, 1);
+				color.a = 1;
+				return color;
 			}
 			ENDCG
 		}

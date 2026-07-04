@@ -38,12 +38,20 @@ public sealed class BulkGhostRenderService : IEagerService
     private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
     private static readonly int MatricesId = Shader.PropertyToID("_Matrices");
     private const float BulkGhostAlpha = 1.0f;
+    private const string BulkGhostDepthShaderName = "GTR/BulkGhostDepth";
+    private const CameraEvent DepthPrepassCameraEvent = CameraEvent.BeforeImageEffects;
+    private const int BulkGhostColorRenderQueue = (int)RenderQueue.Overlay - 50;
     private static readonly Color CharacterBaseColor = Color.white with { a = BulkGhostAlpha };
     private static readonly Color CharacterDetailColor = Color.black with { a = BulkGhostAlpha };
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
     private readonly MaterialPropertyBlock _propertyBlock = new();
+    private readonly CommandBuffer _depthCommandBuffer = new()
+    {
+        name = "GTR Bulk Ghost Depth"
+    };
     private readonly List<ComputeBuffer> _matrixBuffers = new();
     private int _matrixBufferIndex;
+    private Camera _depthCamera;
 
     private readonly List<RenderPart> _renderParts = new();
     private readonly Dictionary<GhostCharacterPlaybackPose, List<RenderPart>> _characterRenderParts = new()
@@ -59,6 +67,7 @@ public sealed class BulkGhostRenderService : IEagerService
     private bool _badDrawShaderLogged;
     private bool _bulkShaderFromBundle;
     private Shader _bulkShader;
+    private Material _depthMaterial;
 
     public BulkGhostRenderService(
         ILogger<BulkGhostRenderService> logger,
@@ -143,9 +152,11 @@ public sealed class BulkGhostRenderService : IEagerService
             !_configService.ShowGhosts.Value ||
             !_configService.ShowGlobalPersonalBest.Value)
         {
+            _depthCommandBuffer.Clear();
             return;
         }
 
+        PrepareDepthPrepass();
         _matrixBufferIndex = 0;
         DrawInstances(_instances, _renderParts);
         foreach (KeyValuePair<GhostCharacterPlaybackPose, Dictionary<int, HashSet<Transform>>> characterInstances in _characterInstances)
@@ -156,6 +167,26 @@ public sealed class BulkGhostRenderService : IEagerService
                     _characterRenderParts[characterInstances.Key],
                     tintBucket.Key);
         }
+    }
+
+    private void PrepareDepthPrepass()
+    {
+        _depthCommandBuffer.Clear();
+        if (_depthMaterial == null)
+            return;
+
+        Camera camera = Camera.main;
+        if (camera == null)
+            return;
+
+        if (_depthCamera == camera)
+            return;
+
+        if (_depthCamera != null)
+            _depthCamera.RemoveCommandBuffer(DepthPrepassCameraEvent, _depthCommandBuffer);
+
+        _depthCamera = camera;
+        _depthCamera.AddCommandBuffer(DepthPrepassCameraEvent, _depthCommandBuffer);
     }
 
     private void DrawInstances(
@@ -181,13 +212,19 @@ public sealed class BulkGhostRenderService : IEagerService
             DrawBatch(renderParts, count, tintBucket);
     }
 
-    private void DrawBatch(IReadOnlyList<RenderPart> renderParts, int count, int? tintBucket = null)
+    private void DrawBatch(
+        IReadOnlyList<RenderPart> renderParts,
+        int count,
+        int? tintBucket = null)
     {
         foreach (RenderPart part in renderParts)
             DrawPart(part, count, tintBucket);
     }
 
-    private void DrawPart(RenderPart part, int count, int? tintBucket = null)
+    private void DrawPart(
+        RenderPart part,
+        int count,
+        int? tintBucket = null)
     {
         Material material = GetMaterial(part, tintBucket);
         if (material == null || IsIncompatibleDrawShader(material.shader))
@@ -204,14 +241,15 @@ public sealed class BulkGhostRenderService : IEagerService
             return;
         }
 
+        _propertyBlock.Clear();
         ComputeBuffer matrixBuffer = GetMatrixBuffer();
         matrixBuffer.SetData(_matrices, 0, 0, count);
-
-        _propertyBlock.Clear();
         _propertyBlock.SetBuffer(MatricesId, matrixBuffer);
         _propertyBlock.SetColor(
             ColorId,
             material.HasProperty(ColorId) ? material.GetColor(ColorId) : Color.white);
+
+        DrawDepthPart(part, count);
 
         Graphics.DrawMeshInstancedProcedural(
             part.Mesh,
@@ -226,6 +264,20 @@ public sealed class BulkGhostRenderService : IEagerService
             null,
             LightProbeUsage.Off,
             null);
+    }
+
+    private void DrawDepthPart(RenderPart part, int count)
+    {
+        if (_depthMaterial == null)
+            return;
+
+        _depthCommandBuffer.DrawMeshInstanced(
+            part.Mesh,
+            0,
+            _depthMaterial,
+            0,
+            _matrices,
+            count);
     }
 
     private ComputeBuffer GetMatrixBuffer()
@@ -248,10 +300,9 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         float meshRadius = meshBounds.extents.magnitude;
-        var bounds = new Bounds(
+        return new Bounds(
             (min + max) * 0.5f,
             (max - min) + Vector3.one * Math.Max(100f, meshRadius * 4f));
-        return bounds;
     }
 
     private Material GetMaterial(RenderPart part, int? tintBucket)
@@ -348,6 +399,8 @@ public sealed class BulkGhostRenderService : IEagerService
             _bulkShader = ResolveBulkShader();
             if (_bulkShader == null)
                 throw new InvalidOperationException("No compatible shader found for instanced bulk ghost rendering.");
+
+            _depthMaterial = CreateDepthMaterial();
 
             AddSoapboxRenderParts(_renderParts, soapboxMeshes, "GTR Instanced Bulk Ghost");
             AddCharacterRenderParts(
@@ -732,6 +785,25 @@ public sealed class BulkGhostRenderService : IEagerService
         return null;
     }
 
+    private Material CreateDepthMaterial()
+    {
+        Shader depthShader = _assetService.GetShader(BulkGhostDepthShaderName);
+        if (depthShader == null)
+        {
+            _logger.LogWarning(
+                "Bulk ghost depth prepass disabled because shader {Shader} was not found in gtr-shaders.",
+                BulkGhostDepthShaderName);
+            return null;
+        }
+
+        var material = new Material(depthShader)
+        {
+            enableInstancing = true,
+            name = "GTR Instanced Bulk Ghost Depth"
+        };
+        return material;
+    }
+
     private static bool IsBadBulkShader(Shader shader)
     {
         if (shader == null)
@@ -776,8 +848,8 @@ public sealed class BulkGhostRenderService : IEagerService
         material.DisableKeyword("_ALPHABLEND_ON");
         material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
         material.SetOverrideTag("RenderType", "Opaque");
-        material.SetOverrideTag("Queue", "Geometry");
-        material.renderQueue = (int)RenderQueue.Geometry;
+        material.SetOverrideTag("Queue", "Overlay-50");
+        material.renderQueue = BulkGhostColorRenderQueue;
     }
 
     private static void SetMaterialColor(Material material, Color color)
@@ -1018,6 +1090,19 @@ public sealed class BulkGhostRenderService : IEagerService
 
     private void DisposeResources()
     {
+        if (_depthCamera != null)
+        {
+            _depthCamera.RemoveCommandBuffer(DepthPrepassCameraEvent, _depthCommandBuffer);
+            _depthCamera = null;
+        }
+
+        _depthCommandBuffer.Clear();
+        if (_depthMaterial != null)
+        {
+            Object.Destroy(_depthMaterial);
+            _depthMaterial = null;
+        }
+
         foreach (RenderPart part in _renderParts)
             part.Dispose();
 
