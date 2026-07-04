@@ -247,13 +247,16 @@ public partial class GhostPlayer : IEagerService
             _bulkGhostRenderService.Register(ghostData.GameObject.transform);
             _bulkGhostRenderService.RegisterCharacter(
                 ghostData.BulkCharacterGameObject?.transform,
-                GhostCharacterPlaybackPose.Seated);
+                GhostCharacterPlaybackPose.Seated,
+                ghost.Color);
             _bulkGhostRenderService.RegisterCharacter(
                 ghostData.BulkArmsUpCharacterGameObject?.transform,
-                GhostCharacterPlaybackPose.SeatedArmsUp);
+                GhostCharacterPlaybackPose.SeatedArmsUp,
+                ghost.Color);
             _bulkGhostRenderService.RegisterCharacter(
                 ghostData.BulkRagdollCharacterGameObject?.transform,
-                GhostCharacterPlaybackPose.Ragdoll);
+                GhostCharacterPlaybackPose.Ragdoll,
+                ghost.Color);
         }
 
         if (!hadExistingGhost)

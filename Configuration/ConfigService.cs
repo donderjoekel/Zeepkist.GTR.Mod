@@ -22,8 +22,10 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostNames { get; private set; }
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowGlobalPersonalBest { get; private set; }
+
     public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
     public ConfigEntry<int> MaximumVisibleTopRecordGhosts { get; private set; }
+    public ConfigEntry<int> MaximumGhostColours { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -149,15 +151,31 @@ public class ConfigService : IEagerService
             -1,
             new ConfigDescription(
                 "(-1 means Show All) Maximum number of fastest PB ghosts loaded",
-                new AcceptableValueRange<int>(-1, int.MaxValue)));
-
+                new AcceptableValueRange<int>(-1, int.MaxValue)
+            )
+        );
         MaximumVisibleTopRecordGhosts = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "2. Top Record Ghosts",
             500,
             new ConfigDescription(
                 "Maximum number of fastest top record ghosts loaded",
-                new AcceptableValueRange<int>(1, int.MaxValue)));
+                new AcceptableValueRange<int>(1, int.MaxValue)
+            )
+        );
+        MaximumGhostColours = config.Bind(
+            "2.3 - Ghosts - Offline Ghosts",
+            "3. Max Ghost Colours",
+            12,
+            new ConfigDescription(
+                "Maximum number of ghost colours to show.\n\n" +
+                "Increasing this will reduce performance.\n\n" +
+                "Set to 1 for maximum performance, but all\n" +
+                "ghosts will be the same colour.",
+                new AcceptableValueRange<int>(1, int.MaxValue)
+            )
+        );
+
     }
 
     private void ConfigRecordHolder(ConfigFile config)

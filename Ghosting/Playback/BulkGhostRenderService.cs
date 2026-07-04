@@ -17,12 +17,13 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
     private readonly HashSet<Transform> _instances = new();
-    private readonly Dictionary<GhostCharacterPlaybackPose, HashSet<Transform>> _characterInstances = new()
+    private readonly Dictionary<GhostCharacterPlaybackPose, Dictionary<int, HashSet<Transform>>> _characterInstances = new()
     {
-        [GhostCharacterPlaybackPose.Seated] = new HashSet<Transform>(),
-        [GhostCharacterPlaybackPose.SeatedArmsUp] = new HashSet<Transform>(),
-        [GhostCharacterPlaybackPose.Ragdoll] = new HashSet<Transform>()
+        [GhostCharacterPlaybackPose.Seated] = CreateTintBuckets(),
+        [GhostCharacterPlaybackPose.SeatedArmsUp] = CreateTintBuckets(),
+        [GhostCharacterPlaybackPose.Ragdoll] = CreateTintBuckets()
     };
+    private readonly Dictionary<int, Color> _tintBucketColors = new();
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
@@ -33,7 +34,6 @@ public sealed class BulkGhostRenderService : IEagerService
     private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
     private const float BulkGhostAlpha = 1.0f;
-
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
@@ -96,16 +96,31 @@ public sealed class BulkGhostRenderService : IEagerService
             _instances.Remove(transform);
     }
 
-    public void RegisterCharacter(Transform transform, GhostCharacterPlaybackPose pose)
+    public void RegisterCharacter(Transform transform, GhostCharacterPlaybackPose pose, Color color)
     {
-        if (transform != null)
-            _characterInstances[pose].Add(transform);
+        if (transform == null)
+            return;
+
+        int tintBucket = GetTintBucket(color);
+        if (!_tintBucketColors.ContainsKey(tintBucket))
+            _tintBucketColors.Add(tintBucket, color with { a = BulkGhostAlpha });
+
+        if (!_characterInstances[pose].TryGetValue(tintBucket, out HashSet<Transform> instances))
+        {
+            instances = new HashSet<Transform>();
+            _characterInstances[pose].Add(tintBucket, instances);
+        }
+
+        instances.Add(transform);
     }
 
     public void UnregisterCharacter(Transform transform, GhostCharacterPlaybackPose pose)
     {
-        if (transform != null)
-            _characterInstances[pose].Remove(transform);
+        if (transform == null)
+            return;
+
+        foreach (HashSet<Transform> instances in _characterInstances[pose].Values)
+            instances.Remove(transform);
     }
 
     private void Draw()
@@ -118,11 +133,20 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         DrawInstances(_instances, _renderParts);
-        foreach (KeyValuePair<GhostCharacterPlaybackPose, HashSet<Transform>> characterInstances in _characterInstances)
-            DrawInstances(characterInstances.Value, _characterRenderParts[characterInstances.Key]);
+        foreach (KeyValuePair<GhostCharacterPlaybackPose, Dictionary<int, HashSet<Transform>>> characterInstances in _characterInstances)
+        {
+            foreach (KeyValuePair<int, HashSet<Transform>> tintBucket in characterInstances.Value)
+                DrawInstances(
+                    tintBucket.Value,
+                    _characterRenderParts[characterInstances.Key],
+                    tintBucket.Key);
+        }
     }
 
-    private void DrawInstances(IEnumerable<Transform> instances, IReadOnlyList<RenderPart> renderParts)
+    private void DrawInstances(
+        IEnumerable<Transform> instances,
+        IReadOnlyList<RenderPart> renderParts,
+        int? tintBucket = null)
     {
         int count = 0;
         foreach (Transform instance in instances)
@@ -134,26 +158,26 @@ public sealed class BulkGhostRenderService : IEagerService
             if (count != BulkGhostBatching.MaximumInstancesPerBatch)
                 continue;
 
-            DrawBatch(renderParts, count);
+            DrawBatch(renderParts, count, tintBucket);
             count = 0;
         }
 
         if (count > 0)
-            DrawBatch(renderParts, count);
+            DrawBatch(renderParts, count, tintBucket);
     }
 
-    private void DrawBatch(IReadOnlyList<RenderPart> renderParts, int count)
+    private void DrawBatch(IReadOnlyList<RenderPart> renderParts, int count, int? tintBucket = null)
     {
         foreach (RenderPart part in renderParts)
-            DrawPart(part, part.Material, count);
+            DrawPart(part, count, tintBucket);
     }
 
-    private void DrawPart(RenderPart part, Material material, int count)
+    private void DrawPart(RenderPart part, int count, int? tintBucket = null)
     {
         Graphics.DrawMeshInstanced(
             part.Mesh,
             0,
-            material,
+            GetMaterial(part, tintBucket),
             _matrices,
             count,
             null,
@@ -164,6 +188,45 @@ public sealed class BulkGhostRenderService : IEagerService
             LightProbeUsage.Off,
             null);
     }
+
+    private Material GetMaterial(RenderPart part, int? tintBucket)
+    {
+        if (!tintBucket.HasValue || !part.Tintable)
+            return part.Material;
+
+        return part.GetTintedMaterial(tintBucket.Value, GetTintBucketColor(tintBucket.Value));
+    }
+
+    private static Dictionary<int, HashSet<Transform>> CreateTintBuckets()
+    {
+        return new Dictionary<int, HashSet<Transform>>();
+    }
+
+    private int GetTintBucket(Color color)
+    {
+        int bucketCount = GetTintBucketCount();
+        if (bucketCount <= 1)
+            return 0;
+
+        Color.RGBToHSV(color, out float hue, out float saturation, out float value);
+        if (saturation < 0.1f || value < 0.1f)
+            return 0;
+
+        return 1 + Mathf.FloorToInt(hue * (bucketCount - 1)) % (bucketCount - 1);
+    }
+
+    private Color GetTintBucketColor(int bucket)
+    {
+        return _tintBucketColors.TryGetValue(bucket, out Color color)
+            ? color
+            : Color.white with { a = BulkGhostAlpha };
+    }
+
+    private int GetTintBucketCount()
+    {
+        return Math.Max(1, _configService.MaximumGhostColours.Value);
+    }
+
     private void InitializeResources()
     {
         GameObject templateRoot = new("GTR Bulk Ghost Mesh Template");
@@ -410,10 +473,44 @@ public sealed class BulkGhostRenderService : IEagerService
             mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
             mesh.RecalculateBounds();
 
-            destination.Add(new RenderPart(mesh, CreateInstancedBulkMaterial(materialGroup.Key)));
+            destination.Add(new RenderPart(
+                mesh,
+                CreateInstancedBulkMaterial(materialGroup.Key),
+                IsTintableCharacterMaterial(materialGroup.Key)));
         }
     }
 
+
+    private static bool IsTintableCharacterMaterial(Material material)
+    {
+        if (material == null)
+            return false;
+
+        string name = material.name.ToLowerInvariant();
+        if (name.Contains("face") ||
+            name.Contains("smile") ||
+            name.Contains("mouth") ||
+            name.Contains("eye") ||
+            name.Contains("heart"))
+        {
+            return false;
+        }
+
+        Color color = GetMaterialColor(material);
+        return color.maxColorComponent > 0.08f;
+    }
+
+    private static Color GetMaterialColor(Material material)
+    {
+        if (material.HasProperty(ColorId))
+            return material.GetColor(ColorId);
+        if (material.HasProperty(BaseColorId))
+            return material.GetColor(BaseColorId);
+        if (material.HasProperty(TintColorId))
+            return material.GetColor(TintColorId);
+
+        return Color.white;
+    }
     private static Material CreateInstancedBulkMaterial(Material source)
     {
         var material = new Material(source)
@@ -443,6 +540,26 @@ public sealed class BulkGhostRenderService : IEagerService
         material.renderQueue = (int)RenderQueue.Geometry;
     }
 
+
+    private static void SetMaterialColor(Material material, Color color)
+    {
+        SetMaterialColor(material, ColorId, color);
+        SetMaterialColor(material, BaseColorId, color);
+        SetMaterialColor(material, TintColorId, color);
+    }
+
+    private static void SetMaterialColor(Material material, int propertyId, Color color)
+    {
+        if (!material.HasProperty(propertyId))
+            return;
+
+        Color existing = material.GetColor(propertyId);
+        existing.r = color.r;
+        existing.g = color.g;
+        existing.b = color.b;
+        existing.a = color.a;
+        material.SetColor(propertyId, existing);
+    }
     private static void SetMaterialAlpha(Material material, float alpha)
     {
         SetMaterialAlpha(material, ColorId, alpha);
@@ -549,19 +666,43 @@ public sealed class BulkGhostRenderService : IEagerService
     }
     private sealed class RenderPart : IDisposable
     {
-        public RenderPart(Mesh mesh, Material material)
+        private readonly Dictionary<int, Material> _tintedMaterials = new();
+
+        public RenderPart(Mesh mesh, Material material, bool tintable)
         {
             Mesh = mesh;
             Material = material;
+            Tintable = tintable;
         }
 
         public Mesh Mesh { get; }
         public Material Material { get; }
+        public bool Tintable { get; }
+
+        public Material GetTintedMaterial(int bucket, Color tint)
+        {
+            if (_tintedMaterials.TryGetValue(bucket, out Material material))
+                return material;
+
+            material = new Material(Material)
+            {
+                enableInstancing = true,
+                name = $"{Material.name} Tint {bucket}"
+            };
+            SetMaterialColor(material, tint);
+            _tintedMaterials.Add(bucket, material);
+            return material;
+        }
 
         public void Dispose()
         {
             Object.Destroy(Mesh);
             Object.Destroy(Material);
+
+            foreach (Material tintedMaterial in _tintedMaterials.Values)
+                Object.Destroy(tintedMaterial);
+
+            _tintedMaterials.Clear();
         }
     }
 }
