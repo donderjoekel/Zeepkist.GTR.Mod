@@ -13,13 +13,8 @@ public class ConfigService : IEagerService
     public const string LocalDevelopmentGraphQLUrl = "http://127.0.0.1:5000/";
 
     public ConfigEntry<bool> SubmitRecords { get; private set; }
-    public ConfigEntry<bool> SubmitAnyPercentRecords { get; private set; }
     public ConfigEntry<bool> ShowRecordSubmitMessage { get; private set; }
     public ConfigEntry<float> ShowRecordSubmitMessageDuration { get; private set; }
-
-    public ConfigEntry<KeyCode> ToggleEnableRecords { get; private set; }
-    public ConfigEntry<KeyCode> ToggleSubmitAnyPercentRecords { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowRecordSubmitMessage { get; private set; }
 
     public ConfigEntry<bool> EnableGhosts { get; private set; }
 
@@ -80,11 +75,6 @@ public class ConfigService : IEagerService
             "1. Submit Records",
             true,
             "Should records be submitted");
-        SubmitAnyPercentRecords = config.Bind(
-            "1. Records - General",
-            "2. Submit Any Percent Records",
-            true,
-            "Should any percent records be submitted");
         ShowRecordSubmitMessage = config.Bind(
             "1. Records - General",
             "3. Show Record Submit Message",
@@ -95,22 +85,6 @@ public class ConfigService : IEagerService
             "4. Show Record Submit Message Duration",
             2.5f,
             "The duration in seconds that the record submit message should be shown for");
-
-        ToggleEnableRecords = config.Bind(
-            "1.1 Records - Keys",
-            "1. Toggle Enable Records",
-            KeyCode.None,
-            "Toggles if records should be enabled");
-        ToggleSubmitAnyPercentRecords = config.Bind(
-            "1.1 Records - Keys",
-            "2. Toggle Submit Any Percent Records",
-            KeyCode.None,
-            "Toggles if any percent records should be submitted");
-        ToggleShowRecordSubmitMessage = config.Bind(
-            "1.1 Records - Keys",
-            "3. Toggle Show Record Submit Message",
-            KeyCode.None,
-            "Toggles if the record submit message should be shown");
     }
 
     private void ConfigGhosts(ConfigFile config)
@@ -170,7 +144,7 @@ public class ConfigService : IEagerService
             "Toggles if the global personal best should be shown");
 
         MaximumVisibleOfflineGhosts = config.Bind(
-            "2.3 - Ghosts - Number of Ghosts Shown in Freeplay",
+            "2.3 - Ghosts - Offline Ghosts",
             "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
@@ -178,7 +152,7 @@ public class ConfigService : IEagerService
                 new AcceptableValueRange<int>(-1, int.MaxValue)));
 
         MaximumVisibleTopRecordGhosts = config.Bind(
-            "2.3 - Ghosts - Number of Ghosts Shown in Freeplay",
+            "2.3 - Ghosts - Offline Ghosts",
             "2. Top Record Ghosts",
             500,
             new ConfigDescription(
