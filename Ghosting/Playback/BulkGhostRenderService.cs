@@ -23,6 +23,17 @@ public sealed class BulkGhostRenderService : IEagerService
         [GhostCharacterPlaybackPose.SeatedArmsUp] = new HashSet<Transform>(),
         [GhostCharacterPlaybackPose.Ragdoll] = new HashSet<Transform>()
     };
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int ModeId = Shader.PropertyToID("_Mode");
+    private static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
+    private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
+    private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
+    private const float BulkGhostAlpha = 1.0f;
+
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
@@ -134,23 +145,25 @@ public sealed class BulkGhostRenderService : IEagerService
     private void DrawBatch(IReadOnlyList<RenderPart> renderParts, int count)
     {
         foreach (RenderPart part in renderParts)
-        {
-            Graphics.DrawMeshInstanced(
-                part.Mesh,
-                0,
-                part.Material,
-                _matrices,
-                count,
-                null,
-                ShadowCastingMode.Off,
-                false,
-                0,
-                null,
-                LightProbeUsage.Off,
-                null);
-        }
+            DrawPart(part, part.Material, count);
     }
 
+    private void DrawPart(RenderPart part, Material material, int count)
+    {
+        Graphics.DrawMeshInstanced(
+            part.Mesh,
+            0,
+            material,
+            _matrices,
+            count,
+            null,
+            ShadowCastingMode.Off,
+            false,
+            0,
+            null,
+            LightProbeUsage.Off,
+            null);
+    }
     private void InitializeResources()
     {
         GameObject templateRoot = new("GTR Bulk Ghost Mesh Template");
@@ -397,15 +410,80 @@ public sealed class BulkGhostRenderService : IEagerService
             mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
             mesh.RecalculateBounds();
 
-            var material = new Material(materialGroup.Key)
-            {
-                enableInstancing = true,
-                name = $"GTR Instanced {materialGroup.Key.name}"
-            };
-            destination.Add(new RenderPart(mesh, material));
+            destination.Add(new RenderPart(mesh, CreateInstancedBulkMaterial(materialGroup.Key)));
         }
     }
 
+    private static Material CreateInstancedBulkMaterial(Material source)
+    {
+        var material = new Material(source)
+        {
+            enableInstancing = true,
+            name = $"GTR Instanced {source.name}"
+        };
+
+        ConfigureInstancedMaterial(material);
+        return material;
+    }
+    private static void ConfigureInstancedMaterial(Material material)
+    {
+        if (material.HasProperty(ModeId))
+            material.SetFloat(ModeId, 3f);
+        if (material.HasProperty(SrcBlendId))
+            material.SetInt(SrcBlendId, (int)BlendMode.One);
+        if (material.HasProperty(DstBlendId))
+            material.SetInt(DstBlendId, (int)BlendMode.Zero);
+        if (material.HasProperty(ZWriteId))
+            material.SetInt(ZWriteId, 1);
+
+        SetMaterialAlpha(material, BulkGhostAlpha);
+        material.DisableKeyword("_ALPHATEST_ON");
+        material.DisableKeyword("_ALPHABLEND_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.renderQueue = (int)RenderQueue.Geometry;
+    }
+
+    private static void SetMaterialAlpha(Material material, float alpha)
+    {
+        SetMaterialAlpha(material, ColorId, alpha);
+        SetMaterialAlpha(material, BaseColorId, alpha);
+        SetMaterialAlpha(material, TintColorId, alpha);
+    }
+
+    private static void SetMaterialAlpha(Material material, int propertyId, float alpha)
+    {
+        if (!material.HasProperty(propertyId))
+            return;
+
+        Color color = material.GetColor(propertyId);
+        color.a = alpha;
+        material.SetColor(propertyId, color);
+    }
+
+    private static void CopyColor(Material source, Material destination, int propertyId)
+    {
+        if (source == null || destination == null)
+            return;
+        if (!source.HasProperty(propertyId) || !destination.HasProperty(propertyId))
+            return;
+
+        Color sourceColor = source.GetColor(propertyId);
+        Color destinationColor = destination.GetColor(propertyId);
+        destinationColor.r = sourceColor.r;
+        destinationColor.g = sourceColor.g;
+        destinationColor.b = sourceColor.b;
+        destination.SetColor(propertyId, destinationColor);
+    }
+
+    private static void CopyTexture(Material source, Material destination, int propertyId)
+    {
+        if (source == null || destination == null)
+            return;
+        if (!source.HasProperty(propertyId) || !destination.HasProperty(propertyId))
+            return;
+
+        destination.SetTexture(propertyId, source.GetTexture(propertyId));
+    }
     private static void AddSubMeshesByMaterial(
         IDictionary<Material, List<CombineInstance>> destination,
         Mesh mesh,
@@ -456,27 +534,20 @@ public sealed class BulkGhostRenderService : IEagerService
     private void DisposeResources()
     {
         foreach (RenderPart part in _renderParts)
-        {
-            Object.Destroy(part.Mesh);
-            Object.Destroy(part.Material);
-        }
+            part.Dispose();
 
         _renderParts.Clear();
 
         foreach (List<RenderPart> renderParts in _characterRenderParts.Values)
         {
             foreach (RenderPart part in renderParts)
-            {
-                Object.Destroy(part.Mesh);
-                Object.Destroy(part.Material);
-            }
+                part.Dispose();
 
             renderParts.Clear();
         }
         _initialized = false;
     }
-
-    private sealed class RenderPart
+    private sealed class RenderPart : IDisposable
     {
         public RenderPart(Mesh mesh, Material material)
         {
@@ -486,5 +557,11 @@ public sealed class BulkGhostRenderService : IEagerService
 
         public Mesh Mesh { get; }
         public Material Material { get; }
+
+        public void Dispose()
+        {
+            Object.Destroy(Mesh);
+            Object.Destroy(Material);
+        }
     }
 }

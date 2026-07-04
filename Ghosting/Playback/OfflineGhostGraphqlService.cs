@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -60,6 +60,27 @@ public class OfflineGhostGraphqlService : OnlineGhostGraphqlService
         return Result.Ok(nodes ?? []);
     }
 
+
+    public async UniTask<Result<IReadOnlyList<IGetTopRecordGhosts_Records_Nodes>>> GetTopRecordGhosts(
+        LevelGraphqlIdentity level,
+        int first,
+        CancellationToken cancellationToken = default)
+    {
+        IOperationResult<IGetTopRecordGhostsResult> result =
+            await GtrClient.GetTopRecordGhosts.ExecuteAsync(level.XxHash, level.Hash, first, cancellationToken);
+
+        try
+        {
+            result.EnsureNoErrors();
+        }
+        catch (Exception e)
+        {
+            return Result.Fail(new ExceptionalError(e));
+        }
+
+        IReadOnlyList<IGetTopRecordGhosts_Records_Nodes> nodes = result.Data?.Records?.Nodes;
+        return Result.Ok(nodes ?? []);
+    }
     private static List<PersonalBest> Map(Root root)
     {
         return Map(root.Data);

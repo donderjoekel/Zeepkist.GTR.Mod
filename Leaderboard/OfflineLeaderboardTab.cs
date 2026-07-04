@@ -17,7 +17,7 @@ namespace TNRD.Zeepkist.GTR.Leaderboard;
 
 public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 {
-    private const int PageSize = 15;
+    private const int PageSize = 14;
 
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly MessengerService _messengerService;
@@ -54,9 +54,12 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
             _originalEvents[rowIndex] = row.favoriteButton.onClick;
             row.favoriteButton.onClick = new UnityEvent();
             row.favoriteButton.onClick.AddListener(
-                rowIndex == 0
-                    ? OnShowAllGhostsClicked
-                    : () => OnFavoriteButtonClicked(rowIndex - 1));
+                rowIndex switch
+                {
+                    0 => OnShowAllGhostsClicked,
+                    1 => OnShowTopRecordsClicked,
+                    _ => () => OnFavoriteButtonClicked(rowIndex - 2)
+                });
         }
 
         InitializeAsync().Forget();
@@ -71,10 +74,11 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
     protected override void OnDraw()
     {
         DrawShowAllGhostsRow(Instance.leaderboard_tab_positions[0]);
+        DrawShowTopRecordsRow(Instance.leaderboard_tab_positions[1]);
 
-        for (int rowIndex = 1; rowIndex < Instance.leaderboard_tab_positions.Count; rowIndex++)
+        for (int rowIndex = 2; rowIndex < Instance.leaderboard_tab_positions.Count; rowIndex++)
         {
-            int itemIndex = rowIndex - 1;
+            int itemIndex = rowIndex - 2;
             if (itemIndex >= _items.Count)
                 continue;
 
@@ -93,10 +97,10 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 
     private void OnFavoriteButtonClicked(int itemIndex)
     {
-        if (_offlineGhostsService.IsShowingAllGhosts || itemIndex >= _items.Count)
+        if (itemIndex >= _items.Count)
             return;
 
-        GUI_OnlineLeaderboardPosition row = Instance.leaderboard_tab_positions[itemIndex + 1];
+        GUI_OnlineLeaderboardPosition row = Instance.leaderboard_tab_positions[itemIndex + 2];
         row.isFavorite = !row.isFavorite;
         IGetPersonalBests_Records_Nodes node = _items[itemIndex];
 
@@ -197,7 +201,25 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
         gui.RedrawFavoriteImage();
         gui.favoriteButton.RedrawButton();
         gui.player_name.text =
-            _offlineGhostsService.IsShowingAllGhosts ? "Clear All" : "Show All Ghosts";
+            _offlineGhostsService.IsShowingAllGhosts ? "Clear Personal Bests" : "Show All Personal Bests";
+        gui.time.text = string.Empty;
+        gui.pointsCurrent.gameObject.SetActive(false);
+        gui.pointsWon.gameObject.SetActive(false);
+    }
+
+    private void DrawShowTopRecordsRow(GUI_OnlineLeaderboardPosition gui)
+    {
+        gui.gameObject.SetActive(true);
+        gui.position.gameObject.SetActive(true);
+        gui.position.text = string.Empty;
+        gui.favoriteButton.gameObject.SetActive(true);
+        gui.favoriteButton.disabled = false;
+        gui.isFavorite = _offlineGhostsService.IsShowingTopRecords;
+        gui.RedrawFavoriteImage();
+        gui.favoriteButton.RedrawButton();
+        gui.player_name.text = _offlineGhostsService.IsShowingTopRecords
+            ? "Clear Top Records"
+            : $"Show Top {_offlineGhostsService.TopRecordLimit} Records";
         gui.time.text = string.Empty;
         gui.pointsCurrent.gameObject.SetActive(false);
         gui.pointsWon.gameObject.SetActive(false);
@@ -209,7 +231,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
         gui.position.text = (index + 1).ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(index + 1);
         gui.favoriteButton.gameObject.SetActive(true);
-        gui.favoriteButton.disabled = _offlineGhostsService.IsShowingAllGhosts;
+        gui.favoriteButton.disabled = false;
         gui.isFavorite = _offlineGhostsService.ContainsAdditionalGhost(item.User.SteamId);
         gui.RedrawFavoriteImage();
         gui.favoriteButton.RedrawButton();
@@ -238,6 +260,14 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
             _offlineGhostsService.ClearAllGhosts();
         else
             _offlineGhostsService.ShowAllGhosts();
+    }
+
+    private void OnShowTopRecordsClicked()
+    {
+        if (_offlineGhostsService.IsShowingTopRecords)
+            _offlineGhostsService.ClearTopRecords();
+        else
+            _offlineGhostsService.ShowTopRecords();
     }
 
     private void OnBulkModeChanged()

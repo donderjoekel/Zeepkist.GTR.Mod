@@ -1,8 +1,7 @@
-query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+query GetTopRecordGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
   records(
     filter: {
       recordMediaExists: true
-      personalBestGlobalsExist: true
       level: {
         or: [
           { xxHash: { equalTo: $xxHash } }

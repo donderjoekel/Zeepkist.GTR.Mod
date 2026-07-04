@@ -45,6 +45,8 @@ public class OfflineGhostsService : IEagerService
     private bool _progressActive;
 
     public bool IsShowingAllGhosts { get; private set; }
+    public bool IsShowingTopRecords { get; private set; }
+    public int TopRecordLimit => _configService.MaximumVisibleTopRecordGhosts.Value;
     public event Action BulkModeChanged;
 
     public OfflineGhostsService(
@@ -98,8 +100,8 @@ public class OfflineGhostsService : IEagerService
         if (!level.IsAvailable)
             return;
 
-        if (IsShowingAllGhosts && _bulkLevelCacheKey == level.CacheKey)
-            LoadAllGhosts();
+        if ((IsShowingAllGhosts || IsShowingTopRecords) && _bulkLevelCacheKey == level.CacheKey)
+            LoadBulkGhosts();
         else
             LoadGhosts();
     }
@@ -110,7 +112,7 @@ public class OfflineGhostsService : IEagerService
             return;
 
         CancelLoad();
-        SetBulkMode(false);
+        SetBulkMode(false, false);
         _loadedLevelCacheKey = null;
         _bulkLevelCacheKey = null;
         _bulkGhostIds.Clear();
@@ -172,8 +174,8 @@ public class OfflineGhostsService : IEagerService
             return;
 
         _bulkLevelCacheKey = level.CacheKey;
-        SetBulkMode(true);
-        LoadAllGhosts();
+        SetBulkMode(true, false);
+        LoadBulkGhosts();
     }
 
     public void ClearAllGhosts()
@@ -181,38 +183,74 @@ public class OfflineGhostsService : IEagerService
         CancelLoad();
         _bulkGhostIds.Clear();
         _bulkLevelCacheKey = null;
-        SetBulkMode(false);
+        SetBulkMode(false, IsShowingTopRecords);
         _ghostPlayer.ClearGhosts();
 
         if (_configService.EnableGhosts.Value && CurrentLevelGraphqlIdentity.Create().IsAvailable)
+            LoadCurrentMode();
+    }
+
+    public void ShowTopRecords()
+    {
+        if (IsShowingTopRecords)
+            return;
+
+        LevelGraphqlIdentity level = PrepareLevel();
+        if (!level.IsAvailable)
+            return;
+
+        _bulkLevelCacheKey = level.CacheKey;
+        SetBulkMode(false, true);
+        LoadBulkGhosts();
+    }
+
+    public void ClearTopRecords()
+    {
+        CancelLoad();
+        _bulkGhostIds.Clear();
+        _bulkLevelCacheKey = null;
+        SetBulkMode(IsShowingAllGhosts, false);
+        _ghostPlayer.ClearGhosts();
+
+        if (_configService.EnableGhosts.Value && CurrentLevelGraphqlIdentity.Create().IsAvailable)
+            LoadCurrentMode();
+    }
+
+    private void LoadCurrentMode()
+    {
+        if (IsShowingAllGhosts || IsShowingTopRecords)
+            LoadBulkGhosts();
+        else
             LoadGhosts();
     }
 
-    private void LoadAllGhosts()
+    private void LoadBulkGhosts()
     {
         (CancellationToken token, int generation) = BeginLoad();
-        LoadAllGhostsAsync(token, generation).Forget();
+        LoadBulkGhostsAsync(token, generation).Forget();
     }
 
-    private async UniTaskVoid LoadAllGhostsAsync(CancellationToken ct, int generation)
+    private async UniTaskVoid LoadBulkGhostsAsync(CancellationToken ct, int generation)
     {
         LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
         if (!level.IsAvailable)
             return;
 
-        int? first = OfflineGhostLimit.ToGraphQlFirst(_configService.MaximumVisibleOfflineGhosts.Value);
+        int? first = IsShowingTopRecords
+            ? _configService.MaximumVisibleTopRecordGhosts.Value
+            : OfflineGhostLimit.ToGraphQlFirst(_configService.MaximumVisibleOfflineGhosts.Value);
         (
             Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> pbResult,
             Result<IReadOnlyList<IGetAdditionalGhosts_PersonalBestGlobals_Nodes>> additionalResult,
-            Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>> allResult
+            Result<IReadOnlyList<IGhostRecordFrag>> bulkResult
         ) = await UniTask.WhenAll(
             LoadPersonalBestsAsync(level, ct),
             LoadAdditionalGhostsAsync(level, ct),
-            _graphqlService.GetAllPersonalBestGhosts(level, first, ct));
+            LoadBulkRecordsAsync(level, first, ct));
 
         if (ct.IsCancellationRequested ||
             !GhostLoadBudget.IsCurrentGeneration(generation, Volatile.Read(ref _loadGeneration)) ||
-            !IsShowingAllGhosts)
+            !(IsShowingAllGhosts || IsShowingTopRecords))
         {
             return;
         }
@@ -228,14 +266,14 @@ public class OfflineGhostsService : IEagerService
         else
             _logger.LogWarning("Loading AdditionalGhosts failed: {Result}", additionalResult);
 
-        IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes> bulkGhosts = [];
-        if (allResult.IsSuccess)
-            bulkGhosts = allResult.Value;
+        IReadOnlyList<IGhostRecordFrag> bulkGhosts = [];
+        if (bulkResult.IsSuccess)
+            bulkGhosts = bulkResult.Value;
         else
-            _logger.LogWarning("Loading all Personal Bests failed: {Result}", allResult);
+            _logger.LogWarning("Loading bulk ghost records failed: {Result}", bulkResult);
 
         _bulkGhostIds.Clear();
-        foreach (IGetAllPersonalBestGhosts_Records_Nodes record in bulkGhosts)
+        foreach (IGhostRecordFrag record in bulkGhosts)
             _bulkGhostIds.Add(record.Id);
 
         List<IGhostRecordFrag> distinctProtected = protectedGhosts
@@ -247,7 +285,7 @@ public class OfflineGhostsService : IEagerService
         var distinctBulk = bulkGhosts
             .Where(record => !protectedIds.Contains(record.Id))
             .GroupBy(record => record.Id)
-            .Select(group => (IGhostRecordFrag)group.First())
+            .Select(group => group.First())
             .ToList();
 
         var desiredIds = protectedIds.ToHashSet();
@@ -257,6 +295,30 @@ public class OfflineGhostsService : IEagerService
         await LoadRecords(distinctProtected, GhostVisualProfile.Full, ct, generation);
         await LoadRecords(distinctBulk, GhostVisualProfile.Bulk, ct, generation);
         EnqueueReconciliation(desiredIds, generation);
+    }
+
+    private async UniTask<Result<IReadOnlyList<IGhostRecordFrag>>> LoadBulkRecordsAsync(
+        LevelGraphqlIdentity level,
+        int? first,
+        CancellationToken ct)
+    {
+        if (IsShowingTopRecords)
+        {
+            Result<IReadOnlyList<IGetTopRecordGhosts_Records_Nodes>> result =
+                await _graphqlService.GetTopRecordGhosts(
+                    level,
+                    first.GetValueOrDefault(_configService.MaximumVisibleTopRecordGhosts.Value),
+                    ct);
+            return result.IsSuccess
+                ? Result.Ok<IReadOnlyList<IGhostRecordFrag>>(result.Value.Select(record => (IGhostRecordFrag)record).ToList())
+                : Result.Fail<IReadOnlyList<IGhostRecordFrag>>(result.Errors);
+        }
+
+        Result<IReadOnlyList<IGetAllPersonalBestGhosts_Records_Nodes>> pbResult =
+            await _graphqlService.GetAllPersonalBestGhosts(level, first, ct);
+        return pbResult.IsSuccess
+            ? Result.Ok<IReadOnlyList<IGhostRecordFrag>>(pbResult.Value.Select(record => (IGhostRecordFrag)record).ToList())
+            : Result.Fail<IReadOnlyList<IGhostRecordFrag>>(pbResult.Errors);
     }
 
     private async UniTask<Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>>>
@@ -305,22 +367,17 @@ public class OfflineGhostsService : IEagerService
 
     public void AddAdditionalGhost(string steamId)
     {
-        if (IsShowingAllGhosts)
-            return;
-
-        _additionalGhosts.Add(steamId);
-        LoadGhosts();
+        if (!_additionalGhosts.Contains(steamId))
+            _additionalGhosts.Add(steamId);
+        LoadCurrentMode();
     }
 
     public bool ContainsAdditionalGhost(string steamId) => _additionalGhosts.Contains(steamId);
 
     public void RemoveAdditionalGhost(string steamId)
     {
-        if (IsShowingAllGhosts)
-            return;
-
         _additionalGhosts.Remove(steamId);
-        LoadGhosts();
+        LoadCurrentMode();
     }
 
     private async UniTask LoadRecords(
@@ -389,14 +446,18 @@ public class OfflineGhostsService : IEagerService
             visualProfile));
     }
 
-    private void SetBulkMode(bool enabled)
+    private void SetBulkMode(bool showAllGhosts, bool showTopRecords)
     {
-        if (IsShowingAllGhosts == enabled)
+        bool wasActive = IsShowingAllGhosts || IsShowingTopRecords;
+        bool isActive = showAllGhosts || showTopRecords;
+        if (IsShowingAllGhosts == showAllGhosts && IsShowingTopRecords == showTopRecords)
             return;
 
-        IsShowingAllGhosts = enabled;
-        _bulkModeState.SetActive(enabled);
-        BulkModeChanged?.Invoke();
+        IsShowingAllGhosts = showAllGhosts;
+        IsShowingTopRecords = showTopRecords;
+        _bulkModeState.SetActive(isActive);
+        if (wasActive != isActive || showAllGhosts || showTopRecords)
+            BulkModeChanged?.Invoke();
     }
 
     private (CancellationToken Token, int Generation) BeginLoad()

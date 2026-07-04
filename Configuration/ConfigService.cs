@@ -1,4 +1,4 @@
-﻿using BepInEx.Configuration;
+using BepInEx.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using UnityEngine;
 
@@ -28,6 +28,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowGlobalPersonalBest { get; private set; }
     public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
+    public ConfigEntry<int> MaximumVisibleTopRecordGhosts { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -169,12 +170,20 @@ public class ConfigService : IEagerService
             "Toggles if the global personal best should be shown");
 
         MaximumVisibleOfflineGhosts = config.Bind(
-            "2.3 - Ghosts - Offline",
-            "1. Number of ghosts rendered when showing all ghosts (-1 means Show All)",
+            "2.3 - Ghosts - Number of Ghosts Shown in Freeplay",
+            "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
-                "Maximum number of fastest PB ghosts loaded by Show All",
+                "(-1 means Show All) Maximum number of fastest PB ghosts loaded",
                 new AcceptableValueRange<int>(-1, int.MaxValue)));
+
+        MaximumVisibleTopRecordGhosts = config.Bind(
+            "2.3 - Ghosts - Number of Ghosts Shown in Freeplay",
+            "2. Top Record Ghosts",
+            500,
+            new ConfigDescription(
+                "Maximum number of fastest top record ghosts loaded",
+                new AcceptableValueRange<int>(1, int.MaxValue)));
     }
 
     private void ConfigRecordHolder(ConfigFile config)
