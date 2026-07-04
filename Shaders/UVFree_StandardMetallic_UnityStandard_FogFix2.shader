@@ -15,6 +15,13 @@ Shader "GTR_UVFree/StandardMetallic/UnityStandard_FogFix2" {
 
 		Pass {
 			Tags { "LightMode"="ForwardBase" }
+			ZWrite On
+			ZTest LEqual
+			Blend One Zero
+			BlendOp Add
+			Cull Off
+			ColorMask RGBA
+
 			CGPROGRAM
 			#pragma target 4.5
 			#pragma vertex vert
