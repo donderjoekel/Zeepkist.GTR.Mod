@@ -63,6 +63,9 @@
         <None Update="discord_game_sdk.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Include="Shaders\gtr-shaders" Condition="Exists('Shaders\gtr-shaders')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <Target Name="PDB">
@@ -85,6 +88,7 @@
             <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
             <OutputFiles Include="$(TargetDir)Strawberry*.dll"/>
             <OutputFiles Include="$(TargetDir)HotChocolate*.dll"/>
+            <OutputFiles Include="$(TargetDir)gtr-shaders"/>
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>

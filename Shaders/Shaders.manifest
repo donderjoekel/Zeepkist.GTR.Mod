@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 2255347946
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: gtr-shaders
+      Dependencies: {}

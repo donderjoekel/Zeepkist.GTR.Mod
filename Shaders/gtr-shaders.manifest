@@ -1,0 +1,19 @@
+ManifestFileVersion: 0
+CRC: 3408851603
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 886e0282ab8bad6314a8a50382abe920
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 87b0bba9d18ffc75f60c50b410bd4a4e
+HashAppended: 0
+ClassTypes:
+- Class: 48
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/Shaders/UVFree_StandardMetallic_Single-Texture.shader
+- Assets/Shaders/UVFree_StandardMetallic_UnityStandard_FogFix2.shader
+- Assets/Shaders/UVFree_StandardSpecular_Single-Texture.shader
+Dependencies: []

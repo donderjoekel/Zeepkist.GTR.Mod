@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
@@ -16,6 +17,7 @@ public sealed class BulkGhostRenderService : IEagerService
 {
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
+    private readonly AssetService _assetService;
     private readonly HashSet<Transform> _instances = new();
     private readonly Dictionary<GhostCharacterPlaybackPose, Dictionary<int, HashSet<Transform>>> _characterInstances = new()
     {
@@ -27,14 +29,21 @@ public sealed class BulkGhostRenderService : IEagerService
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
-    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int ColorTintId = Shader.PropertyToID("_ColorTint");
     private static readonly int ModeId = Shader.PropertyToID("_Mode");
     private static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
     private static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int MatricesId = Shader.PropertyToID("_Matrices");
     private const float BulkGhostAlpha = 1.0f;
+    private static readonly Color CharacterBaseColor = Color.white with { a = BulkGhostAlpha };
+    private static readonly Color CharacterDetailColor = Color.black with { a = BulkGhostAlpha };
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
+    private readonly MaterialPropertyBlock _propertyBlock = new();
+    private readonly List<ComputeBuffer> _matrixBuffers = new();
+    private int _matrixBufferIndex;
 
     private readonly List<RenderPart> _renderParts = new();
     private readonly Dictionary<GhostCharacterPlaybackPose, List<RenderPart>> _characterRenderParts = new()
@@ -47,14 +56,19 @@ public sealed class BulkGhostRenderService : IEagerService
 
     private bool _initializationAttempted;
     private bool _initialized;
+    private bool _badDrawShaderLogged;
+    private bool _bulkShaderFromBundle;
+    private Shader _bulkShader;
 
     public BulkGhostRenderService(
         ILogger<BulkGhostRenderService> logger,
         ConfigService configService,
+        AssetService assetService,
         PlayerLoopService playerLoopService)
     {
         _logger = logger;
         _configService = configService;
+        _assetService = assetService;
         playerLoopService.SubscribeLateUpdate(Draw);
     }
 
@@ -132,6 +146,7 @@ public sealed class BulkGhostRenderService : IEagerService
             return;
         }
 
+        _matrixBufferIndex = 0;
         DrawInstances(_instances, _renderParts);
         foreach (KeyValuePair<GhostCharacterPlaybackPose, Dictionary<int, HashSet<Transform>>> characterInstances in _characterInstances)
         {
@@ -174,19 +189,69 @@ public sealed class BulkGhostRenderService : IEagerService
 
     private void DrawPart(RenderPart part, int count, int? tintBucket = null)
     {
-        Graphics.DrawMeshInstanced(
+        Material material = GetMaterial(part, tintBucket);
+        if (material == null || IsIncompatibleDrawShader(material.shader))
+        {
+            if (!_badDrawShaderLogged)
+            {
+                _badDrawShaderLogged = true;
+                _logger.LogError(
+                    "Skipping bulk ghost draw because material {Material} uses incompatible shader {Shader}. Check that gtr-shaders is beside the mod DLL and loaded.",
+                    material != null ? material.name : "null",
+                    material?.shader != null ? material.shader.name : "null");
+            }
+
+            return;
+        }
+
+        ComputeBuffer matrixBuffer = GetMatrixBuffer();
+        matrixBuffer.SetData(_matrices, 0, 0, count);
+
+        _propertyBlock.Clear();
+        _propertyBlock.SetBuffer(MatricesId, matrixBuffer);
+        _propertyBlock.SetColor(
+            ColorId,
+            material.HasProperty(ColorId) ? material.GetColor(ColorId) : Color.white);
+
+        Graphics.DrawMeshInstancedProcedural(
             part.Mesh,
             0,
-            GetMaterial(part, tintBucket),
-            _matrices,
+            material,
+            CalculateProceduralBounds(part.Mesh.bounds, count),
             count,
-            null,
+            _propertyBlock,
             ShadowCastingMode.Off,
             false,
             0,
             null,
             LightProbeUsage.Off,
             null);
+    }
+
+    private ComputeBuffer GetMatrixBuffer()
+    {
+        if (_matrixBufferIndex == _matrixBuffers.Count)
+            _matrixBuffers.Add(new ComputeBuffer(BulkGhostBatching.MaximumInstancesPerBatch, sizeof(float) * 16));
+
+        return _matrixBuffers[_matrixBufferIndex++];
+    }
+
+    private Bounds CalculateProceduralBounds(Bounds meshBounds, int count)
+    {
+        Vector3 min = _matrices[0].GetColumn(3);
+        Vector3 max = min;
+        for (int i = 1; i < count; i++)
+        {
+            Vector3 position = _matrices[i].GetColumn(3);
+            min = Vector3.Min(min, position);
+            max = Vector3.Max(max, position);
+        }
+
+        float meshRadius = meshBounds.extents.magnitude;
+        var bounds = new Bounds(
+            (min + max) * 0.5f,
+            (max - min) + Vector3.one * Math.Max(100f, meshRadius * 4f));
+        return bounds;
     }
 
     private Material GetMaterial(RenderPart part, int? tintBucket)
@@ -242,17 +307,18 @@ public sealed class BulkGhostRenderService : IEagerService
             Matrix4x4 rootInverse = templateRoot.transform.worldToLocalMatrix;
             RagdollRotationOffset = GhostCharacterRig.GetRagdollRotationOffset(model);
 
-            var soapboxMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
-            var characterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
-            var armsUpCharacterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
-            var ragdollCharacterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
+            var soapboxMeshes = new SoapboxMeshGroups();
+            var characterMeshes = new CharacterMeshGroups();
+            var armsUpCharacterMeshes = new CharacterMeshGroups();
+            var ragdollCharacterMeshes = new CharacterMeshGroups();
 
             AddModelRenderersByMaterial(
                 model,
                 rootInverse,
-                soapboxMaterialGroups,
-                characterMaterialGroups,
-                bakedMeshes);
+                soapboxMeshes,
+                characterMeshes,
+                bakedMeshes,
+                GetTintBucketCount());
 
             SetupModelCar armsUpModel = Object.Instantiate(
                 ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostModel,
@@ -262,7 +328,7 @@ public sealed class BulkGhostRenderService : IEagerService
             AddCharacterRenderersByMaterial(
                 armsUpModel,
                 rootInverse,
-                armsUpCharacterMaterialGroups,
+                armsUpCharacterMeshes,
                 bakedMeshes);
 
             SetupModelCar ragdollModel = Object.Instantiate(
@@ -273,25 +339,31 @@ public sealed class BulkGhostRenderService : IEagerService
             AddCharacterRenderersByMaterial(
                 ragdollModel,
                 rootInverse,
-                ragdollCharacterMaterialGroups,
+                ragdollCharacterMeshes,
                 bakedMeshes);
 
-            if (soapboxMaterialGroups.Count == 0)
+            if (soapboxMeshes.Count == 0)
                 throw new InvalidOperationException("Bulk ghost template contains no active meshes.");
 
-            AddRenderParts(_renderParts, soapboxMaterialGroups, "GTR Instanced Bulk Ghost");
-            if (characterMaterialGroups.Count > 0)
-                AddRenderParts(_characterRenderParts[GhostCharacterPlaybackPose.Seated], characterMaterialGroups, "GTR Instanced Bulk Character");
-            if (armsUpCharacterMaterialGroups.Count > 0)
-                AddRenderParts(
-                    _characterRenderParts[GhostCharacterPlaybackPose.SeatedArmsUp],
-                    armsUpCharacterMaterialGroups,
-                    "GTR Instanced Bulk Arms Up Character");
-            if (ragdollCharacterMaterialGroups.Count > 0)
-                AddRenderParts(
-                    _characterRenderParts[GhostCharacterPlaybackPose.Ragdoll],
-                    ragdollCharacterMaterialGroups,
-                    "GTR Instanced Bulk Ragdoll Character");
+            _bulkShader = ResolveBulkShader();
+            if (_bulkShader == null)
+                throw new InvalidOperationException("No compatible shader found for instanced bulk ghost rendering.");
+
+            AddSoapboxRenderParts(_renderParts, soapboxMeshes, "GTR Instanced Bulk Ghost");
+            AddCharacterRenderParts(
+                _characterRenderParts[GhostCharacterPlaybackPose.Seated],
+                characterMeshes,
+                "GTR Instanced Bulk Character");
+            AddCharacterRenderParts(
+                _characterRenderParts[GhostCharacterPlaybackPose.SeatedArmsUp],
+                armsUpCharacterMeshes,
+                "GTR Instanced Bulk Arms Up Character");
+            AddCharacterRenderParts(
+                _characterRenderParts[GhostCharacterPlaybackPose.Ragdoll],
+                ragdollCharacterMeshes,
+                "GTR Instanced Bulk Ragdoll Character");
+
+            LogRenderPartCounts();
         }
         finally
         {
@@ -326,9 +398,10 @@ public sealed class BulkGhostRenderService : IEagerService
     private static void AddModelRenderersByMaterial(
         SetupModelCar model,
         Matrix4x4 rootInverse,
-        IDictionary<Material, List<CombineInstance>> soapboxMaterialGroups,
-        IDictionary<Material, List<CombineInstance>> characterMaterialGroups,
-        ICollection<Mesh> bakedMeshes)
+        SoapboxMeshGroups soapboxMeshes,
+        CharacterMeshGroups characterMeshes,
+        ICollection<Mesh> bakedMeshes,
+        int colorBucketCount)
     {
         foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
         {
@@ -339,9 +412,14 @@ public sealed class BulkGhostRenderService : IEagerService
                 continue;
 
             if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
-                AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+                AddMeshFilterToCharacterGroups(characterMeshes, filter, rootInverse, renderer.sharedMaterials, renderer.name);
             else
-                AddMeshFilterByMaterial(soapboxMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+                AddMeshFilterToSoapboxGroups(
+                    soapboxMeshes,
+                    filter,
+                    rootInverse,
+                    renderer.sharedMaterials,
+                    colorBucketCount);
         }
 
         foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
@@ -352,7 +430,7 @@ public sealed class BulkGhostRenderService : IEagerService
             if (GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
             {
                 AddCorrectedSkinnedRendererByMaterial(
-                    characterMaterialGroups,
+                    characterMeshes,
                     renderer,
                     rootInverse,
                     bakedMeshes,
@@ -361,11 +439,12 @@ public sealed class BulkGhostRenderService : IEagerService
             else
             {
                 AddCorrectedSkinnedRendererByMaterial(
-                    soapboxMaterialGroups,
+                    soapboxMeshes,
                     renderer,
                     rootInverse,
                     bakedMeshes,
-                    true);
+                    true,
+                    colorBucketCount);
             }
         }
     }
@@ -373,7 +452,7 @@ public sealed class BulkGhostRenderService : IEagerService
     private static void AddCharacterRenderersByMaterial(
         SetupModelCar model,
         Matrix4x4 rootInverse,
-        IDictionary<Material, List<CombineInstance>> characterMaterialGroups,
+        CharacterMeshGroups characterMeshes,
         ICollection<Mesh> bakedMeshes)
     {
         foreach (MeshFilter filter in model.GetComponentsInChildren<MeshFilter>(false))
@@ -386,7 +465,7 @@ public sealed class BulkGhostRenderService : IEagerService
             if (!GhostCharacterRenderers.IsCharacterRenderer(renderer, model))
                 continue;
 
-            AddMeshFilterByMaterial(characterMaterialGroups, filter, rootInverse, renderer.sharedMaterials);
+            AddMeshFilterToCharacterGroups(characterMeshes, filter, rootInverse, renderer.sharedMaterials, renderer.name);
         }
 
         foreach (SkinnedMeshRenderer renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(false))
@@ -397,7 +476,7 @@ public sealed class BulkGhostRenderService : IEagerService
                 continue;
 
             AddCorrectedSkinnedRendererByMaterial(
-                characterMaterialGroups,
+                characterMeshes,
                 renderer,
                 rootInverse,
                 bakedMeshes,
@@ -405,25 +484,86 @@ public sealed class BulkGhostRenderService : IEagerService
         }
     }
 
-    private static void AddMeshFilterByMaterial(
-        IDictionary<Material, List<CombineInstance>> destination,
+    private static void AddMeshFilterToGroup(
+        ICollection<CombineInstance> destination,
+        MeshFilter filter,
+        Matrix4x4 rootInverse)
+    {
+        AddSubMeshesToGroup(destination, filter.sharedMesh, rootInverse * filter.transform.localToWorldMatrix);
+    }
+
+    private static void AddMeshFilterToSoapboxGroups(
+        SoapboxMeshGroups destination,
         MeshFilter filter,
         Matrix4x4 rootInverse,
-        IReadOnlyList<Material> materials)
+        IReadOnlyList<Material> materials,
+        int colorBucketCount)
     {
-        AddSubMeshesByMaterial(
+        AddSubMeshesToSoapboxGroups(
             destination,
             filter.sharedMesh,
             rootInverse * filter.transform.localToWorldMatrix,
-            materials);
+            materials,
+            colorBucketCount);
+    }
+
+    private static void AddMeshFilterToCharacterGroups(
+        CharacterMeshGroups destination,
+        MeshFilter filter,
+        Matrix4x4 rootInverse,
+        IReadOnlyList<Material> materials,
+        string rendererName)
+    {
+        AddSubMeshesToCharacterGroups(
+            destination,
+            filter.sharedMesh,
+            rootInverse * filter.transform.localToWorldMatrix,
+            materials,
+            rendererName);
     }
 
     private static void AddCorrectedSkinnedRendererByMaterial(
-        IDictionary<Material, List<CombineInstance>> destination,
+        SoapboxMeshGroups destination,
+        SkinnedMeshRenderer renderer,
+        Matrix4x4 rootInverse,
+        ICollection<Mesh> bakedMeshes,
+        bool applyScaleCorrection,
+        int colorBucketCount)
+    {
+        AddCorrectedSkinnedRenderer(
+            renderer,
+            rootInverse,
+            bakedMeshes,
+            applyScaleCorrection,
+            (mesh, transform) => AddSubMeshesToSoapboxGroups(
+                destination,
+                mesh,
+                transform,
+                renderer.sharedMaterials,
+                colorBucketCount));
+    }
+
+    private static void AddCorrectedSkinnedRendererByMaterial(
+        CharacterMeshGroups destination,
         SkinnedMeshRenderer renderer,
         Matrix4x4 rootInverse,
         ICollection<Mesh> bakedMeshes,
         bool applyScaleCorrection)
+    {
+        AddCorrectedSkinnedRenderer(
+            renderer,
+            rootInverse,
+            bakedMeshes,
+            applyScaleCorrection,
+            (mesh, transform) => AddSubMeshesToCharacterGroups(destination, mesh, transform, renderer.sharedMaterials, renderer.name));
+    }
+
+    private static void AddCorrectedSkinnedRenderer(
+        SkinnedMeshRenderer renderer,
+        Matrix4x4 rootInverse,
+        ICollection<Mesh> bakedMeshes,
+        bool applyScaleCorrection,
+        Action<Mesh, Matrix4x4> addSubMeshes)
     {
         if (renderer == null || !renderer.enabled || renderer.sharedMesh == null)
             return;
@@ -450,82 +590,177 @@ public sealed class BulkGhostRenderService : IEagerService
             transform *= Matrix4x4.Scale(Vector3.one * correction);
         }
 
-        AddSubMeshesByMaterial(
-            destination,
-            bakedMesh,
-            transform,
-            renderer.sharedMaterials);
+        addSubMeshes(bakedMesh, transform);
     }
 
-    private static void AddRenderParts(
+    private void AddCharacterRenderParts(
         ICollection<RenderPart> destination,
-        IReadOnlyDictionary<Material, List<CombineInstance>> materialGroups,
+        CharacterMeshGroups meshGroups,
+        string name)
+    {
+        AddRenderPart(destination, meshGroups.Tintable, $"{name} Body", CharacterBaseColor, true);
+        AddRenderPart(destination, meshGroups.Details, $"{name} Details", CharacterDetailColor, false);
+    }
+
+    private void AddSoapboxRenderParts(
+        ICollection<RenderPart> destination,
+        SoapboxMeshGroups meshGroups,
         string name)
     {
         int partIndex = 0;
-        foreach (KeyValuePair<Material, List<CombineInstance>> materialGroup in materialGroups)
+        foreach (KeyValuePair<SoapboxMaterialKey, SoapboxMeshGroup> group in meshGroups.Groups)
         {
-            var mesh = new Mesh
-            {
-                name = $"{name} {partIndex++}",
-                indexFormat = IndexFormat.UInt32
-            };
-            mesh.CombineMeshes(materialGroup.Value.ToArray(), true, true, false);
-            mesh.RecalculateBounds();
-
-            destination.Add(new RenderPart(
-                mesh,
-                CreateInstancedBulkMaterial(materialGroup.Key),
-                IsTintableCharacterMaterial(materialGroup.Key)));
+            AddRenderPart(
+                destination,
+                group.Value.Instances,
+                $"{name} {partIndex++}",
+                group.Value.Color,
+                false,
+                group.Value.Texture);
         }
     }
 
+    private void AddRenderPart(
+        ICollection<RenderPart> destination,
+        IReadOnlyList<CombineInstance> instances,
+        string name,
+        Color color,
+        bool tintable)
+    {
+        AddRenderPart(destination, instances, name, color, tintable, null);
+    }
 
-    private static bool IsTintableCharacterMaterial(Material material)
+    private void AddRenderPart(
+        ICollection<RenderPart> destination,
+        IReadOnlyList<CombineInstance> instances,
+        string name,
+        Color color,
+        bool tintable,
+        Texture texture)
+    {
+        if (instances.Count == 0)
+            return;
+
+        var mesh = new Mesh
+        {
+            name = name,
+            indexFormat = IndexFormat.UInt32
+        };
+        var combineInstances = new CombineInstance[instances.Count];
+        for (int i = 0; i < instances.Count; i++)
+            combineInstances[i] = instances[i];
+
+        mesh.CombineMeshes(combineInstances, true, true, false);
+        mesh.RecalculateBounds();
+
+        destination.Add(new RenderPart(
+            mesh,
+            CreateInstancedBulkMaterial(color, name, texture),
+            tintable));
+    }
+
+    private static bool IsTintableCharacterMaterial(Material material, string rendererName)
     {
         if (material == null)
             return false;
 
-        string name = material.name.ToLowerInvariant();
-        if (name.Contains("face") ||
-            name.Contains("smile") ||
-            name.Contains("mouth") ||
-            name.Contains("eye") ||
-            name.Contains("heart"))
+        if (IsCharacterDetailName(material.name) || IsCharacterDetailName(rendererName))
         {
             return false;
         }
 
-        Color color = GetMaterialColor(material);
-        return color.maxColorComponent > 0.08f;
+        return true;
     }
 
-    private static Color GetMaterialColor(Material material)
+    private static bool IsCharacterDetailName(string name)
     {
-        if (material.HasProperty(ColorId))
-            return material.GetColor(ColorId);
-        if (material.HasProperty(BaseColorId))
-            return material.GetColor(BaseColorId);
-        if (material.HasProperty(TintColorId))
-            return material.GetColor(TintColorId);
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
 
-        return Color.white;
+        string lowerName = name.ToLowerInvariant();
+        return lowerName.Contains("face") ||
+               lowerName.Contains("smile") ||
+               lowerName.Contains("mouth") ||
+               lowerName.Contains("eye") ||
+               lowerName.Contains("heart");
     }
-    private static Material CreateInstancedBulkMaterial(Material source)
+
+    private Material CreateInstancedBulkMaterial(Color color, string name, Texture texture = null)
     {
-        var material = new Material(source)
+        var material = new Material(_bulkShader)
         {
             enableInstancing = true,
-            name = $"GTR Instanced {source.name}"
+            name = name
         };
 
         ConfigureInstancedMaterial(material);
+        if (texture != null && material.HasProperty(MainTexId))
+            material.SetTexture(MainTexId, texture);
+
+        SetMaterialColor(material, color);
         return material;
     }
+
+    private Shader ResolveBulkShader()
+    {
+        Material ghostMaterial = ComponentCache.Get<NetworkedGhostSpawner>().zeepkistGhostPrefab.ghostFader.fadeThisMaterial;
+        Shader shader = ghostMaterial != null ? ghostMaterial.shader : null;
+        if (shader != null)
+        {
+            Shader bundledShader = _assetService.GetShader(shader.name);
+            if (bundledShader != null)
+            {
+                _bulkShaderFromBundle = true;
+                _logger.LogInformation(
+                    "Using bundled bulk ghost shader {Shader} instead of runtime shader {RuntimeShader}",
+                    bundledShader.name,
+                    shader.name);
+                return bundledShader;
+            }
+        }
+
+        if (shader != null && !IsBadBulkShader(shader))
+        {
+            _bulkShaderFromBundle = false;
+            _logger.LogDebug("Using bulk ghost fader shader: {Shader}", shader.name);
+            return shader;
+        }
+
+        _logger.LogWarning(
+            "No compatible bulk ghost shader found. Fader shader was {Shader}. Bulk instancing disabled to avoid DrawMeshInstanced shader spam.",
+            shader != null ? shader.name : "null");
+        return null;
+    }
+
+    private static bool IsBadBulkShader(Shader shader)
+    {
+        if (shader == null)
+            return true;
+
+        string shaderName = shader.name;
+        return shaderName == "Standard" ||
+               shaderName == "Hidden/InternalErrorShader" ||
+               shaderName == "Unlit/Color" ||
+               shaderName == "Unlit/Texture" ||
+               shaderName == "Sprites/Default" ||
+               shaderName.StartsWith("UVFree/", StringComparison.Ordinal);
+    }
+
+    private bool IsIncompatibleDrawShader(Shader shader)
+    {
+        if (shader == null)
+            return true;
+
+        if (_bulkShaderFromBundle && ReferenceEquals(shader, _bulkShader))
+            return false;
+
+        return IsBadBulkShader(shader);
+    }
+
     private static void ConfigureInstancedMaterial(Material material)
     {
         if (material.HasProperty(ModeId))
-            material.SetFloat(ModeId, 3f);
+            material.SetFloat(ModeId, 0f);
         if (material.HasProperty(SrcBlendId))
             material.SetInt(SrcBlendId, (int)BlendMode.One);
         if (material.HasProperty(DstBlendId))
@@ -534,18 +769,20 @@ public sealed class BulkGhostRenderService : IEagerService
             material.SetInt(ZWriteId, 1);
 
         SetMaterialAlpha(material, BulkGhostAlpha);
+        if (material.HasProperty(MainTexId))
+            material.SetTexture(MainTexId, Texture2D.whiteTexture);
+
         material.DisableKeyword("_ALPHATEST_ON");
         material.DisableKeyword("_ALPHABLEND_ON");
         material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.SetOverrideTag("RenderType", "Opaque");
+        material.SetOverrideTag("Queue", "Geometry");
         material.renderQueue = (int)RenderQueue.Geometry;
     }
-
 
     private static void SetMaterialColor(Material material, Color color)
     {
         SetMaterialColor(material, ColorId, color);
-        SetMaterialColor(material, BaseColorId, color);
-        SetMaterialColor(material, TintColorId, color);
     }
 
     private static void SetMaterialColor(Material material, int propertyId, Color color)
@@ -563,8 +800,6 @@ public sealed class BulkGhostRenderService : IEagerService
     private static void SetMaterialAlpha(Material material, float alpha)
     {
         SetMaterialAlpha(material, ColorId, alpha);
-        SetMaterialAlpha(material, BaseColorId, alpha);
-        SetMaterialAlpha(material, TintColorId, alpha);
     }
 
     private static void SetMaterialAlpha(Material material, int propertyId, float alpha)
@@ -576,36 +811,55 @@ public sealed class BulkGhostRenderService : IEagerService
         color.a = alpha;
         material.SetColor(propertyId, color);
     }
-
-    private static void CopyColor(Material source, Material destination, int propertyId)
+    private static void AddSubMeshesToGroup(
+        ICollection<CombineInstance> destination,
+        Mesh mesh,
+        Matrix4x4 transform)
     {
-        if (source == null || destination == null)
-            return;
-        if (!source.HasProperty(propertyId) || !destination.HasProperty(propertyId))
-            return;
-
-        Color sourceColor = source.GetColor(propertyId);
-        Color destinationColor = destination.GetColor(propertyId);
-        destinationColor.r = sourceColor.r;
-        destinationColor.g = sourceColor.g;
-        destinationColor.b = sourceColor.b;
-        destination.SetColor(propertyId, destinationColor);
+        for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+        {
+            destination.Add(new CombineInstance
+            {
+                mesh = mesh,
+                subMeshIndex = subMesh,
+                transform = transform
+            });
+        }
     }
 
-    private static void CopyTexture(Material source, Material destination, int propertyId)
-    {
-        if (source == null || destination == null)
-            return;
-        if (!source.HasProperty(propertyId) || !destination.HasProperty(propertyId))
-            return;
-
-        destination.SetTexture(propertyId, source.GetTexture(propertyId));
-    }
-    private static void AddSubMeshesByMaterial(
-        IDictionary<Material, List<CombineInstance>> destination,
+    private static void AddSubMeshesToSoapboxGroups(
+        SoapboxMeshGroups destination,
         Mesh mesh,
         Matrix4x4 transform,
-        IReadOnlyList<Material> materials)
+        IReadOnlyList<Material> materials,
+        int colorBucketCount)
+    {
+        for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+        {
+            Material material = materials.Count > 0
+                ? materials[Math.Min(subMesh, materials.Count - 1)]
+                : null;
+            int bucket = GetSoapboxColorBucket(material, colorBucketCount);
+            Texture texture = GetSoapboxMaterialTexture(material);
+            destination.Add(
+                new SoapboxMaterialKey(texture, bucket),
+                GetSoapboxMaterialColor(material),
+                texture,
+                new CombineInstance
+                {
+                    mesh = mesh,
+                    subMeshIndex = subMesh,
+                    transform = transform
+                });
+        }
+    }
+
+    private static void AddSubMeshesToCharacterGroups(
+        CharacterMeshGroups destination,
+        Mesh mesh,
+        Matrix4x4 transform,
+        IReadOnlyList<Material> materials,
+        string rendererName)
     {
         for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
         {
@@ -616,19 +870,133 @@ public sealed class BulkGhostRenderService : IEagerService
             if (material == null)
                 continue;
 
-            if (!destination.TryGetValue(material, out List<CombineInstance> instances))
-            {
-                instances = new List<CombineInstance>();
-                destination.Add(material, instances);
-            }
-
-            instances.Add(new CombineInstance
+            ICollection<CombineInstance> group = IsTintableCharacterMaterial(material, rendererName)
+                ? destination.Tintable
+                : destination.Details;
+            group.Add(new CombineInstance
             {
                 mesh = mesh,
                 subMeshIndex = subMesh,
                 transform = transform
             });
         }
+    }
+
+    private static int GetSoapboxColorBucket(Material material, int colorBucketCount)
+    {
+        colorBucketCount = Math.Max(1, colorBucketCount);
+        Color color = GetSoapboxMaterialColor(material);
+        int r = Mathf.Clamp(Mathf.RoundToInt(color.r * 3f), 0, 3);
+        int g = Mathf.Clamp(Mathf.RoundToInt(color.g * 3f), 0, 3);
+        int b = Mathf.Clamp(Mathf.RoundToInt(color.b * 3f), 0, 3);
+        return ((r * 4 + g) * 4 + b) % colorBucketCount;
+    }
+
+    private static Color GetSoapboxMaterialColor(Material material)
+    {
+        if (material == null)
+            return Color.white with { a = BulkGhostAlpha };
+
+        if (material.HasProperty(ColorId))
+            return NormalizeBulkColor(material.GetColor(ColorId));
+        if (material.HasProperty(BaseColorId))
+            return NormalizeBulkColor(material.GetColor(BaseColorId));
+        if (material.HasProperty(TintColorId))
+            return NormalizeBulkColor(material.GetColor(TintColorId));
+        if (material.HasProperty(ColorTintId))
+            return NormalizeBulkColor(material.GetColor(ColorTintId));
+
+        if (TryGetAverageTextureColor(material, MainTexId, out Color mainTextureColor))
+            return mainTextureColor;
+        if (TryGetAverageTextureColor(material, BaseMapId, out Color baseMapColor))
+            return baseMapColor;
+
+        return Color.white with { a = BulkGhostAlpha };
+    }
+
+    private static Texture GetSoapboxMaterialTexture(Material material)
+    {
+        if (material == null)
+            return null;
+
+        if (material.HasProperty(MainTexId) && material.GetTexture(MainTexId) != null)
+            return material.GetTexture(MainTexId);
+        if (material.HasProperty(BaseMapId) && material.GetTexture(BaseMapId) != null)
+            return material.GetTexture(BaseMapId);
+
+        return null;
+    }
+
+    private static Color NormalizeBulkColor(Color color)
+    {
+        if (color.a <= 0.001f)
+            color.a = BulkGhostAlpha;
+
+        color.a = BulkGhostAlpha;
+        return color;
+    }
+
+    private static bool TryGetAverageTextureColor(Material material, int texturePropertyId, out Color color)
+    {
+        color = Color.white with { a = BulkGhostAlpha };
+        if (!material.HasProperty(texturePropertyId))
+            return false;
+
+        if (material.GetTexture(texturePropertyId) is not Texture2D texture)
+            return false;
+
+        try
+        {
+            Color32[] pixels = texture.GetPixels32();
+            if (pixels.Length == 0)
+                return false;
+
+            long red = 0;
+            long green = 0;
+            long blue = 0;
+            long alpha = 0;
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color32 pixel = pixels[i];
+                red += pixel.r;
+                green += pixel.g;
+                blue += pixel.b;
+                alpha += pixel.a;
+            }
+
+            float scale = 1f / (pixels.Length * 255f);
+            color = new Color(
+                red * scale,
+                green * scale,
+                blue * scale,
+                Math.Max(alpha * scale, BulkGhostAlpha)) with
+            {
+                a = BulkGhostAlpha
+            };
+            return true;
+        }
+        catch (UnityException)
+        {
+            return false;
+        }
+    }
+
+    private void LogRenderPartCounts()
+    {
+        int maxCharacterParts = 0;
+        foreach (List<RenderPart> renderParts in _characterRenderParts.Values)
+            maxCharacterParts = Math.Max(maxCharacterParts, renderParts.Count);
+
+        int estimatedDrawCallsFor1000Ghosts = _renderParts.Count + maxCharacterParts * GetTintBucketCount();
+        _logger.LogDebug(
+            "Bulk ghost render parts: shader={Shader}, soapbox={SoapboxParts}, seated={SeatedParts}, armsUp={ArmsUpParts}, ragdoll={RagdollParts}, tintBuckets={TintBuckets}, estimatedDrawCallsFor1000Ghosts={EstimatedDrawCalls}",
+            _bulkShader != null ? _bulkShader.name : "null",
+            _renderParts.Count,
+            _characterRenderParts[GhostCharacterPlaybackPose.Seated].Count,
+            _characterRenderParts[GhostCharacterPlaybackPose.SeatedArmsUp].Count,
+            _characterRenderParts[GhostCharacterPlaybackPose.Ragdoll].Count,
+            GetTintBucketCount(),
+            estimatedDrawCallsFor1000Ghosts);
     }
 
     private static Bounds TransformBounds(Bounds bounds, Matrix4x4 matrix)
@@ -662,8 +1030,90 @@ public sealed class BulkGhostRenderService : IEagerService
 
             renderParts.Clear();
         }
+
+        foreach (ComputeBuffer matrixBuffer in _matrixBuffers)
+            matrixBuffer.Release();
+
+        _matrixBuffers.Clear();
+        _matrixBufferIndex = 0;
         _initialized = false;
     }
+
+    private sealed class CharacterMeshGroups
+    {
+        public readonly List<CombineInstance> Tintable = new();
+        public readonly List<CombineInstance> Details = new();
+    }
+
+    private sealed class SoapboxMeshGroups
+    {
+        public readonly Dictionary<SoapboxMaterialKey, SoapboxMeshGroup> Groups = new();
+
+        public int Count { get; private set; }
+
+        public void Add(SoapboxMaterialKey key, Color color, Texture texture, CombineInstance instance)
+        {
+            if (!Groups.TryGetValue(key, out SoapboxMeshGroup group))
+            {
+                group = new SoapboxMeshGroup(texture);
+                Groups.Add(key, group);
+            }
+
+            group.AddColor(color);
+            group.Instances.Add(instance);
+            Count++;
+        }
+    }
+
+    private sealed class SoapboxMeshGroup
+    {
+        public readonly List<CombineInstance> Instances = new();
+        public readonly Texture Texture;
+        private Color _colorSum;
+        private int _colorCount;
+
+        public SoapboxMeshGroup(Texture texture)
+        {
+            Texture = texture;
+        }
+
+        public Color Color => _colorCount > 0
+            ? (_colorSum / _colorCount) with { a = BulkGhostAlpha }
+            : Color.white with { a = BulkGhostAlpha };
+
+        public void AddColor(Color color)
+        {
+            _colorSum += color;
+            _colorCount++;
+        }
+    }
+
+    private readonly struct SoapboxMaterialKey : IEquatable<SoapboxMaterialKey>
+    {
+        private readonly int _textureId;
+        private readonly int _colorBucket;
+
+        public SoapboxMaterialKey(Texture texture, int colorBucket)
+        {
+            _textureId = texture != null ? texture.GetInstanceID() : 0;
+            _colorBucket = colorBucket;
+        }
+
+        public bool Equals(SoapboxMaterialKey other) =>
+            _textureId == other._textureId && _colorBucket == other._colorBucket;
+
+        public override bool Equals(object obj) =>
+            obj is SoapboxMaterialKey other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (_textureId * 397) ^ _colorBucket;
+            }
+        }
+    }
+
     private sealed class RenderPart : IDisposable
     {
         private readonly Dictionary<int, Material> _tintedMaterials = new();
