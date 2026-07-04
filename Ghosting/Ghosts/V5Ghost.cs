@@ -71,7 +71,7 @@ public partial class V5Ghost : GhostBase
         Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
         Ghost?.SetNameAnchor(Ghost.GameObject.transform);
         AlignBulkCharacterToGhost();
-        Ghost?.SetBulkCharacterState(armsUp, false);
+        Ghost?.SetCharacterPlaybackState(GhostCharacterPlaybackState.FromSeated(armsUp));
     }
 
     protected override void OnFixedUpdate(int fixedUpdateFrame)

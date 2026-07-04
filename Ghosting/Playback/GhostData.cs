@@ -41,6 +41,13 @@ public class GhostData
         Ghost = ghost;
     }
 
+    public void PrepareForCosmeticsReuse()
+    {
+        DisposeRenderer();
+        ClearCharacterRig(true);
+        SetNameAnchor(GameObject.transform);
+    }
+
     public void InitializeRenderer()
     {
         Renderer?.Dispose();
@@ -51,14 +58,26 @@ public class GhostData
 
     public void SetCharacterRig(GhostCharacterRig characterRig)
     {
-        CharacterRig?.Destroy();
+        ClearCharacterRig(true);
         CharacterRig = characterRig;
+        ApplyPlaybackVisibility();
     }
 
-    public void SetBulkCharacterLocalTransform(Vector3 localPosition, Quaternion localRotation)
+    public void ClearCharacterRig(bool restoreToModel)
     {
-        BulkCharacterLocalPosition = localPosition;
-        BulkCharacterLocalRotation = localRotation;
+        if (CharacterRig == null)
+            return;
+
+        if (restoreToModel)
+            CharacterRig.RestoreToModel();
+
+        CharacterRig.Destroy();
+        CharacterRig = null;
+    }
+
+    public void SetBulkRagdollRotationOffset(Quaternion rotationOffset)
+    {
+        BulkRagdollRotationOffset = rotationOffset;
     }
 
     public void SetNameAnchor(Transform nameAnchor)
@@ -66,10 +85,9 @@ public class GhostData
         NameAnchor = nameAnchor != null ? nameAnchor : GameObject.transform;
     }
 
-    public void SetBulkCharacterState(bool armsUpVisible, bool ragdollVisible)
+    public void SetCharacterPlaybackState(GhostCharacterPlaybackState state)
     {
-        BulkArmsUpCharacterVisible = armsUpVisible;
-        BulkRagdollCharacterVisible = ragdollVisible;
+        CharacterPlaybackState = state;
         ApplyPlaybackVisibility();
     }
 
@@ -79,14 +97,17 @@ public class GhostData
         ApplyPlaybackVisibility();
     }
 
-    public void ResetRenderState()
+    public void ResetPlaybackState()
     {
+        PlaybackVisible = false;
+        CharacterPlaybackState = GhostCharacterPlaybackState.Reset;
         Renderer?.Enable();
         Renderer?.SwitchToNormal();
         Renderer?.SetFade(1);
+        CharacterRig?.ApplySeatedPose(false);
         CharacterRig?.SetActive(true);
-        SetBulkCharacterState(false, false);
         SetNameAnchor(GameObject.transform);
+        ApplyPlaybackVisibility();
     }
 
     public IGhost Ghost { get; private set; }
@@ -98,11 +119,9 @@ public class GhostData
     public GameObject BulkCharacterGameObject { get; }
     public GameObject BulkArmsUpCharacterGameObject { get; }
     public GameObject BulkRagdollCharacterGameObject { get; }
-    public Vector3 BulkCharacterLocalPosition { get; private set; }
-    public Quaternion BulkCharacterLocalRotation { get; private set; } = Quaternion.identity;
+    public Quaternion BulkRagdollRotationOffset { get; private set; } = Quaternion.identity;
     public bool PlaybackVisible { get; private set; }
-    public bool BulkArmsUpCharacterVisible { get; private set; }
-    public bool BulkRagdollCharacterVisible { get; private set; }
+    public GhostCharacterPlaybackState CharacterPlaybackState { get; private set; } = GhostCharacterPlaybackState.Reset;
     public Transform NameAnchor { get; private set; }
     public GhostCharacterRig CharacterRig { get; private set; }
     public GhostVisuals Visuals { get; private set; }
@@ -137,13 +156,13 @@ public class GhostData
                 GameObject.SetActive(visible);
 
             if (BulkCharacterGameObject != null)
-                BulkCharacterGameObject.SetActive(visible && !BulkArmsUpCharacterVisible && !BulkRagdollCharacterVisible);
+                BulkCharacterGameObject.SetActive(visible && CharacterPlaybackState.SeatedVisible);
 
             if (BulkArmsUpCharacterGameObject != null)
-                BulkArmsUpCharacterGameObject.SetActive(visible && BulkArmsUpCharacterVisible && !BulkRagdollCharacterVisible);
+                BulkArmsUpCharacterGameObject.SetActive(visible && CharacterPlaybackState.ArmsUpVisible);
 
             if (BulkRagdollCharacterGameObject != null)
-                BulkRagdollCharacterGameObject.SetActive(visible && BulkRagdollCharacterVisible);
+                BulkRagdollCharacterGameObject.SetActive(visible && CharacterPlaybackState.RagdollVisible);
         }
         else
         {
@@ -151,7 +170,7 @@ public class GhostData
                 GameObject.SetActive(Active);
 
             if (CharacterRig != null)
-                CharacterRig.SetActive(Active);
+                CharacterRig.SetActive(Active && visible);
 
             if (visible)
                 Renderer?.Enable();

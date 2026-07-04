@@ -82,9 +82,7 @@ public partial class GhostPlayer : IEagerService
                 bulkCharacterGameObject,
                 bulkArmsUpCharacterGameObject,
                 bulkRagdollCharacterGameObject);
-            instancedGhostData.SetBulkCharacterLocalTransform(
-                _bulkGhostRenderService.CharacterLocalPosition,
-                _bulkGhostRenderService.CharacterLocalRotation);
+            instancedGhostData.SetBulkRagdollRotationOffset(_bulkGhostRenderService.RagdollRotationOffset);
             return instancedGhostData;
         }
 
@@ -108,8 +106,8 @@ public partial class GhostPlayer : IEagerService
 
     private static void GetGhost(GhostData ghostData)
     {
+        ghostData.ResetPlaybackState();
         ghostData.SetActive(true);
-        ghostData.SetPlaybackVisible(false);
     }
 
     private static void ReleaseGhost(GhostData ghostData)
@@ -117,14 +115,14 @@ public partial class GhostPlayer : IEagerService
         ghostData.CurrentHorn?.Stop();
         ghostData.CurrentHorn?.Cleanup();
         ghostData.CurrentHorn = null;
-        ghostData.ResetRenderState();
+        ghostData.ResetPlaybackState();
         ghostData.SetActive(false);
     }
 
     private static void DestroyGhost(GhostData ghostData)
     {
         ghostData.DisposeRenderer();
-        ghostData.CharacterRig?.Destroy();
+        ghostData.ClearCharacterRig(false);
         if (ghostData.Visuals != null && ghostData.Visuals.gameObject != null)
             Object.Destroy(ghostData.Visuals.gameObject);
         else if (ghostData.GameObject != null)
@@ -239,6 +237,7 @@ public partial class GhostPlayer : IEagerService
         ghost.Initialize(ghostData);
         if (visualProfile == GhostVisualProfile.Full)
         {
+            ghostData.PrepareForCosmeticsReuse();
             ghost.ApplyCosmetics(steamName);
             ghostData.InitializeRenderer();
         }
@@ -246,9 +245,15 @@ public partial class GhostPlayer : IEagerService
         if (ghostData.IsInstanced)
         {
             _bulkGhostRenderService.Register(ghostData.GameObject.transform);
-            _bulkGhostRenderService.RegisterCharacter(ghostData.BulkCharacterGameObject?.transform);
-            _bulkGhostRenderService.RegisterArmsUpCharacter(ghostData.BulkArmsUpCharacterGameObject?.transform);
-            _bulkGhostRenderService.RegisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
+            _bulkGhostRenderService.RegisterCharacter(
+                ghostData.BulkCharacterGameObject?.transform,
+                GhostCharacterPlaybackPose.Seated);
+            _bulkGhostRenderService.RegisterCharacter(
+                ghostData.BulkArmsUpCharacterGameObject?.transform,
+                GhostCharacterPlaybackPose.SeatedArmsUp);
+            _bulkGhostRenderService.RegisterCharacter(
+                ghostData.BulkRagdollCharacterGameObject?.transform,
+                GhostCharacterPlaybackPose.Ragdoll);
         }
 
         if (!hadExistingGhost)
@@ -276,9 +281,15 @@ public partial class GhostPlayer : IEagerService
             if (ghostData.IsInstanced)
             {
                 _bulkGhostRenderService.Unregister(ghostData.GameObject.transform);
-                _bulkGhostRenderService.UnregisterCharacter(ghostData.BulkCharacterGameObject?.transform);
-                _bulkGhostRenderService.UnregisterArmsUpCharacter(ghostData.BulkArmsUpCharacterGameObject?.transform);
-                _bulkGhostRenderService.UnregisterRagdollCharacter(ghostData.BulkRagdollCharacterGameObject?.transform);
+                _bulkGhostRenderService.UnregisterCharacter(
+                    ghostData.BulkCharacterGameObject?.transform,
+                    GhostCharacterPlaybackPose.Seated);
+                _bulkGhostRenderService.UnregisterCharacter(
+                    ghostData.BulkArmsUpCharacterGameObject?.transform,
+                    GhostCharacterPlaybackPose.SeatedArmsUp);
+                _bulkGhostRenderService.UnregisterCharacter(
+                    ghostData.BulkRagdollCharacterGameObject?.transform,
+                    GhostCharacterPlaybackPose.Ragdoll);
             }
 
             GetPool(ghostData.VisualProfile).Release(ghostData);

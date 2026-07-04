@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -16,17 +17,22 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
     private readonly HashSet<Transform> _instances = new();
-    private readonly HashSet<Transform> _characterInstances = new();
-    private readonly HashSet<Transform> _armsUpCharacterInstances = new();
-    private readonly HashSet<Transform> _ragdollCharacterInstances = new();
+    private readonly Dictionary<GhostCharacterPlaybackPose, HashSet<Transform>> _characterInstances = new()
+    {
+        [GhostCharacterPlaybackPose.Seated] = new HashSet<Transform>(),
+        [GhostCharacterPlaybackPose.SeatedArmsUp] = new HashSet<Transform>(),
+        [GhostCharacterPlaybackPose.Ragdoll] = new HashSet<Transform>()
+    };
     private readonly Matrix4x4[] _matrices = new Matrix4x4[BulkGhostBatching.MaximumInstancesPerBatch];
 
     private readonly List<RenderPart> _renderParts = new();
-    private readonly List<RenderPart> _characterRenderParts = new();
-    private readonly List<RenderPart> _armsUpCharacterRenderParts = new();
-    private readonly List<RenderPart> _ragdollCharacterRenderParts = new();
-    public Vector3 CharacterLocalPosition { get; private set; }
-    public Quaternion CharacterLocalRotation { get; private set; } = Quaternion.identity;
+    private readonly Dictionary<GhostCharacterPlaybackPose, List<RenderPart>> _characterRenderParts = new()
+    {
+        [GhostCharacterPlaybackPose.Seated] = new List<RenderPart>(),
+        [GhostCharacterPlaybackPose.SeatedArmsUp] = new List<RenderPart>(),
+        [GhostCharacterPlaybackPose.Ragdoll] = new List<RenderPart>()
+    };
+    public Quaternion RagdollRotationOffset { get; private set; } = Quaternion.identity;
 
     private bool _initializationAttempted;
     private bool _initialized;
@@ -79,40 +85,16 @@ public sealed class BulkGhostRenderService : IEagerService
             _instances.Remove(transform);
     }
 
-    public void RegisterCharacter(Transform transform)
+    public void RegisterCharacter(Transform transform, GhostCharacterPlaybackPose pose)
     {
         if (transform != null)
-            _characterInstances.Add(transform);
+            _characterInstances[pose].Add(transform);
     }
 
-    public void UnregisterCharacter(Transform transform)
+    public void UnregisterCharacter(Transform transform, GhostCharacterPlaybackPose pose)
     {
         if (transform != null)
-            _characterInstances.Remove(transform);
-    }
-
-    public void RegisterArmsUpCharacter(Transform transform)
-    {
-        if (transform != null)
-            _armsUpCharacterInstances.Add(transform);
-    }
-
-    public void UnregisterArmsUpCharacter(Transform transform)
-    {
-        if (transform != null)
-            _armsUpCharacterInstances.Remove(transform);
-    }
-
-    public void RegisterRagdollCharacter(Transform transform)
-    {
-        if (transform != null)
-            _ragdollCharacterInstances.Add(transform);
-    }
-
-    public void UnregisterRagdollCharacter(Transform transform)
-    {
-        if (transform != null)
-            _ragdollCharacterInstances.Remove(transform);
+            _characterInstances[pose].Remove(transform);
     }
 
     private void Draw()
@@ -125,9 +107,8 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         DrawInstances(_instances, _renderParts);
-        DrawInstances(_characterInstances, _characterRenderParts);
-        DrawInstances(_armsUpCharacterInstances, _armsUpCharacterRenderParts);
-        DrawInstances(_ragdollCharacterInstances, _ragdollCharacterRenderParts);
+        foreach (KeyValuePair<GhostCharacterPlaybackPose, HashSet<Transform>> characterInstances in _characterInstances)
+            DrawInstances(characterInstances.Value, _characterRenderParts[characterInstances.Key]);
     }
 
     private void DrawInstances(IEnumerable<Transform> instances, IReadOnlyList<RenderPart> renderParts)
@@ -183,8 +164,7 @@ public sealed class BulkGhostRenderService : IEagerService
             GhostVisuals.ConfigureBulkModel(model);
 
             Matrix4x4 rootInverse = templateRoot.transform.worldToLocalMatrix;
-            CharacterLocalPosition = Vector3.zero;
-            CharacterLocalRotation = Quaternion.identity;
+            RagdollRotationOffset = GhostCharacterRig.GetRagdollRotationOffset(model);
 
             var soapboxMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
             var characterMaterialGroups = new Dictionary<Material, List<CombineInstance>>();
@@ -225,15 +205,15 @@ public sealed class BulkGhostRenderService : IEagerService
 
             AddRenderParts(_renderParts, soapboxMaterialGroups, "GTR Instanced Bulk Ghost");
             if (characterMaterialGroups.Count > 0)
-                AddRenderParts(_characterRenderParts, characterMaterialGroups, "GTR Instanced Bulk Character");
+                AddRenderParts(_characterRenderParts[GhostCharacterPlaybackPose.Seated], characterMaterialGroups, "GTR Instanced Bulk Character");
             if (armsUpCharacterMaterialGroups.Count > 0)
                 AddRenderParts(
-                    _armsUpCharacterRenderParts,
+                    _characterRenderParts[GhostCharacterPlaybackPose.SeatedArmsUp],
                     armsUpCharacterMaterialGroups,
                     "GTR Instanced Bulk Arms Up Character");
             if (ragdollCharacterMaterialGroups.Count > 0)
                 AddRenderParts(
-                    _ragdollCharacterRenderParts,
+                    _characterRenderParts[GhostCharacterPlaybackPose.Ragdoll],
                     ragdollCharacterMaterialGroups,
                     "GTR Instanced Bulk Ragdoll Character");
         }
@@ -483,29 +463,16 @@ public sealed class BulkGhostRenderService : IEagerService
 
         _renderParts.Clear();
 
-        foreach (RenderPart part in _characterRenderParts)
+        foreach (List<RenderPart> renderParts in _characterRenderParts.Values)
         {
-            Object.Destroy(part.Mesh);
-            Object.Destroy(part.Material);
+            foreach (RenderPart part in renderParts)
+            {
+                Object.Destroy(part.Mesh);
+                Object.Destroy(part.Material);
+            }
+
+            renderParts.Clear();
         }
-
-        _characterRenderParts.Clear();
-
-        foreach (RenderPart part in _armsUpCharacterRenderParts)
-        {
-            Object.Destroy(part.Mesh);
-            Object.Destroy(part.Material);
-        }
-
-        _armsUpCharacterRenderParts.Clear();
-
-        foreach (RenderPart part in _ragdollCharacterRenderParts)
-        {
-            Object.Destroy(part.Mesh);
-            Object.Destroy(part.Material);
-        }
-
-        _ragdollCharacterRenderParts.Clear();
         _initialized = false;
     }
 

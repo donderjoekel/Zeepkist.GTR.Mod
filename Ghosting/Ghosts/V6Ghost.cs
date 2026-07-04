@@ -45,14 +45,14 @@ public partial class V6Ghost : GhostBase
     public override void Start()
     {
         base.Start();
-        ApplyCharacterPlaybackState(V6CharacterPlaybackState.Reset);
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
     }
 
     public override void Stop()
     {
         base.Stop();
-        ApplyCharacterPlaybackState(V6CharacterPlaybackState.Reset);
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
     }
 
@@ -66,14 +66,11 @@ public partial class V6Ghost : GhostBase
         if (previousFrame is not Frame previous || nextFrame is not Frame next)
             return;
 
-        V6RagdollPlaybackState playbackState = V6RagdollPlaybackState.FromSegment(
-            previous.RagdollState,
-            next.RagdollState);
-        V6CharacterPlaybackState characterState = V6CharacterPlaybackState.FromSegment(
+        GhostCharacterPlaybackState characterState = GhostCharacterPlaybackState.FromSegment(
             previous.RagdollState,
             next.RagdollState,
             next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
-        if (!playbackState.RagdollVisible)
+        if (!characterState.RagdollVisible)
         {
             AlignCharacterToSeated(characterState.ArmsUpVisible);
             return;
@@ -90,7 +87,6 @@ public partial class V6Ghost : GhostBase
 
         AlignCharacterToWorld(position, rotation);
     }
-
     protected override void OnFixedUpdate(int fixedUpdateFrame)
     {
         if (fixedUpdateFrame <= 0)
@@ -112,15 +108,19 @@ public partial class V6Ghost : GhostBase
         Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
         Ghost?.SetNameAnchor(Ghost.GameObject.transform);
         AlignBulkCharacterToGhost();
-        ApplyCharacterPlaybackState(V6CharacterPlaybackState.FromSegment(false, false, armsUp));
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.FromSeated(armsUp));
     }
 
     private void AlignCharacterToWorld(Vector3 position, Quaternion rotation)
     {
+        Quaternion visualRotation = Ghost?.CharacterRig != null
+            ? Ghost.CharacterRig.GetRagdollWorldRotation(rotation)
+            : rotation * (Ghost?.BulkRagdollRotationOffset ?? Quaternion.identity);
+
         Ghost?.CharacterRig?.ApplyStandingRagdollPose();
         if (Ghost?.CharacterRig != null)
         {
-            Ghost.CharacterRig.AlignToWorld(position, rotation);
+            Ghost.CharacterRig.AlignToWorld(position, visualRotation);
             Ghost.SetNameAnchor(Ghost.CharacterRig.Root.transform);
         }
         else
@@ -129,14 +129,14 @@ public partial class V6Ghost : GhostBase
         }
 
         if (Ghost?.BulkRagdollCharacterGameObject != null)
-            Ghost.BulkRagdollCharacterGameObject.transform.SetPositionAndRotation(position, rotation);
+            Ghost.BulkRagdollCharacterGameObject.transform.SetPositionAndRotation(position, visualRotation);
 
-        ApplyCharacterPlaybackState(V6CharacterPlaybackState.FromSegment(true, true, false));
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.FromSegment(true, true, false));
     }
 
-    private void ApplyCharacterPlaybackState(V6CharacterPlaybackState playbackState)
+    private void ApplyCharacterPlaybackState(GhostCharacterPlaybackState playbackState)
     {
-        Ghost?.SetBulkCharacterState(playbackState.ArmsUpVisible, playbackState.RagdollVisible);
+        Ghost?.SetCharacterPlaybackState(playbackState);
         SetCharacterActive(Ghost?.PlaybackVisible == true);
     }
 
