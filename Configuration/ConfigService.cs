@@ -166,10 +166,10 @@ public class ConfigService : IEagerService
         MaximumGhostColours = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "3. Max Ghost Colours",
-            6,
+            24,
             new ConfigDescription(
                 "Maximum number of ghost colours to show.\n\n" +
-                "Increasing this will reduce performance.\n\n" +
+                "Increasing this can reduce performance.\n\n" +
                 "Set to 1 for maximum performance, but all\n" +
                 "ghosts will be the same colour.",
                 new AcceptableValueRange<int>(1, int.MaxValue)
