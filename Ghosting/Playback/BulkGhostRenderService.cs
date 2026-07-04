@@ -537,14 +537,6 @@ public sealed class BulkGhostRenderService : IEagerService
         }
     }
 
-    private static void AddMeshFilterToGroup(
-        ICollection<CombineInstance> destination,
-        MeshFilter filter,
-        Matrix4x4 rootInverse)
-    {
-        AddSubMeshesToGroup(destination, filter.sharedMesh, rootInverse * filter.transform.localToWorldMatrix);
-    }
-
     private static void AddMeshFilterToSoapboxGroups(
         SoapboxMeshGroups destination,
         MeshFilter filter,
@@ -869,6 +861,7 @@ public sealed class BulkGhostRenderService : IEagerService
         existing.a = color.a;
         material.SetColor(propertyId, existing);
     }
+
     private static void SetMaterialAlpha(Material material, float alpha)
     {
         SetMaterialAlpha(material, ColorId, alpha);
@@ -882,21 +875,6 @@ public sealed class BulkGhostRenderService : IEagerService
         Color color = material.GetColor(propertyId);
         color.a = alpha;
         material.SetColor(propertyId, color);
-    }
-    private static void AddSubMeshesToGroup(
-        ICollection<CombineInstance> destination,
-        Mesh mesh,
-        Matrix4x4 transform)
-    {
-        for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
-        {
-            destination.Add(new CombineInstance
-            {
-                mesh = mesh,
-                subMeshIndex = subMesh,
-                transform = transform
-            });
-        }
     }
 
     private static void AddSubMeshesToSoapboxGroups(
