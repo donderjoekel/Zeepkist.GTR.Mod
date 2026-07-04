@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using BepInEx;
@@ -137,7 +137,7 @@ public class Plugin : BaseUnityPlugin
             client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
-        services.AddGtrClient()
+        services.AddGtrClient(StrawberryShake.ExecutionStrategy.CacheAndNetwork)
             .ConfigureHttpClient((provider,client) =>
             {
                 var configService = provider.GetRequiredService<ConfigService>();

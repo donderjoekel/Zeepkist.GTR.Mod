@@ -154,9 +154,6 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 
     private async UniTaskVoid LoadRecords(int page, CancellationToken ct)
     {
-        _items.Clear();
-        Draw();
-
         LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
         if (!level.IsAvailable)
             return;
