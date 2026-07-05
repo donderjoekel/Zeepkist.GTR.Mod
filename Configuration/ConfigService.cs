@@ -145,22 +145,24 @@ public class ConfigService : IEagerService
             KeyCode.None,
             "Toggles if the global personal best should be shown");
 
+        // TODO: Replace max 1000 with int.MaxValue once pagination added
         MaximumVisibleOfflineGhosts = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
                 "(-1 means Show All) Maximum number of fastest PB ghosts loaded",
-                new AcceptableValueRange<int>(-1, int.MaxValue)
+                new AcceptableValueRange<int>(-1, 1000)
             )
         );
+        // TODO: Replace max 1000 with int.MaxValue once pagination added
         MaximumVisibleTopRecordGhosts = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "2. Top Record Ghosts",
             500,
             new ConfigDescription(
                 "Maximum number of fastest top record ghosts loaded",
-                new AcceptableValueRange<int>(1, int.MaxValue)
+                new AcceptableValueRange<int>(1, 1000)
             )
         );
         MaximumGhostColours = config.Bind(
@@ -172,7 +174,7 @@ public class ConfigService : IEagerService
                 "Increasing this can reduce performance.\n\n" +
                 "Set to 1 for maximum performance, but all\n" +
                 "ghosts will be the same colour.",
-                new AcceptableValueRange<int>(1, int.MaxValue)
+                new AcceptableValueRange<int>(1, 128)
             )
         );
 
