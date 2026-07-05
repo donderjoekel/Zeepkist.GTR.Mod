@@ -1,4 +1,4 @@
-﻿using TNRD.Zeepkist.GTR.Ghosting.Playback;
+using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
@@ -52,19 +52,22 @@ public abstract class GhostBase : IGhost
         }
     }
 
-    public void Start()
+    public virtual void Start()
     {
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
 
         IFrame frame = GetFrame(0);
         Ghost.GameObject.transform.SetPositionAndRotation(frame.Position, frame.Rotation);
+        AlignBulkCharacterToGhost();
+        Ghost.SetPlaybackVisible(true);
     }
 
-    public void Stop()
+    public virtual void Stop()
     {
         _updateFrame = 0;
         _fixedUpdateFrame = 0;
+        Ghost.SetPlaybackVisible(false);
     }
 
     public void Update()
@@ -100,12 +103,33 @@ public abstract class GhostBase : IGhost
         Vector3 position = Vector3.Lerp(previousFrame.Position, nextFrame.Position, t);
         Quaternion rotation = Quaternion.Slerp(previousFrame.Rotation, nextFrame.Rotation, t);
         Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
+        AlignBulkCharacterToGhost();
+        Ghost.SetPlaybackVisible(true);
 
-        OnUpdate();
+        OnUpdate(previousFrame, nextFrame, t);
     }
 
-    protected virtual void OnUpdate()
+    protected virtual void OnUpdate(IFrame previousFrame, IFrame nextFrame, float t)
     {
+    }
+
+    protected void AlignBulkCharacterToGhost()
+    {
+        if (Ghost == null)
+            return;
+
+        AlignBulkCharacterTransform(Ghost.BulkCharacterGameObject?.transform);
+        AlignBulkCharacterTransform(Ghost.BulkArmsUpCharacterGameObject?.transform);
+    }
+
+    private void AlignBulkCharacterTransform(Transform transform)
+    {
+        if (transform == null)
+            return;
+
+        transform.SetPositionAndRotation(
+            Ghost.GameObject.transform.position,
+            Ghost.GameObject.transform.rotation);
     }
 
     public void FixedUpdate()

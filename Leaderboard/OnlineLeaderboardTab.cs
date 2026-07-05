@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -112,9 +112,6 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab
 
     private async UniTaskVoid LoadRecords(int page, CancellationToken ct)
     {
-        _items.Clear();
-        Draw();
-
         LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
         if (!level.IsAvailable)
             return;

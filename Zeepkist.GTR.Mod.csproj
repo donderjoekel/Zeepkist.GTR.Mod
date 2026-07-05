@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>1.1.1</Version>
+        <Version>1.2.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
@@ -60,7 +60,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="discord_game_sdk.dll">
+        <None Include="RuntimeAssets\Native\discord_game_sdk.dll" Link="discord_game_sdk.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Include="RuntimeAssets\Shaders\gtr-shaders" Link="gtr-shaders" Condition="Exists('RuntimeAssets\Shaders\gtr-shaders')">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
@@ -85,6 +88,7 @@
             <OutputFiles Include="$(TargetDir)JsonApiSerializer.dll"/>
             <OutputFiles Include="$(TargetDir)Strawberry*.dll"/>
             <OutputFiles Include="$(TargetDir)HotChocolate*.dll"/>
+            <OutputFiles Include="$(TargetDir)gtr-shaders"/>
         </ItemGroup>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(TargetDir)\Package"/>
         <Copy SourceFiles="@(OutputFiles)" DestinationFolder="D:\SteamLibrary\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins"/>

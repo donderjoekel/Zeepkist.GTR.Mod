@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 ConfigureClient(sp, serviceCollection, strategy);
                 return new ClientServiceProvider(global::Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(serviceCollection));
             });
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => new global::TNRD.Zeepkist.GTR.State.GtrClientStoreAccessor());
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => new global::TNRD.Zeepkist.GTR.State.GtrClientStoreAccessor(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IEntityStore>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IEntityIdSerializer>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.IOperationRequestFactory>>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.IOperationResultDataFactory>>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp))));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetAdditionalGhostsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetAllPersonalBestGhostsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetLevelPointsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
@@ -25,6 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestGhostsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPlayerRankOnLevelQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTopRecordGhostsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTotalUserCountQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GtrClient>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
@@ -34,6 +35,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static global::Microsoft.Extensions.DependencyInjection.IServiceCollection ConfigureClient(global::System.IServiceProvider parentServices, global::Microsoft.Extensions.DependencyInjection.ServiceCollection services, global::StrawberryShake.ExecutionStrategy strategy = global::StrawberryShake.ExecutionStrategy.NetworkOnly)
         {
+            global::Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<global::StrawberryShake.IEntityStore, global::StrawberryShake.EntityStore>(services);
+            global::Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton<global::StrawberryShake.IOperationStore>(services, sp => new global::StrawberryShake.OperationStore(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IEntityStore>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Transport.Http.IHttpConnection>(services, sp =>
             {
                 var clientFactory = global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Net.Http.IHttpClientFactory>(parentServices);
@@ -61,7 +64,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetAdditionalGhostsBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetAdditionalGhostsQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetAdditionalGhostsQuery>(sp));
@@ -69,7 +72,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetAllPersonalBestGhostsBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetAllPersonalBestGhostsQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetAllPersonalBestGhostsQuery>(sp));
@@ -77,7 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>, global::TNRD.Zeepkist.GTR.State.GetLevelPointsBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetLevelPointsQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetLevelPointsQuery>(sp));
@@ -85,7 +88,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>, global::TNRD.Zeepkist.GTR.State.GetPersonalBestBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetPersonalBestQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestQuery>(sp));
@@ -93,7 +96,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>, global::TNRD.Zeepkist.GTR.State.GetPersonalBestCountBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetPersonalBestCountQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestCountQuery>(sp));
@@ -101,7 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetPersonalBestGhostsBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetPersonalBestGhostsQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestGhostsQuery>(sp));
@@ -109,7 +112,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>, global::TNRD.Zeepkist.GTR.State.GetPersonalBestsBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetPersonalBestsQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPersonalBestsQuery>(sp));
@@ -117,15 +120,23 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>, global::TNRD.Zeepkist.GTR.State.GetPlayerRankOnLevelBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetPlayerRankOnLevelQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetPlayerRankOnLevelQuery>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetTopRecordGhostsResultFactory>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetTopRecordGhostsBuilder>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetTopRecordGhostsQuery>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTopRecordGhostsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>, global::TNRD.Zeepkist.GTR.State.GetTotalUserCountResultFactory>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>, global::TNRD.Zeepkist.GTR.State.GetTotalUserCountBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetTotalUserCountQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTotalUserCountQuery>(sp));
@@ -133,10 +144,11 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>, global::TNRD.Zeepkist.GTR.State.GetWorldRecordHolderBuilder>(services);
-            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>>(services, sp => new global::StrawberryShake.StorelessOperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IEntityIdSerializer, global::TNRD.Zeepkist.GTR.State.GtrClientEntityIdFactory>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GtrClient>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGtrClient>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GtrClient>(sp));
             return services;
@@ -2859,6 +2871,423 @@ namespace TNRD.Zeepkist.GTR
     /// The root query type which gives access points into the data universe.
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsResult : global::System.IEquatable<GetTopRecordGhostsResult>, IGetTopRecordGhostsResult
+    {
+        public GetTopRecordGhostsResult(global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records? records)
+        {
+            Records = records;
+        }
+
+        /// <summary>
+        /// Reads and enables pagination through a set of `Record`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records? Records { get; }
+
+        public virtual global::System.Boolean Equals(GetTopRecordGhostsResult? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (((Records is null && other.Records is null) || Records != null && Records.Equals(other.Records)));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetTopRecordGhostsResult)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                if (Records != null)
+                {
+                    hash ^= 397 * Records.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A connection to a list of `Record` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhosts_Records_RecordsConnection : global::System.IEquatable<GetTopRecordGhosts_Records_RecordsConnection>, IGetTopRecordGhosts_Records_RecordsConnection
+    {
+        public GetTopRecordGhosts_Records_RecordsConnection(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes> nodes)
+        {
+            Nodes = nodes;
+        }
+
+        /// <summary>
+        /// A list of `Record` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes> Nodes { get; }
+
+        public virtual global::System.Boolean Equals(GetTopRecordGhosts_Records_RecordsConnection? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::StrawberryShake.Internal.ComparisonHelper.SequenceEqual(Nodes, other.Nodes));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetTopRecordGhosts_Records_RecordsConnection)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                foreach (var Nodes_elm in Nodes)
+                {
+                    hash ^= 397 * Nodes_elm.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhosts_Records_Nodes_Record : global::System.IEquatable<GetTopRecordGhosts_Records_Nodes_Record>, IGetTopRecordGhosts_Records_Nodes_Record
+    {
+        public GetTopRecordGhosts_Records_Nodes_Record(global::System.Int32 id, global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? user, global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? recordMedia)
+        {
+            Id = id;
+            User = user;
+            RecordMedia = recordMedia;
+        }
+
+        public global::System.Int32 Id { get; }
+        /// <summary>
+        /// Reads a single `User` that is related to this `Record`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? User { get; }
+        /// <summary>
+        /// Reads a single `RecordMedia` that is related to this `Record`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? RecordMedia { get; }
+
+        public virtual global::System.Boolean Equals(GetTopRecordGhosts_Records_Nodes_Record? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::System.Object.Equals(Id, other.Id)) && ((User is null && other.User is null) || User != null && User.Equals(other.User)) && ((RecordMedia is null && other.RecordMedia is null) || RecordMedia != null && RecordMedia.Equals(other.RecordMedia));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetTopRecordGhosts_Records_Nodes_Record)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * Id.GetHashCode();
+                if (User != null)
+                {
+                    hash ^= 397 * User.GetHashCode();
+                }
+
+                if (RecordMedia != null)
+                {
+                    hash ^= 397 * RecordMedia.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhosts_Records_Nodes_User_User : global::System.IEquatable<GetTopRecordGhosts_Records_Nodes_User_User>, IGetTopRecordGhosts_Records_Nodes_User_User
+    {
+        public GetTopRecordGhosts_Records_Nodes_User_User(global::System.String? steamName)
+        {
+            SteamName = steamName;
+        }
+
+        public global::System.String? SteamName { get; }
+
+        public virtual global::System.Boolean Equals(GetTopRecordGhosts_Records_Nodes_User_User? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (((SteamName is null && other.SteamName is null) || SteamName != null && SteamName.Equals(other.SteamName)));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetTopRecordGhosts_Records_Nodes_User_User)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                if (SteamName != null)
+                {
+                    hash ^= 397 * SteamName.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia : global::System.IEquatable<GetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia>, IGetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia
+    {
+        public GetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia(global::System.String? ghostUrl)
+        {
+            GhostUrl = ghostUrl;
+        }
+
+        public global::System.String? GhostUrl { get; }
+
+        public virtual global::System.Boolean Equals(GetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (((GhostUrl is null && other.GhostUrl is null) || GhostUrl != null && GhostUrl.Equals(other.GhostUrl)));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                if (GhostUrl != null)
+                {
+                    hash ^= 397 * GhostUrl.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The root query type which gives access points into the data universe.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhostsResult
+    {
+        /// <summary>
+        /// Reads and enables pagination through a set of `Record`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records? Records { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `Record` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records
+    {
+        /// <summary>
+        /// A list of `Record` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes> Nodes { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `Record` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_RecordsConnection : IGetTopRecordGhosts_Records
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes : IGhostRecordFrag
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes_Record : IGetTopRecordGhosts_Records_Nodes
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes_User
+    {
+        public global::System.String? SteamName { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes_User_User : IGetTopRecordGhosts_Records_Nodes_User
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes_RecordMedia
+    {
+        public global::System.String? GhostUrl { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhosts_Records_Nodes_RecordMedia_RecordMedia : IGetTopRecordGhosts_Records_Nodes_RecordMedia
+    {
+    }
+
+    /// <summary>
+    /// The root query type which gives access points into the data universe.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetTotalUserCountResult : global::System.IEquatable<GetTotalUserCountResult>, IGetTotalUserCountResult
     {
         public GetTotalUserCountResult(global::TNRD.Zeepkist.GTR.IGetTotalUserCount_Users? users)
@@ -3458,7 +3887,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -3972,7 +4401,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4091,7 +4520,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4116,7 +4545,7 @@ namespace TNRD.Zeepkist.GTR
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
     /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
-    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    ///   records(filter: { recordMediaExists: true, personalBestGlobalsExist: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4124,7 +4553,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4254,134 +4683,29 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7b,
             0x20,
-            0x6c,
+            0x72,
             0x65,
-            0x76,
-            0x65,
-            0x6c,
-            0x3a,
-            0x20,
-            0x7b,
-            0x20,
+            0x63,
             0x6f,
             0x72,
-            0x3a,
-            0x20,
-            0x5b,
-            0x20,
-            0x7b,
-            0x20,
-            0x78,
-            0x78,
-            0x48,
-            0x61,
-            0x73,
-            0x68,
-            0x3a,
-            0x20,
-            0x7b,
-            0x20,
-            0x65,
-            0x71,
-            0x75,
-            0x61,
-            0x6c,
-            0x54,
-            0x6f,
-            0x3a,
-            0x20,
-            0x24,
-            0x78,
-            0x78,
-            0x48,
-            0x61,
-            0x73,
-            0x68,
-            0x20,
-            0x7d,
-            0x20,
-            0x7d,
-            0x2c,
-            0x20,
-            0x7b,
-            0x20,
-            0x61,
-            0x6e,
             0x64,
-            0x3a,
-            0x20,
-            0x5b,
-            0x20,
-            0x7b,
-            0x20,
-            0x68,
-            0x61,
-            0x73,
-            0x68,
-            0x3a,
-            0x20,
-            0x7b,
-            0x20,
+            0x4d,
             0x65,
-            0x71,
-            0x75,
-            0x61,
-            0x6c,
-            0x54,
-            0x6f,
-            0x3a,
-            0x20,
-            0x24,
-            0x68,
-            0x61,
-            0x73,
-            0x68,
-            0x20,
-            0x7d,
-            0x20,
-            0x7d,
-            0x2c,
-            0x20,
-            0x7b,
-            0x20,
-            0x61,
             0x64,
-            0x76,
-            0x65,
-            0x6e,
+            0x69,
+            0x61,
+            0x45,
+            0x78,
+            0x69,
+            0x73,
             0x74,
-            0x75,
-            0x72,
-            0x65,
-            0x3a,
-            0x20,
-            0x7b,
-            0x20,
-            0x65,
-            0x71,
-            0x75,
-            0x61,
-            0x6c,
-            0x54,
-            0x6f,
+            0x73,
             0x3a,
             0x20,
             0x74,
             0x72,
             0x75,
             0x65,
-            0x20,
-            0x7d,
-            0x20,
-            0x7d,
-            0x20,
-            0x5d,
-            0x20,
-            0x7d,
-            0x20,
-            0x5d,
-            0x20,
-            0x7d,
             0x2c,
             0x20,
             0x70,
@@ -4414,6 +4738,136 @@ namespace TNRD.Zeepkist.GTR
             0x72,
             0x75,
             0x65,
+            0x2c,
+            0x20,
+            0x6c,
+            0x65,
+            0x76,
+            0x65,
+            0x6c,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
             0x20,
             0x7d,
             0x2c,
@@ -4618,7 +5072,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "ad510ab434578d77986a65ce26806139");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "030beb7b979386ae86b8eb129c163aa4");
 
         public override global::System.String ToString()
         {
@@ -4634,7 +5088,7 @@ namespace TNRD.Zeepkist.GTR
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
     /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
-    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    ///   records(filter: { recordMediaExists: true, personalBestGlobalsExist: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4642,7 +5096,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4739,7 +5193,7 @@ namespace TNRD.Zeepkist.GTR
     /// Represents the operation service of the GetAllPersonalBestGhosts GraphQL operation
     /// <code>
     /// query GetAllPersonalBestGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
-    ///   records(filter: { level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] }, personalBestGlobalsExist: true }, first: $first, orderBy: TIME_ASC) {
+    ///   records(filter: { recordMediaExists: true, personalBestGlobalsExist: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
     ///     __typename
     ///     nodes {
     ///       __typename
@@ -4747,7 +5201,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -6060,7 +6514,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -6586,7 +7040,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -6694,7 +7148,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    /// 
+    ///
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -7778,6 +8232,649 @@ namespace TNRD.Zeepkist.GTR
     }
 
     /// <summary>
+    /// Represents the operation service of the GetTopRecordGhosts GraphQL operation
+    /// <code>
+    /// query GetTopRecordGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { recordMediaExists: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       ... GhostRecordFrag
+    ///     }
+    ///   }
+    /// }
+    ///
+    /// fragment GhostRecordFrag on Record {
+    ///   id
+    ///   user {
+    ///     __typename
+    ///     steamName
+    ///   }
+    ///   recordMedia {
+    ///     __typename
+    ///     ghostUrl
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsQueryDocument : global::StrawberryShake.IDocument
+    {
+        private GetTopRecordGhostsQueryDocument()
+        {
+        }
+
+        public static GetTopRecordGhostsQueryDocument Instance { get; } = new GetTopRecordGhostsQueryDocument();
+        public global::StrawberryShake.OperationKind Kind => global::StrawberryShake.OperationKind.Query;
+        public MemoryAlias::System.ReadOnlySpan<global::System.Byte> Body => new global::System.Byte[]
+        {
+            0x71,
+            0x75,
+            0x65,
+            0x72,
+            0x79,
+            0x20,
+            0x47,
+            0x65,
+            0x74,
+            0x54,
+            0x6f,
+            0x70,
+            0x52,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x47,
+            0x68,
+            0x6f,
+            0x73,
+            0x74,
+            0x73,
+            0x28,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x53,
+            0x74,
+            0x72,
+            0x69,
+            0x6e,
+            0x67,
+            0x21,
+            0x2c,
+            0x20,
+            0x24,
+            0x66,
+            0x69,
+            0x72,
+            0x73,
+            0x74,
+            0x3a,
+            0x20,
+            0x49,
+            0x6e,
+            0x74,
+            0x20,
+            0x3d,
+            0x20,
+            0x6e,
+            0x75,
+            0x6c,
+            0x6c,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x72,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x73,
+            0x28,
+            0x66,
+            0x69,
+            0x6c,
+            0x74,
+            0x65,
+            0x72,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x72,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x4d,
+            0x65,
+            0x64,
+            0x69,
+            0x61,
+            0x45,
+            0x78,
+            0x69,
+            0x73,
+            0x74,
+            0x73,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x2c,
+            0x20,
+            0x6c,
+            0x65,
+            0x76,
+            0x65,
+            0x6c,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x6f,
+            0x72,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x6e,
+            0x64,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x7b,
+            0x20,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x7b,
+            0x20,
+            0x61,
+            0x64,
+            0x76,
+            0x65,
+            0x6e,
+            0x74,
+            0x75,
+            0x72,
+            0x65,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x5d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x66,
+            0x69,
+            0x72,
+            0x73,
+            0x74,
+            0x3a,
+            0x20,
+            0x24,
+            0x66,
+            0x69,
+            0x72,
+            0x73,
+            0x74,
+            0x2c,
+            0x20,
+            0x6f,
+            0x72,
+            0x64,
+            0x65,
+            0x72,
+            0x42,
+            0x79,
+            0x3a,
+            0x20,
+            0x54,
+            0x49,
+            0x4d,
+            0x45,
+            0x5f,
+            0x41,
+            0x53,
+            0x43,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x6e,
+            0x6f,
+            0x64,
+            0x65,
+            0x73,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x2e,
+            0x2e,
+            0x2e,
+            0x20,
+            0x47,
+            0x68,
+            0x6f,
+            0x73,
+            0x74,
+            0x52,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x46,
+            0x72,
+            0x61,
+            0x67,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x66,
+            0x72,
+            0x61,
+            0x67,
+            0x6d,
+            0x65,
+            0x6e,
+            0x74,
+            0x20,
+            0x47,
+            0x68,
+            0x6f,
+            0x73,
+            0x74,
+            0x52,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x46,
+            0x72,
+            0x61,
+            0x67,
+            0x20,
+            0x6f,
+            0x6e,
+            0x20,
+            0x52,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x20,
+            0x7b,
+            0x20,
+            0x69,
+            0x64,
+            0x20,
+            0x75,
+            0x73,
+            0x65,
+            0x72,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x73,
+            0x74,
+            0x65,
+            0x61,
+            0x6d,
+            0x4e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x72,
+            0x65,
+            0x63,
+            0x6f,
+            0x72,
+            0x64,
+            0x4d,
+            0x65,
+            0x64,
+            0x69,
+            0x61,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x67,
+            0x68,
+            0x6f,
+            0x73,
+            0x74,
+            0x55,
+            0x72,
+            0x6c,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d
+        };
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "a017869f58012ff5e63ed2e68b7ecb9f");
+
+        public override global::System.String ToString()
+        {
+#if NETCOREAPP3_1_OR_GREATER
+        return global::System.Text.Encoding.UTF8.GetString(Body);
+#else
+            return global::System.Text.Encoding.UTF8.GetString(Body.ToArray());
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Represents the operation service of the GetTopRecordGhosts GraphQL operation
+    /// <code>
+    /// query GetTopRecordGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { recordMediaExists: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       ... GhostRecordFrag
+    ///     }
+    ///   }
+    /// }
+    ///
+    /// fragment GhostRecordFrag on Record {
+    ///   id
+    ///   user {
+    ///     __typename
+    ///     steamName
+    ///   }
+    ///   recordMedia {
+    ///     __typename
+    ///     ghostUrl
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsQuery : global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery
+    {
+        private readonly global::StrawberryShake.IOperationExecutor<IGetTopRecordGhostsResult> _operationExecutor;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _stringFormatter;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _intFormatter;
+        public GetTopRecordGhostsQuery(global::StrawberryShake.IOperationExecutor<IGetTopRecordGhostsResult> operationExecutor, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        {
+            _operationExecutor = operationExecutor ?? throw new global::System.ArgumentNullException(nameof(operationExecutor));
+            _stringFormatter = serializerResolver.GetInputValueFormatter("String");
+            _intFormatter = serializerResolver.GetInputValueFormatter("Int");
+        }
+
+        global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetTopRecordGhostsResult);
+
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetTopRecordGhostsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default)
+        {
+            var request = CreateRequest(xxHash, hash, first);
+            return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetTopRecordGhostsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        {
+            var request = CreateRequest(xxHash, hash, first);
+            return _operationExecutor.Watch(request, strategy);
+        }
+
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String xxHash, global::System.String hash, global::System.Int32? first)
+        {
+            var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("xxHash", FormatXxHash(xxHash));
+            variables.Add("hash", FormatHash(hash));
+            variables.Add("first", FormatFirst(first));
+            return CreateRequest(variables);
+        }
+
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
+        {
+            return new global::StrawberryShake.OperationRequest(id: GetTopRecordGhostsQueryDocument.Instance.Hash.Value, name: "GetTopRecordGhosts", document: GetTopRecordGhostsQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
+        }
+
+        private global::System.Object? FormatXxHash(global::System.String value)
+        {
+            if (value is null)
+            {
+                throw new global::System.ArgumentNullException(nameof(value));
+            }
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatHash(global::System.String value)
+        {
+            if (value is null)
+            {
+                throw new global::System.ArgumentNullException(nameof(value));
+            }
+
+            return _stringFormatter.Format(value);
+        }
+
+        private global::System.Object? FormatFirst(global::System.Int32? value)
+        {
+            if (value is null)
+            {
+                return value;
+            }
+            else
+            {
+                return _intFormatter.Format(value);
+            }
+        }
+
+        global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
+        {
+            return CreateRequest(variables!);
+        }
+    }
+
+    /// <summary>
+    /// Represents the operation service of the GetTopRecordGhosts GraphQL operation
+    /// <code>
+    /// query GetTopRecordGhosts($xxHash: String!, $hash: String!, $first: Int = null) {
+    ///   records(filter: { recordMediaExists: true, level: { or: [ { xxHash: { equalTo: $xxHash } }, { and: [ { hash: { equalTo: $hash } }, { adventure: { equalTo: true } } ] } ] } }, first: $first, orderBy: TIME_ASC) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       ... GhostRecordFrag
+    ///     }
+    ///   }
+    /// }
+    ///
+    /// fragment GhostRecordFrag on Record {
+    ///   id
+    ///   user {
+    ///     __typename
+    ///     steamName
+    ///   }
+    ///   recordMedia {
+    ///     __typename
+    ///     ghostUrl
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetTopRecordGhostsQuery : global::StrawberryShake.IOperationRequestFactory
+    {
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetTopRecordGhostsResult>> ExecuteAsync(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetTopRecordGhostsResult>> Watch(global::System.String xxHash, global::System.String hash, global::System.Int32? first, global::StrawberryShake.ExecutionStrategy? strategy = null);
+    }
+
+    /// <summary>
     /// Represents the operation service of the GetTotalUserCount GraphQL operation
     /// <code>
     /// query GetTotalUserCount {
@@ -8429,9 +9526,10 @@ namespace TNRD.Zeepkist.GTR
         private readonly global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery _getPersonalBestGhosts;
         private readonly global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery _getPersonalBests;
         private readonly global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery _getPlayerRankOnLevel;
+        private readonly global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery _getTopRecordGhosts;
         private readonly global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery _getTotalUserCount;
         private readonly global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery _getWorldRecordHolder;
-        public GtrClient(global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery getAdditionalGhosts, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery getAllPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery getLevelPoints, global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery getPersonalBest, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery getPersonalBestCount, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery getPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery getPersonalBests, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery getPlayerRankOnLevel, global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery getTotalUserCount, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery getWorldRecordHolder)
+        public GtrClient(global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery getAdditionalGhosts, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery getAllPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery getLevelPoints, global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery getPersonalBest, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery getPersonalBestCount, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery getPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery getPersonalBests, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery getPlayerRankOnLevel, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery getTopRecordGhosts, global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery getTotalUserCount, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery getWorldRecordHolder)
         {
             _getAdditionalGhosts = getAdditionalGhosts ?? throw new global::System.ArgumentNullException(nameof(getAdditionalGhosts));
             _getAllPersonalBestGhosts = getAllPersonalBestGhosts ?? throw new global::System.ArgumentNullException(nameof(getAllPersonalBestGhosts));
@@ -8441,6 +9539,7 @@ namespace TNRD.Zeepkist.GTR
             _getPersonalBestGhosts = getPersonalBestGhosts ?? throw new global::System.ArgumentNullException(nameof(getPersonalBestGhosts));
             _getPersonalBests = getPersonalBests ?? throw new global::System.ArgumentNullException(nameof(getPersonalBests));
             _getPlayerRankOnLevel = getPlayerRankOnLevel ?? throw new global::System.ArgumentNullException(nameof(getPlayerRankOnLevel));
+            _getTopRecordGhosts = getTopRecordGhosts ?? throw new global::System.ArgumentNullException(nameof(getTopRecordGhosts));
             _getTotalUserCount = getTotalUserCount ?? throw new global::System.ArgumentNullException(nameof(getTotalUserCount));
             _getWorldRecordHolder = getWorldRecordHolder ?? throw new global::System.ArgumentNullException(nameof(getWorldRecordHolder));
         }
@@ -8454,6 +9553,7 @@ namespace TNRD.Zeepkist.GTR
         public global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery GetPersonalBestGhosts => _getPersonalBestGhosts;
         public global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery GetPersonalBests => _getPersonalBests;
         public global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery GetPlayerRankOnLevel => _getPlayerRankOnLevel;
+        public global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery GetTopRecordGhosts => _getTopRecordGhosts;
         public global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery GetTotalUserCount => _getTotalUserCount;
         public global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery GetWorldRecordHolder => _getWorldRecordHolder;
     }
@@ -8480,6 +9580,8 @@ namespace TNRD.Zeepkist.GTR
 
         global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery GetPlayerRankOnLevel { get; }
 
+        global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery GetTopRecordGhosts { get; }
+
         global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery GetTotalUserCount { get; }
 
         global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery GetWorldRecordHolder { get; }
@@ -8491,23 +9593,30 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAdditionalGhostsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetAdditionalGhostsResult>
     {
-        public GetAdditionalGhostsResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetAdditionalGhostsResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult);
 
         public GetAdditionalGhostsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetAdditionalGhostsResultInfo info)
             {
-                return new GetAdditionalGhostsResult(MapIGetAdditionalGhosts_PersonalBestGlobals(info.PersonalBestGlobals));
+                return new GetAdditionalGhostsResult(MapIGetAdditionalGhosts_PersonalBestGlobals(info.PersonalBestGlobals, snapshot));
             }
 
             throw new global::System.ArgumentException("GetAdditionalGhostsResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals? MapIGetAdditionalGhosts_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals? MapIGetAdditionalGhosts_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8517,7 +9626,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetAdditionalGhosts_PersonalBestGlobals returnValue = default !;
             if (data?.__typename.Equals("PersonalBestGlobalsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -8527,7 +9636,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes> MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes> MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -8537,18 +9646,18 @@ namespace TNRD.Zeepkist.GTR.State
             var personalBestGlobals = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData child in list)
             {
-                personalBestGlobals.Add(MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_Nodes(child));
+                personalBestGlobals.Add(MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_Nodes(child, snapshot));
             }
 
             return personalBestGlobals;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes MapNonNullableIGetAdditionalGhosts_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetAdditionalGhosts_PersonalBestGlobals_Nodes returnValue = default !;
             if (data.__typename.Equals("PersonalBestGlobal", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record(data.Record));
+                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record(data.Record, snapshot));
             }
             else
             {
@@ -8558,7 +9667,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8568,7 +9677,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record returnValue = default !;
             if (data?.__typename.Equals("Record", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia));
+                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User, snapshot), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia, snapshot));
             }
             else
             {
@@ -8578,7 +9687,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8598,7 +9707,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8627,44 +9736,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAdditionalGhostsResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetAdditionalGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetAdditionalGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             PersonalBestGlobals = personalBestGlobals;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `PersonalBestGlobal`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? PersonalBestGlobals { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetAdditionalGhostsResultInfo(PersonalBestGlobals);
+            return new GetAdditionalGhostsResultInfo(PersonalBestGlobals, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAllPersonalBestGhostsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetAllPersonalBestGhostsResult>
     {
-        public GetAllPersonalBestGhostsResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetAllPersonalBestGhostsResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult);
 
         public GetAllPersonalBestGhostsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetAllPersonalBestGhostsResultInfo info)
             {
-                return new GetAllPersonalBestGhostsResult(MapIGetAllPersonalBestGhosts_Records(info.Records));
+                return new GetAllPersonalBestGhostsResult(MapIGetAllPersonalBestGhosts_Records(info.Records, snapshot));
             }
 
             throw new global::System.ArgumentException("GetAllPersonalBestGhostsResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records? MapIGetAllPersonalBestGhosts_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records? MapIGetAllPersonalBestGhosts_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8674,7 +9794,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetAllPersonalBestGhosts_Records returnValue = default !;
             if (data?.__typename.Equals("RecordsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetAllPersonalBestGhosts_Records_RecordsConnection(MapNonNullableIGetAllPersonalBestGhosts_Records_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetAllPersonalBestGhosts_Records_RecordsConnection(MapNonNullableIGetAllPersonalBestGhosts_Records_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -8684,7 +9804,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records_Nodes> MapNonNullableIGetAllPersonalBestGhosts_Records_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records_Nodes> MapNonNullableIGetAllPersonalBestGhosts_Records_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -8694,18 +9814,18 @@ namespace TNRD.Zeepkist.GTR.State
             var @records = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.RecordData child in list)
             {
-                @records.Add(MapNonNullableIGetAllPersonalBestGhosts_Records_Nodes(child));
+                @records.Add(MapNonNullableIGetAllPersonalBestGhosts_Records_Nodes(child, snapshot));
             }
 
             return @records;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records_Nodes MapNonNullableIGetAllPersonalBestGhosts_Records_Nodes(global::TNRD.Zeepkist.GTR.State.RecordData data)
+        private global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhosts_Records_Nodes MapNonNullableIGetAllPersonalBestGhosts_Records_Nodes(global::TNRD.Zeepkist.GTR.State.RecordData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetAllPersonalBestGhosts_Records_Nodes returnValue = default !;
             if (data.__typename.Equals("Record", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetAllPersonalBestGhosts_Records_Nodes_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia));
+                returnValue = new GetAllPersonalBestGhosts_Records_Nodes_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User, snapshot), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia, snapshot));
             }
             else
             {
@@ -8715,7 +9835,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8735,7 +9855,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8764,44 +9884,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAllPersonalBestGhostsResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetAllPersonalBestGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetAllPersonalBestGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             Records = records;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `Record`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Records { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetAllPersonalBestGhostsResultInfo(Records);
+            return new GetAllPersonalBestGhostsResultInfo(Records, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetLevelPointsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetLevelPointsResult>
     {
-        public GetLevelPointsResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetLevelPointsResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetLevelPointsResult);
 
         public GetLevelPointsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetLevelPointsResultInfo info)
             {
-                return new GetLevelPointsResult(MapIGetLevelPoints_LevelPoints(info.LevelPoints));
+                return new GetLevelPointsResult(MapIGetLevelPoints_LevelPoints(info.LevelPoints, snapshot));
             }
 
             throw new global::System.ArgumentException("GetLevelPointsResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints? MapIGetLevelPoints_LevelPoints(global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints? MapIGetLevelPoints_LevelPoints(global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8811,7 +9942,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetLevelPoints_LevelPoints returnValue = default !;
             if (data?.__typename.Equals("LevelPointsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetLevelPoints_LevelPoints_LevelPointsConnection(MapNonNullableIGetLevelPoints_LevelPoints_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetLevelPoints_LevelPoints_LevelPointsConnection(MapNonNullableIGetLevelPoints_LevelPoints_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -8821,7 +9952,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints_Nodes> MapNonNullableIGetLevelPoints_LevelPoints_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelPointData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints_Nodes> MapNonNullableIGetLevelPoints_LevelPoints_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelPointData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -8831,13 +9962,13 @@ namespace TNRD.Zeepkist.GTR.State
             var levelPoints = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.LevelPointData child in list)
             {
-                levelPoints.Add(MapNonNullableIGetLevelPoints_LevelPoints_Nodes(child));
+                levelPoints.Add(MapNonNullableIGetLevelPoints_LevelPoints_Nodes(child, snapshot));
             }
 
             return levelPoints;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints_Nodes MapNonNullableIGetLevelPoints_LevelPoints_Nodes(global::TNRD.Zeepkist.GTR.State.LevelPointData data)
+        private global::TNRD.Zeepkist.GTR.IGetLevelPoints_LevelPoints_Nodes MapNonNullableIGetLevelPoints_LevelPoints_Nodes(global::TNRD.Zeepkist.GTR.State.LevelPointData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetLevelPoints_LevelPoints_Nodes returnValue = default !;
             if (data.__typename.Equals("LevelPoint", global::System.StringComparison.Ordinal))
@@ -8861,44 +9992,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetLevelPointsResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetLevelPointsResultInfo(global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? levelPoints)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetLevelPointsResultInfo(global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? levelPoints, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             LevelPoints = levelPoints;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `LevelPoint`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? LevelPoints { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetLevelPointsResultInfo(LevelPoints);
+            return new GetLevelPointsResultInfo(LevelPoints, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetPersonalBestResult>
     {
-        public GetPersonalBestResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetPersonalBestResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetPersonalBestResult);
 
         public GetPersonalBestResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetPersonalBestResultInfo info)
             {
-                return new GetPersonalBestResult(MapIGetPersonalBest_PersonalBestGlobals(info.PersonalBestGlobals));
+                return new GetPersonalBestResult(MapIGetPersonalBest_PersonalBestGlobals(info.PersonalBestGlobals, snapshot));
             }
 
             throw new global::System.ArgumentException("GetPersonalBestResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals? MapIGetPersonalBest_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals? MapIGetPersonalBest_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8908,7 +10050,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetPersonalBest_PersonalBestGlobals returnValue = default !;
             if (data?.__typename.Equals("PersonalBestGlobalsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetPersonalBest_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetPersonalBest_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetPersonalBest_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetPersonalBest_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -8918,7 +10060,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes> MapNonNullableIGetPersonalBest_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes> MapNonNullableIGetPersonalBest_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -8928,18 +10070,18 @@ namespace TNRD.Zeepkist.GTR.State
             var personalBestGlobals = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData child in list)
             {
-                personalBestGlobals.Add(MapNonNullableIGetPersonalBest_PersonalBestGlobals_Nodes(child));
+                personalBestGlobals.Add(MapNonNullableIGetPersonalBest_PersonalBestGlobals_Nodes(child, snapshot));
             }
 
             return personalBestGlobals;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes MapNonNullableIGetPersonalBest_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes MapNonNullableIGetPersonalBest_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetPersonalBest_PersonalBestGlobals_Nodes returnValue = default !;
             if (data.__typename.Equals("PersonalBestGlobal", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetPersonalBest_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetPersonalBest_PersonalBestGlobals_Nodes_Record(data.Record));
+                returnValue = new GetPersonalBest_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetPersonalBest_PersonalBestGlobals_Nodes_Record(data.Record, snapshot));
             }
             else
             {
@@ -8949,7 +10091,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes_Record? MapIGetPersonalBest_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBest_PersonalBestGlobals_Nodes_Record? MapIGetPersonalBest_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -8978,44 +10120,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetPersonalBestResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetPersonalBestResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             PersonalBestGlobals = personalBestGlobals;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `PersonalBestGlobal`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? PersonalBestGlobals { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetPersonalBestResultInfo(PersonalBestGlobals);
+            return new GetPersonalBestResultInfo(PersonalBestGlobals, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestCountResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetPersonalBestCountResult>
     {
-        public GetPersonalBestCountResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetPersonalBestCountResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult);
 
         public GetPersonalBestCountResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetPersonalBestCountResultInfo info)
             {
-                return new GetPersonalBestCountResult(MapIGetPersonalBestCount_PersonalBestGlobals(info.PersonalBestGlobals));
+                return new GetPersonalBestCountResult(MapIGetPersonalBestCount_PersonalBestGlobals(info.PersonalBestGlobals, snapshot));
             }
 
             throw new global::System.ArgumentException("GetPersonalBestCountResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBestCount_PersonalBestGlobals? MapIGetPersonalBestCount_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBestCount_PersonalBestGlobals? MapIGetPersonalBestCount_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9044,44 +10197,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestCountResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetPersonalBestCountResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetPersonalBestCountResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             PersonalBestGlobals = personalBestGlobals;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `PersonalBestGlobal`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? PersonalBestGlobals { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetPersonalBestCountResultInfo(PersonalBestGlobals);
+            return new GetPersonalBestCountResultInfo(PersonalBestGlobals, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestGhostsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetPersonalBestGhostsResult>
     {
-        public GetPersonalBestGhostsResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetPersonalBestGhostsResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult);
 
         public GetPersonalBestGhostsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetPersonalBestGhostsResultInfo info)
             {
-                return new GetPersonalBestGhostsResult(MapIGetPersonalBestGhosts_PersonalBestGlobals(info.PersonalBestGlobals));
+                return new GetPersonalBestGhostsResult(MapIGetPersonalBestGhosts_PersonalBestGlobals(info.PersonalBestGlobals, snapshot));
             }
 
             throw new global::System.ArgumentException("GetPersonalBestGhostsResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals? MapIGetPersonalBestGhosts_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals? MapIGetPersonalBestGhosts_PersonalBestGlobals(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9091,7 +10255,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetPersonalBestGhosts_PersonalBestGlobals returnValue = default !;
             if (data?.__typename.Equals("PersonalBestGlobalsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_PersonalBestGlobalsConnection(MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -9101,7 +10265,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes> MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes> MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -9111,18 +10275,18 @@ namespace TNRD.Zeepkist.GTR.State
             var personalBestGlobals = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData child in list)
             {
-                personalBestGlobals.Add(MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_Nodes(child));
+                personalBestGlobals.Add(MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_Nodes(child, snapshot));
             }
 
             return personalBestGlobals;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes MapNonNullableIGetPersonalBestGhosts_PersonalBestGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetPersonalBestGhosts_PersonalBestGlobals_Nodes returnValue = default !;
             if (data.__typename.Equals("PersonalBestGlobal", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record(data.Record));
+                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_Nodes_PersonalBestGlobal(MapIGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record(data.Record, snapshot));
             }
             else
             {
@@ -9132,7 +10296,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record? MapIGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record? MapIGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9142,7 +10306,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record returnValue = default !;
             if (data?.__typename.Equals("Record", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia));
+                returnValue = new GetPersonalBestGhosts_PersonalBestGlobals_Nodes_Record_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User, snapshot), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia, snapshot));
             }
             else
             {
@@ -9152,7 +10316,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9172,7 +10336,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data)
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9201,44 +10365,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestGhostsResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetPersonalBestGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetPersonalBestGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? personalBestGlobals, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             PersonalBestGlobals = personalBestGlobals;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `PersonalBestGlobal`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? PersonalBestGlobals { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetPersonalBestGhostsResultInfo(PersonalBestGlobals);
+            return new GetPersonalBestGhostsResultInfo(PersonalBestGlobals, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetPersonalBestsResult>
     {
-        public GetPersonalBestsResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetPersonalBestsResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult);
 
         public GetPersonalBestsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetPersonalBestsResultInfo info)
             {
-                return new GetPersonalBestsResult(MapIGetPersonalBests_Records(info.Records));
+                return new GetPersonalBestsResult(MapIGetPersonalBests_Records(info.Records, snapshot));
             }
 
             throw new global::System.ArgumentException("GetPersonalBestsResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records? MapIGetPersonalBests_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records? MapIGetPersonalBests_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9248,7 +10423,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetPersonalBests_Records returnValue = default !;
             if (data?.__typename.Equals("RecordsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetPersonalBests_Records_RecordsConnection(MapNonNullableIGetPersonalBests_Records_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetPersonalBests_Records_RecordsConnection(MapNonNullableIGetPersonalBests_Records_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -9258,7 +10433,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes> MapNonNullableIGetPersonalBests_Records_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes> MapNonNullableIGetPersonalBests_Records_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -9268,18 +10443,18 @@ namespace TNRD.Zeepkist.GTR.State
             var @records = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.RecordData child in list)
             {
-                @records.Add(MapNonNullableIGetPersonalBests_Records_Nodes(child));
+                @records.Add(MapNonNullableIGetPersonalBests_Records_Nodes(child, snapshot));
             }
 
             return @records;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes MapNonNullableIGetPersonalBests_Records_Nodes(global::TNRD.Zeepkist.GTR.State.RecordData data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes MapNonNullableIGetPersonalBests_Records_Nodes(global::TNRD.Zeepkist.GTR.State.RecordData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetPersonalBests_Records_Nodes returnValue = default !;
             if (data.__typename.Equals("Record", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetPersonalBests_Records_Nodes_Record(MapIGetPersonalBests_Records_Nodes_User(data.User), data.Time ?? throw new global::System.ArgumentNullException());
+                returnValue = new GetPersonalBests_Records_Nodes_Record(MapIGetPersonalBests_Records_Nodes_User(data.User, snapshot), data.Time ?? throw new global::System.ArgumentNullException());
             }
             else
             {
@@ -9289,7 +10464,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes_User? MapIGetPersonalBests_Records_Nodes_User(global::TNRD.Zeepkist.GTR.State.UserData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPersonalBests_Records_Nodes_User? MapIGetPersonalBests_Records_Nodes_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9318,44 +10493,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestsResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetPersonalBestsResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetPersonalBestsResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             Records = records;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `Record`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Records { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetPersonalBestsResultInfo(Records);
+            return new GetPersonalBestsResultInfo(Records, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPlayerRankOnLevelResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetPlayerRankOnLevelResult>
     {
-        public GetPlayerRankOnLevelResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetPlayerRankOnLevelResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult);
 
         public GetPlayerRankOnLevelResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetPlayerRankOnLevelResultInfo info)
             {
-                return new GetPlayerRankOnLevelResult(MapIGetPlayerRankOnLevel_Records(info.Records));
+                return new GetPlayerRankOnLevelResult(MapIGetPlayerRankOnLevel_Records(info.Records, snapshot));
             }
 
             throw new global::System.ArgumentException("GetPlayerRankOnLevelResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevel_Records? MapIGetPlayerRankOnLevel_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevel_Records? MapIGetPlayerRankOnLevel_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9384,44 +10570,203 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPlayerRankOnLevelResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetPlayerRankOnLevelResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetPlayerRankOnLevelResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             Records = records;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `Record`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Records { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetPlayerRankOnLevelResultInfo(Records);
+            return new GetPlayerRankOnLevelResultInfo(Records, _entityIds, version);
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetTopRecordGhostsResult>
+    {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetTopRecordGhostsResultFactory(global::StrawberryShake.IEntityStore entityStore)
+        {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+        }
+
+        global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult);
+
+        public GetTopRecordGhostsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
+        {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
+            if (dataInfo is GetTopRecordGhostsResultInfo info)
+            {
+                return new GetTopRecordGhostsResult(MapIGetTopRecordGhosts_Records(info.Records, snapshot));
+            }
+
+            throw new global::System.ArgumentException("GetTopRecordGhostsResultInfo expected.");
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records? MapIGetTopRecordGhosts_Records(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetTopRecordGhosts_Records returnValue = default !;
+            if (data?.__typename.Equals("RecordsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetTopRecordGhosts_Records_RecordsConnection(MapNonNullableIGetTopRecordGhosts_Records_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes> MapNonNullableIGetTopRecordGhosts_Records_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (list is null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var @records = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes>();
+            foreach (global::TNRD.Zeepkist.GTR.State.RecordData child in list)
+            {
+                @records.Add(MapNonNullableIGetTopRecordGhosts_Records_Nodes(child, snapshot));
+            }
+
+            return @records;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetTopRecordGhosts_Records_Nodes MapNonNullableIGetTopRecordGhosts_Records_Nodes(global::TNRD.Zeepkist.GTR.State.RecordData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetTopRecordGhosts_Records_Nodes returnValue = default !;
+            if (data.__typename.Equals("Record", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetTopRecordGhosts_Records_Nodes_Record(data.Id ?? throw new global::System.ArgumentNullException(), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(data.User, snapshot), MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(data.RecordMedia, snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User returnValue = default !;
+            if (data?.__typename.Equals("User", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User_User(data.SteamName);
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia? MapIGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::TNRD.Zeepkist.GTR.State.RecordMediaData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia returnValue = default !;
+            if (data?.__typename.Equals("RecordMedia", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia_RecordMedia(data.GhostUrl);
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        global::System.Object global::StrawberryShake.IOperationResultDataFactory.Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot)
+        {
+            return Create(dataInfo, snapshot);
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsResultInfo : global::StrawberryShake.IOperationResultDataInfo
+    {
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetTopRecordGhostsResultInfo(global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? records, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
+        {
+            Records = records;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
+        }
+
+        /// <summary>
+        /// Reads and enables pagination through a set of `Record`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Records { get; }
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
+
+        public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
+        {
+            return new GetTopRecordGhostsResultInfo(Records, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetTotalUserCountResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetTotalUserCountResult>
     {
-        public GetTotalUserCountResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetTotalUserCountResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult);
 
         public GetTotalUserCountResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetTotalUserCountResultInfo info)
             {
-                return new GetTotalUserCountResult(MapIGetTotalUserCount_Users(info.Users));
+                return new GetTotalUserCountResult(MapIGetTotalUserCount_Users(info.Users, snapshot));
             }
 
             throw new global::System.ArgumentException("GetTotalUserCountResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetTotalUserCount_Users? MapIGetTotalUserCount_Users(global::TNRD.Zeepkist.GTR.State.UsersConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetTotalUserCount_Users? MapIGetTotalUserCount_Users(global::TNRD.Zeepkist.GTR.State.UsersConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9450,44 +10795,55 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetTotalUserCountResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetTotalUserCountResultInfo(global::TNRD.Zeepkist.GTR.State.UsersConnectionData? users)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetTotalUserCountResultInfo(global::TNRD.Zeepkist.GTR.State.UsersConnectionData? users, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             Users = users;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `User`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.UsersConnectionData? Users { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetTotalUserCountResultInfo(Users);
+            return new GetTotalUserCountResultInfo(Users, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetWorldRecordHolderResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderResult>
     {
-        public GetWorldRecordHolderResultFactory()
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetWorldRecordHolderResultFactory(global::StrawberryShake.IEntityStore entityStore)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
         }
 
         global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult);
 
         public GetWorldRecordHolderResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
         {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
             if (dataInfo is GetWorldRecordHolderResultInfo info)
             {
-                return new GetWorldRecordHolderResult(MapIGetWorldRecordHolder_WorldRecordGlobals(info.WorldRecordGlobals));
+                return new GetWorldRecordHolderResult(MapIGetWorldRecordHolder_WorldRecordGlobals(info.WorldRecordGlobals, snapshot));
             }
 
             throw new global::System.ArgumentException("GetWorldRecordHolderResultInfo expected.");
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals? MapIGetWorldRecordHolder_WorldRecordGlobals(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? data)
+        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals? MapIGetWorldRecordHolder_WorldRecordGlobals(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9497,7 +10853,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetWorldRecordHolder_WorldRecordGlobals returnValue = default !;
             if (data?.__typename.Equals("WorldRecordGlobalsConnection", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_WorldRecordGlobalsConnection(MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException()));
+                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_WorldRecordGlobalsConnection(MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
             }
             else
             {
@@ -9507,7 +10863,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes> MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalData>? list)
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes> MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (list is null)
             {
@@ -9517,18 +10873,18 @@ namespace TNRD.Zeepkist.GTR.State
             var worldRecordGlobals = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes>();
             foreach (global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalData child in list)
             {
-                worldRecordGlobals.Add(MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_Nodes(child));
+                worldRecordGlobals.Add(MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_Nodes(child, snapshot));
             }
 
             return worldRecordGlobals;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalData data)
+        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes MapNonNullableIGetWorldRecordHolder_WorldRecordGlobals_Nodes(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             IGetWorldRecordHolder_WorldRecordGlobals_Nodes returnValue = default !;
             if (data.__typename.Equals("WorldRecordGlobal", global::System.StringComparison.Ordinal))
             {
-                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_Nodes_WorldRecordGlobal(MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record(data.Record));
+                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_Nodes_WorldRecordGlobal(MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record(data.Record, snapshot));
             }
             else
             {
@@ -9538,7 +10894,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record? MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data)
+        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record? MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record(global::TNRD.Zeepkist.GTR.State.RecordData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9548,7 +10904,7 @@ namespace TNRD.Zeepkist.GTR.State
             IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record returnValue = default !;
             if (data?.__typename.Equals("Record", global::System.StringComparison.Ordinal) ?? false)
             {
-                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_Record(data.Time ?? throw new global::System.ArgumentNullException(), MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User(data.User));
+                returnValue = new GetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_Record(data.Time ?? throw new global::System.ArgumentNullException(), MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User(data.User, snapshot));
             }
             else
             {
@@ -9558,7 +10914,7 @@ namespace TNRD.Zeepkist.GTR.State
             return returnValue;
         }
 
-        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User? MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data)
+        private global::TNRD.Zeepkist.GTR.IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User? MapIGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
         {
             if (data is null)
             {
@@ -9587,32 +10943,40 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetWorldRecordHolderResultInfo : global::StrawberryShake.IOperationResultDataInfo
     {
-        public GetWorldRecordHolderResultInfo(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? worldRecordGlobals)
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetWorldRecordHolderResultInfo(global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? worldRecordGlobals, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
         {
             WorldRecordGlobals = worldRecordGlobals;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
         }
 
         /// <summary>
         /// Reads and enables pagination through a set of `WorldRecordGlobal`.
         /// </summary>
         public global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? WorldRecordGlobals { get; }
-        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => global::System.Array.Empty<global::StrawberryShake.EntityId>();
-        public global::System.UInt64 Version => 0;
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
 
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
-            return new GetWorldRecordHolderResultInfo(WorldRecordGlobals);
+            return new GetWorldRecordHolderResultInfo(WorldRecordGlobals, _entityIds, version);
         }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAdditionalGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetAdditionalGhostsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetAdditionalGhostsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
@@ -9623,7 +10987,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetAdditionalGhostsResultInfo(Deserialize_IGetAdditionalGhosts_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetAdditionalGhostsResultInfo(Deserialize_IGetAdditionalGhosts_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? Deserialize_IGetAdditionalGhosts_PersonalBestGlobals(global::System.Text.Json.JsonElement? obj)
@@ -9786,10 +11156,14 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetAllPersonalBestGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetAllPersonalBestGhostsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetAllPersonalBestGhostsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
@@ -9799,7 +11173,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetAllPersonalBestGhostsResultInfo(Deserialize_IGetAllPersonalBestGhosts_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetAllPersonalBestGhostsResultInfo(Deserialize_IGetAllPersonalBestGhosts_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Deserialize_IGetAllPersonalBestGhosts_Records(global::System.Text.Json.JsonElement? obj)
@@ -9941,10 +11321,14 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetLevelPointsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetLevelPointsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetLevelPointsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetLevelPointsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
@@ -9954,7 +11338,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetLevelPointsResultInfo(Deserialize_IGetLevelPoints_LevelPoints(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "levelPoints")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetLevelPointsResultInfo(Deserialize_IGetLevelPoints_LevelPoints(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "levelPoints")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.LevelPointsConnectionData? Deserialize_IGetLevelPoints_LevelPoints(global::System.Text.Json.JsonElement? obj)
@@ -10039,11 +11429,15 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
-        public GetPersonalBestBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetPersonalBestBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
@@ -10054,7 +11448,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetPersonalBestResultInfo(Deserialize_IGetPersonalBest_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetPersonalBestResultInfo(Deserialize_IGetPersonalBest_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? Deserialize_IGetPersonalBest_PersonalBestGlobals(global::System.Text.Json.JsonElement? obj)
@@ -10160,10 +11560,14 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestCountBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetPersonalBestCountBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetPersonalBestCountBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestCountResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
@@ -10173,7 +11577,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetPersonalBestCountResultInfo(Deserialize_IGetPersonalBestCount_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetPersonalBestCountResultInfo(Deserialize_IGetPersonalBestCount_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? Deserialize_IGetPersonalBestCount_PersonalBestGlobals(global::System.Text.Json.JsonElement? obj)
@@ -10216,11 +11626,15 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetPersonalBestGhostsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetPersonalBestGhostsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
@@ -10231,7 +11645,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetPersonalBestGhostsResultInfo(Deserialize_IGetPersonalBestGhosts_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetPersonalBestGhostsResultInfo(Deserialize_IGetPersonalBestGhosts_PersonalBestGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "personalBestGlobals")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.PersonalBestGlobalsConnectionData? Deserialize_IGetPersonalBestGhosts_PersonalBestGlobals(global::System.Text.Json.JsonElement? obj)
@@ -10394,12 +11814,16 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPersonalBestsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
-        public GetPersonalBestsBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetPersonalBestsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPersonalBestsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
@@ -10411,7 +11835,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetPersonalBestsResultInfo(Deserialize_IGetPersonalBests_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetPersonalBestsResultInfo(Deserialize_IGetPersonalBests_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Deserialize_IGetPersonalBests_Records(global::System.Text.Json.JsonElement? obj)
@@ -10532,11 +11962,15 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetPlayerRankOnLevelBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetPlayerRankOnLevelBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetPlayerRankOnLevelBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _floatParser = serializerResolver.GetLeafValueParser<global::System.Double, global::System.Double>("Float") ?? throw new global::System.ArgumentException("No serializer for type `Float` found.");
@@ -10547,7 +11981,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetPlayerRankOnLevelResultInfo(Deserialize_IGetPlayerRankOnLevel_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetPlayerRankOnLevelResultInfo(Deserialize_IGetPlayerRankOnLevel_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Deserialize_IGetPlayerRankOnLevel_Records(global::System.Text.Json.JsonElement? obj)
@@ -10588,11 +12028,180 @@ namespace TNRD.Zeepkist.GTR.State
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetTopRecordGhostsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult>
+    {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
+        public GetTopRecordGhostsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
+            ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
+            _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
+            _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
+        }
+
+        protected override global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsResult> ResultDataFactory { get; }
+
+        protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
+        {
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetTopRecordGhostsResultInfo(Deserialize_IGetTopRecordGhosts_Records(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "records")), entityIds, snapshot.Version);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.RecordsConnectionData? Deserialize_IGetTopRecordGhosts_Records(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("RecordsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.RecordsConnectionData(typename, nodes: Deserialize_NonNullableIGetTopRecordGhosts_Records_NodesNonNullableArray(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "nodes")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.RecordData> Deserialize_NonNullableIGetTopRecordGhosts_Records_NodesNonNullableArray(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var @records = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.State.RecordData>();
+            foreach (global::System.Text.Json.JsonElement child in obj.Value.EnumerateArray())
+            {
+                @records.Add(Deserialize_NonNullableIGetTopRecordGhosts_Records_Nodes(child));
+            }
+
+            return @records;
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.RecordData Deserialize_NonNullableIGetTopRecordGhosts_Records_Nodes(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("Record", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.RecordData(typename, id: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "id")), user: Deserialize_IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "user")), recordMedia: Deserialize_IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "recordMedia")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Int32 Deserialize_NonNullableInt32(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            return _intParser.Parse(obj.Value.GetInt32()!);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.UserData? Deserialize_IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_User(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("User", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.UserData(typename, steamName: Deserialize_String(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "steamName")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.String? Deserialize_String(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            return _stringParser.Parse(obj.Value.GetString()!);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.RecordMediaData? Deserialize_IGetAdditionalGhosts_PersonalBestGlobals_Nodes_Record_RecordMedia(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("RecordMedia", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.RecordMediaData(typename, ghostUrl: Deserialize_String(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "ghostUrl")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetTotalUserCountBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
-        public GetTotalUserCountBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetTotalUserCountBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetTotalUserCountResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
         }
@@ -10601,7 +12210,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetTotalUserCountResultInfo(Deserialize_IGetTotalUserCount_Users(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "users")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetTotalUserCountResultInfo(Deserialize_IGetTotalUserCount_Users(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "users")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.UsersConnectionData? Deserialize_IGetTotalUserCount_Users(global::System.Text.Json.JsonElement? obj)
@@ -10644,10 +12259,14 @@ namespace TNRD.Zeepkist.GTR.State
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class GetWorldRecordHolderBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult>
     {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
         private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
-        public GetWorldRecordHolderBuilder(global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        public GetWorldRecordHolderBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
         {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
             ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
             _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
             _floatParser = serializerResolver.GetLeafValueParser<global::System.Double, global::System.Double>("Float") ?? throw new global::System.ArgumentException("No serializer for type `Float` found.");
@@ -10657,7 +12276,13 @@ namespace TNRD.Zeepkist.GTR.State
 
         protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
         {
-            return new GetWorldRecordHolderResultInfo(Deserialize_IGetWorldRecordHolder_WorldRecordGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "worldRecordGlobals")));
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetWorldRecordHolderResultInfo(Deserialize_IGetWorldRecordHolder_WorldRecordGlobals(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "worldRecordGlobals")), entityIds, snapshot.Version);
         }
 
         private global::TNRD.Zeepkist.GTR.State.WorldRecordGlobalsConnectionData? Deserialize_IGetWorldRecordHolder_WorldRecordGlobals(global::System.Text.Json.JsonElement? obj)
@@ -10974,20 +12599,33 @@ namespace TNRD.Zeepkist.GTR.State
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
-    public partial class GtrClientStoreAccessor : global::StrawberryShake.IStoreAccessor
+    public partial class GtrClientEntityIdFactory : global::StrawberryShake.IEntityIdSerializer
     {
-        public global::StrawberryShake.IOperationStore OperationStore => throw new global::System.NotSupportedException("OperationStore is not supported in store less mode");
-        public global::StrawberryShake.IEntityStore EntityStore => throw new global::System.NotSupportedException("EntityStore is not supported in store less mode");
-        public global::StrawberryShake.IEntityIdSerializer EntityIdSerializer => throw new global::System.NotSupportedException("EntityIdSerializer is not supported in store less mode");
-
-        public global::StrawberryShake.IOperationRequestFactory GetOperationRequestFactory(global::System.Type resultType)
+        private static readonly global::System.Text.Json.JsonWriterOptions _options = new global::System.Text.Json.JsonWriterOptions()
         {
-            throw new global::System.NotSupportedException("GetOperationRequestFactory is not supported in store less mode");
+            Indented = false
+        };
+        public global::StrawberryShake.EntityId Parse(global::System.Text.Json.JsonElement obj)
+        {
+            global::System.String __typename = obj.GetProperty("__typename").GetString()!;
+            return __typename switch
+            {
+                _ => throw new global::System.NotSupportedException()};
         }
 
-        public global::StrawberryShake.IOperationResultDataFactory GetOperationResultDataFactory(global::System.Type resultType)
+        public global::System.String Format(global::StrawberryShake.EntityId entityId)
         {
-            throw new global::System.NotSupportedException("GetOperationResultDataFactory is not supported in store less mode");
+            return entityId.Name switch
+            {
+                _ => throw new global::System.NotSupportedException()};
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GtrClientStoreAccessor : global::StrawberryShake.StoreAccessor
+    {
+        public GtrClientStoreAccessor(global::StrawberryShake.IOperationStore operationStore, global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer entityIdSerializer, global::System.Collections.Generic.IEnumerable<global::StrawberryShake.IOperationRequestFactory> requestFactories, global::System.Collections.Generic.IEnumerable<global::StrawberryShake.IOperationResultDataFactory> resultDataFactories) : base(operationStore, entityStore, entityIdSerializer, requestFactories, resultDataFactories)
+        {
         }
     }
 }

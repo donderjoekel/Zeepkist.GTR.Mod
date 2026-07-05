@@ -1,4 +1,4 @@
-﻿using BepInEx.Configuration;
+using BepInEx.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using UnityEngine;
 
@@ -9,16 +9,12 @@ public class ConfigService : IEagerService
     public const string ProductionBackendUrl = "https://backend.zeepki.st";
     public const string LocalDevelopmentBackendUrl = "http://localhost:3000";
     public const string CdnUrl = "https://cdn.zeepki.st";
-    public const string GraphQLUrl = "https://graphql.zeepki.st";
+    public const string ProductionGraphQLUrl = "https://graphql.zeepki.st";
+    public const string LocalDevelopmentGraphQLUrl = "http://127.0.0.1:5000/";
 
     public ConfigEntry<bool> SubmitRecords { get; private set; }
-    public ConfigEntry<bool> SubmitAnyPercentRecords { get; private set; }
     public ConfigEntry<bool> ShowRecordSubmitMessage { get; private set; }
     public ConfigEntry<float> ShowRecordSubmitMessageDuration { get; private set; }
-
-    public ConfigEntry<KeyCode> ToggleEnableRecords { get; private set; }
-    public ConfigEntry<KeyCode> ToggleSubmitAnyPercentRecords { get; private set; }
-    public ConfigEntry<KeyCode> ToggleShowRecordSubmitMessage { get; private set; }
 
     public ConfigEntry<bool> EnableGhosts { get; private set; }
 
@@ -26,7 +22,10 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowGhostNames { get; private set; }
     public ConfigEntry<bool> ShowGhostTransparent { get; private set; }
     public ConfigEntry<bool> ShowGlobalPersonalBest { get; private set; }
+
     public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
+    public ConfigEntry<int> MaximumVisibleTopRecordGhosts { get; private set; }
+    public ConfigEntry<int> MaximumGhostColours { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -51,7 +50,16 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ButtonLinkDiscord { get; private set; }
     public ConfigEntry<bool> ButtonUnlinkDiscord { get; private set; }
 
-    public ConfigEntry<bool> BackendUrl { get; private set; }
+    public ConfigEntry<bool> UseLocalDevelopmentBackend { get; private set; }
+    public ConfigEntry<bool> UseLocalDevelopmentGraphQL { get; private set; }
+
+    public string SelectedBackendUrl => UseLocalDevelopmentBackend.Value
+        ? LocalDevelopmentBackendUrl
+        : ProductionBackendUrl;
+
+    public string SelectedGraphQLUrl => UseLocalDevelopmentGraphQL.Value
+        ? LocalDevelopmentGraphQLUrl
+        : ProductionGraphQLUrl;
 
     public ConfigService(ConfigFile config)
     {
@@ -69,11 +77,6 @@ public class ConfigService : IEagerService
             "1. Submit Records",
             true,
             "Should records be submitted");
-        SubmitAnyPercentRecords = config.Bind(
-            "1. Records - General",
-            "2. Submit Any Percent Records",
-            true,
-            "Should any percent records be submitted");
         ShowRecordSubmitMessage = config.Bind(
             "1. Records - General",
             "3. Show Record Submit Message",
@@ -84,22 +87,6 @@ public class ConfigService : IEagerService
             "4. Show Record Submit Message Duration",
             2.5f,
             "The duration in seconds that the record submit message should be shown for");
-
-        ToggleEnableRecords = config.Bind(
-            "1.1 Records - Keys",
-            "1. Toggle Enable Records",
-            KeyCode.None,
-            "Toggles if records should be enabled");
-        ToggleSubmitAnyPercentRecords = config.Bind(
-            "1.1 Records - Keys",
-            "2. Toggle Submit Any Percent Records",
-            KeyCode.None,
-            "Toggles if any percent records should be submitted");
-        ToggleShowRecordSubmitMessage = config.Bind(
-            "1.1 Records - Keys",
-            "3. Toggle Show Record Submit Message",
-            KeyCode.None,
-            "Toggles if the record submit message should be shown");
     }
 
     private void ConfigGhosts(ConfigFile config)
@@ -158,13 +145,39 @@ public class ConfigService : IEagerService
             KeyCode.None,
             "Toggles if the global personal best should be shown");
 
+        // TODO: Replace max 1000 with int.MaxValue once pagination added
         MaximumVisibleOfflineGhosts = config.Bind(
-            "2.3 - Ghosts - Offline",
-            "1. Number of ghosts rendered when showing all ghosts (-1 means Show All)",
+            "2.3 - Ghosts - Offline Ghosts",
+            "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
-                "Maximum number of fastest PB ghosts loaded by Show All",
-                new AcceptableValueRange<int>(-1, int.MaxValue)));
+                "(-1 means Show All) Maximum number of fastest PB ghosts loaded",
+                new AcceptableValueRange<int>(-1, 1000)
+            )
+        );
+        // TODO: Replace max 1000 with int.MaxValue once pagination added
+        MaximumVisibleTopRecordGhosts = config.Bind(
+            "2.3 - Ghosts - Offline Ghosts",
+            "2. Top Record Ghosts",
+            500,
+            new ConfigDescription(
+                "Maximum number of fastest top record ghosts loaded",
+                new AcceptableValueRange<int>(1, 1000)
+            )
+        );
+        MaximumGhostColours = config.Bind(
+            "2.3 - Ghosts - Offline Ghosts",
+            "3. Max Ghost Colours",
+            24,
+            new ConfigDescription(
+                "Maximum number of ghost colours to show.\n\n" +
+                "Increasing this can reduce performance.\n\n" +
+                "Set to 1 for maximum performance, but all\n" +
+                "ghosts will be the same colour.",
+                new AcceptableValueRange<int>(1, 128)
+            )
+        );
+
     }
 
     private void ConfigRecordHolder(ConfigFile config)
@@ -244,11 +257,17 @@ public class ConfigService : IEagerService
 
     private void ConfigUrls(ConfigFile config)
     {
-        BackendUrl = config.Bind(
+        UseLocalDevelopmentBackend = config.Bind(
             "5. URLs",
-            "Use Local Development Backend",
+            "Local Backend",
             false,
             "Use http://localhost:3000 instead of production backend\n" +
             "Changing this logs in again against the selected backend");
+
+        UseLocalDevelopmentGraphQL = config.Bind(
+            "5. URLs",
+            "Local GraphQL",
+            false,
+            "Use http://127.0.0.1:5000/ instead of production GraphQL");
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using BepInEx;
@@ -118,6 +118,7 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V3Reader>();
         services.AddTransient<V4Reader>();
         services.AddTransient<V5Reader>();
+        services.AddTransient<V6Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
         services.AddHttpClient(GhostRepository.ClientKey, client =>
@@ -132,18 +133,15 @@ public class Plugin : BaseUnityPlugin
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();
-            string backendUrl = configService.BackendUrl.Value
-                ? ConfigService.LocalDevelopmentBackendUrl
-                : ConfigService.ProductionBackendUrl;
-            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(backendUrl, "Backend API URL");
+            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedBackendUrl, "Backend API URL");
             client.Timeout = TimeSpan.FromSeconds(30);
             AddDefaultHeaders(client);
         });
-        services.AddGtrClient()
+        services.AddGtrClient(StrawberryShake.ExecutionStrategy.CacheAndNetwork)
             .ConfigureHttpClient((provider,client) =>
             {
-                client.BaseAddress =
-                    ServiceUriValidator.ParseBaseAddress(ConfigService.GraphQLUrl, "GraphQL URL");
+                var configService = provider.GetRequiredService<ConfigService>();
+                client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedGraphQLUrl, "GraphQL URL");
                 client.Timeout = TimeSpan.FromSeconds(30);
                 AddDefaultHeaders(client);
             });

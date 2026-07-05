@@ -44,7 +44,6 @@ public class GhostReaderFactory
 
     private IGhostReader GetReader(int version)
     {
-        _logger.LogInformation("Ghost version: {Version}", version);
         return version switch
         {
             1 => _provider.GetRequiredService<V1Reader>(),
@@ -52,6 +51,7 @@ public class GhostReaderFactory
             3 => _provider.GetRequiredService<V3Reader>(),
             4 => _provider.GetRequiredService<V4Reader>(),
             5 => _provider.GetRequiredService<V5Reader>(),
+            6 => _provider.GetRequiredService<V6Reader>(),
             _ => throw new NotSupportedException($"Version {version} is not supported.")
         };
     }

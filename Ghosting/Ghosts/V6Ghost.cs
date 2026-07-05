@@ -6,7 +6,7 @@ using ZeepkistNetworking;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V5Ghost : GhostBase
+public partial class V6Ghost : GhostBase
 {
     private readonly string _taggedUsername;
     private readonly Color _color;
@@ -14,7 +14,7 @@ public partial class V5Ghost : GhostBase
     private readonly CosmeticIDs _cosmeticIds;
     private readonly List<Frame> _frames;
 
-    public V5Ghost(
+    public V6Ghost(
         GhostTimingService timingService,
         string taggedUsername,
         Color color,
@@ -45,12 +45,14 @@ public partial class V5Ghost : GhostBase
     public override void Start()
     {
         base.Start();
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
     }
 
     public override void Stop()
     {
         base.Stop();
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.Reset);
         AlignCharacterToSeated(false);
     }
 
@@ -61,19 +63,30 @@ public partial class V5Ghost : GhostBase
 
     protected override void OnUpdate(IFrame previousFrame, IFrame nextFrame, float t)
     {
-        if (nextFrame is Frame next)
-            AlignCharacterToSeated(next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
-    }
+        if (previousFrame is not Frame previous || nextFrame is not Frame next)
+            return;
 
-    private void AlignCharacterToSeated(bool armsUp)
-    {
-        Ghost?.CharacterRig?.ApplySeatedPose(armsUp);
-        Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
-        Ghost?.SetNameAnchor(Ghost.GameObject.transform);
-        AlignBulkCharacterToGhost();
-        Ghost?.SetCharacterPlaybackState(GhostCharacterPlaybackState.FromSeated(armsUp));
-    }
+        GhostCharacterPlaybackState characterState = GhostCharacterPlaybackState.FromSegment(
+            previous.RagdollState,
+            next.RagdollState,
+            next.InputFlags.HasFlagFast(InputFlags.ArmsUp));
+        if (!characterState.RagdollVisible)
+        {
+            AlignCharacterToSeated(characterState.ArmsUpVisible);
+            return;
+        }
 
+        Vector3 position = Vector3.Lerp(
+            previous.RagdollPosition ?? previous.Position,
+            next.RagdollPosition ?? next.Position,
+            t);
+        Quaternion rotation = Quaternion.Slerp(
+            previous.RagdollRotation ?? previous.Rotation,
+            next.RagdollRotation ?? next.Rotation,
+            t);
+
+        AlignCharacterToWorld(position, rotation);
+    }
     protected override void OnFixedUpdate(int fixedUpdateFrame)
     {
         if (fixedUpdateFrame <= 0)
@@ -88,6 +101,50 @@ public partial class V5Ghost : GhostBase
         HandleOffroad(previousFrame, frame);
         HandleParaglider(previousFrame, frame);
     }
+
+    private void AlignCharacterToSeated(bool armsUp)
+    {
+        Ghost?.CharacterRig?.ApplySeatedPose(armsUp);
+        Ghost?.CharacterRig?.AlignToSeated(Ghost.GameObject.transform);
+        Ghost?.SetNameAnchor(Ghost.GameObject.transform);
+        AlignBulkCharacterToGhost();
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.FromSeated(armsUp));
+    }
+
+    private void AlignCharacterToWorld(Vector3 position, Quaternion rotation)
+    {
+        Quaternion visualRotation = Ghost?.CharacterRig != null
+            ? Ghost.CharacterRig.GetRagdollWorldRotation(rotation)
+            : rotation * (Ghost?.BulkRagdollRotationOffset ?? Quaternion.identity);
+
+        Ghost?.CharacterRig?.ApplyStandingRagdollPose();
+        if (Ghost?.CharacterRig != null)
+        {
+            Ghost.CharacterRig.AlignToWorld(position, visualRotation);
+            Ghost.SetNameAnchor(Ghost.CharacterRig.Root.transform);
+        }
+        else
+        {
+            Ghost?.SetNameAnchor(Ghost.GameObject.transform);
+        }
+
+        if (Ghost?.BulkRagdollCharacterGameObject != null)
+            Ghost.BulkRagdollCharacterGameObject.transform.SetPositionAndRotation(position, visualRotation);
+
+        ApplyCharacterPlaybackState(GhostCharacterPlaybackState.FromSegment(true, true, false));
+    }
+
+    private void ApplyCharacterPlaybackState(GhostCharacterPlaybackState playbackState)
+    {
+        Ghost?.SetCharacterPlaybackState(playbackState);
+        SetCharacterActive(Ghost?.PlaybackVisible == true);
+    }
+
+    private void SetCharacterActive(bool active)
+    {
+        Ghost?.CharacterRig?.SetActive(active);
+    }
+
 
     private void HandleHorn(Frame previousFrame, Frame frame)
     {

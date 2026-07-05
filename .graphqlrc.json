@@ -6,7 +6,7 @@
       "name": "GtrClient",
       "namespace": "TNRD.Zeepkist.GTR",
       "outputDirectoryName": "GraphQL",
-      "noStore": true,
+      "noStore": false,
       "url": "https://graphql.zeepki.st",
       "records": {
         "inputs": false,
