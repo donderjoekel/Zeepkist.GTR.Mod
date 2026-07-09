@@ -1,6 +1,7 @@
 using System;
 using Imui.Controls;
 using Imui.Core;
+using Imui.IO.Events;
 using Imui.Rendering;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.UI;
@@ -70,7 +71,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private static ImSize GetTimelineWindowSize(ImGui gui, bool hasPlaybackData)
     {
-        const int playbackContentRows = 5;
+        const int playbackContentRows = 4;
         var contentRows = hasPlaybackData ? playbackContentRows : 1;
         var contentHeight = gui.GetRowsHeightWithSpacing(contentRows);
         var windowPadding = gui.Style.Window.ContentPadding.Vertical;
@@ -105,12 +106,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private void DrawTimeScrubber(ImGui gui, float currentTime, float duration)
     {
-        var timeDisplay = $"{FormatTime(currentTime)} / {FormatTime(duration)}";
-        gui.SliderHeader("Time".AsSpan(), currentTime, timeDisplay.AsSpan());
-
-        ImSize size = new Vector2(gui.GetLayoutWidth(), gui.GetRowHeight());
-        var scrubTime = _scrubTime;
-        var scrubberChanged = gui.Slider(ref scrubTime, 0f, duration, size, 0.01f);
+        var scrubTime = currentTime;
+        var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration);
         _isScrubbing = scrubberChanged || gui.IsControlActive(gui.LastControl);
 
         if (scrubberChanged)
@@ -118,6 +115,76 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             _scrubTime = scrubTime;
             _playbackService.Seek(scrubTime);
         }
+    }
+
+    private static bool DrawTimeScrubBar(ImGui gui, ref float time, float duration)
+    {
+        const float step = 0.01f;
+
+        gui.AddSpacingIfLayoutFrameNotEmpty();
+
+        var rowHeight = gui.GetRowHeight();
+        var rect = gui.AddSingleRowRect(new ImSize(gui.GetLayoutWidth(), rowHeight));
+        var id = gui.GetNextControlId();
+        var hovered = gui.IsControlHovered(id);
+        var active = gui.IsControlActive(id);
+
+        var normValue = duration > 0f ? Mathf.Clamp01(time / duration) : 0f;
+        var changed = false;
+
+        ref readonly var trackStyle = ref active || hovered
+            ? ref gui.Style.Slider.Selected
+            : ref gui.Style.Slider.Normal;
+        gui.Box(rect, in trackStyle);
+
+        if (normValue > 0f)
+        {
+            var fillRect = rect;
+            fillRect.W *= normValue;
+            var fillColor = hovered || active
+                ? gui.Style.Slider.Fill.FrontColor
+                : gui.Style.Slider.Fill.BackColor;
+            gui.Canvas.Rect(fillRect, fillColor, gui.Style.Slider.Normal.BorderRadius);
+        }
+
+        var timeDisplay = $"{FormatTime(time)} / {FormatTime(duration)}";
+        var fontSize = gui.GetFontSizeForContainerHeight(rect.H * 0.75f);
+        var textSettings = new ImTextSettings(fontSize, 0.5f, 0.5f);
+        gui.Canvas.Text(timeDisplay.AsSpan(), gui.Style.Text.Color, rect, in textSettings);
+
+        gui.RegisterControl(id, rect);
+
+        if (gui.IsReadOnly)
+            return false;
+
+        ref readonly var evt = ref gui.Input.MouseEvent;
+        switch (evt.Type)
+        {
+            case ImMouseEventType.Down or ImMouseEventType.BeginDrag when evt.LeftButton && hovered:
+                normValue = Mathf.Clamp01(rect.GetNormalPositionAtPoint(gui.Input.MousePosition).x);
+                changed = true;
+                gui.SetActiveControl(id, ImControlFlag.Draggable);
+                gui.Input.UseMouseEvent();
+                break;
+            case ImMouseEventType.Drag when active:
+                normValue = Mathf.Clamp01(rect.GetNormalPositionAtPoint(gui.Input.MousePosition).x);
+                changed = true;
+                gui.Input.UseMouseEvent();
+                break;
+            case ImMouseEventType.Up when active:
+                gui.ResetActiveControl();
+                break;
+        }
+
+        if (!changed)
+            return false;
+
+        time = Mathf.Clamp(normValue * duration, 0f, duration);
+
+        var precision = 1.0f / step;
+        time = Mathf.Round(time * precision) / precision;
+
+        return true;
     }
 
     private void DrawTransportControls(ImGui gui)
