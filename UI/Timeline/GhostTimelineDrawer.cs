@@ -14,6 +14,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 {
     private const string WindowTitle = "GTR Playback";
     private const float DefaultWindowWidth = 960f;
+    private const int PlaybackContentRows = 5;
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
     private readonly GhostTimelineState _timelineState;
@@ -23,6 +24,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private float _scrubTime;
     private float _speed = 1f;
     private bool _isScrubbing;
+    private float _playbackWindowHeight;
 
     public GhostTimelineDrawer(
         PhotoModeTimelineService photoModeTimelineService,
@@ -69,13 +71,11 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             _timelineState.SetVisible(false);
     }
 
-    private static ImSize GetTimelineWindowSize(ImGui gui, bool hasPlaybackData)
+    private ImSize GetTimelineWindowSize(ImGui gui, bool hasPlaybackData)
     {
-        const int playbackContentRows = 4;
-        var contentRows = hasPlaybackData ? playbackContentRows : 1;
-        var contentHeight = gui.GetRowsHeightWithSpacing(contentRows);
-        var windowPadding = gui.Style.Window.ContentPadding.Vertical;
-        var height = contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
+        var height = hasPlaybackData
+            ? GetPlaybackWindowHeight(gui)
+            : GetEmptyWindowHeight(gui);
 
         var width = DefaultWindowWidth;
         var windowId = gui.GetControlId(WindowTitle.AsSpan());
@@ -83,6 +83,24 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             width = gui.WindowManager.GetWindowState(windowId).Rect.W;
 
         return new Vector2(width, height);
+    }
+
+    private float GetPlaybackWindowHeight(ImGui gui)
+    {
+        if (_playbackWindowHeight > 0f)
+            return _playbackWindowHeight;
+
+        var contentHeight = gui.GetRowsHeightWithSpacing(PlaybackContentRows);
+        var windowPadding = gui.Style.Window.ContentPadding.Vertical;
+        _playbackWindowHeight = contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
+        return _playbackWindowHeight;
+    }
+
+    private static float GetEmptyWindowHeight(ImGui gui)
+    {
+        var contentHeight = gui.GetRowsHeightWithSpacing(1);
+        var windowPadding = gui.Style.Window.ContentPadding.Vertical;
+        return contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
     }
 
     private void DrawTimeline(ImGui gui, float duration)
