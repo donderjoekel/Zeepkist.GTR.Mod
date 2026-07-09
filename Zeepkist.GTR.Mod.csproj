@@ -45,7 +45,7 @@
         <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.15.1867" PrivateAssets="all" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all" />
         <PackageReference Include="ZeepSDK" Version="2.5.0" PrivateAssets="all" />
     </ItemGroup>
 
