@@ -95,7 +95,7 @@ public class V4Reader : GhostReaderBase<V4Ghost>
                     ShortToFloat(lastResetFrame.RotationY),
                     ShortToFloat(lastResetFrame.RotationZ),
                     ShortToFloat(lastResetFrame.RotationW)),
-                lastResetFrame.Steering,
+                GhostSteeringCodec.FromByte(lastResetFrame.Steering),
                 lastResetFrame.Flags.HasFlag(Flags.ArmsUp),
                 lastResetFrame.Flags.HasFlag(Flags.IsBraking)),
             lastResetFrame);
@@ -135,7 +135,7 @@ public class V4Reader : GhostReaderBase<V4Ghost>
                     frame.Time,
                     position,
                     new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
-                    frame.Steering,
+                    GhostSteeringCodec.FromByte(frame.Steering),
                     frame.Flags.HasFlag(Flags.ArmsUp),
                     frame.Flags.HasFlag(Flags.IsBraking)));
         }
