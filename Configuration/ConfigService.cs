@@ -68,6 +68,8 @@ public class ConfigService : IEagerService
     public ConfigEntry<KeyCode> PlaybackSpeedIncreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedResetKey { get; private set; }
+    public ConfigEntry<bool> ShowTimeline { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowTimeline { get; private set; }
 
     public ConfigService(ConfigFile config, Plugin plugin)
     {
@@ -312,31 +314,43 @@ public class ConfigService : IEagerService
 
     private void ConfigPlayback(ConfigFile config)
     {
+        ShowTimeline = config.Bind(
+            "7. Playback",
+            "1. Show Timeline",
+            false,
+            "Should the playback timeline window be shown in photo mode");
+
+        ToggleShowTimeline = config.Bind(
+            "7. Playback",
+            "2. Toggle Show Timeline Key",
+            KeyCode.None,
+            "Toggle playback timeline window visibility in photo mode");
+
         PlaybackScrubProgressKeys = new ConfigEntry<KeyCode>[10];
         for (var i = 0; i < PlaybackScrubProgressKeys.Length; i++)
         {
             PlaybackScrubProgressKeys[i] = config.Bind(
                 "7. Playback",
-                $"{i + 1}. Scrub to {i * 10}% Key",
+                $"{i + 3}. Scrub to {i * 10}% Key",
                 KeyCode.Keypad0 + i,
                 $"Seek ghost playback to {i * 10}% of duration");
         }
 
         PlaybackSpeedIncreaseKey = config.Bind(
             "7. Playback",
-            "11. Increase Playback Speed Key",
+            "13. Increase Playback Speed Key",
             KeyCode.KeypadPlus,
             "Increase ghost playback speed by 0.1x");
 
         PlaybackSpeedDecreaseKey = config.Bind(
             "7. Playback",
-            "12. Decrease Playback Speed Key",
+            "14. Decrease Playback Speed Key",
             KeyCode.KeypadMinus,
             "Decrease ghost playback speed by 0.1x");
 
         PlaybackSpeedResetKey = config.Bind(
             "7. Playback",
-            "13. Reset Playback Speed Key",
+            "15. Reset Playback Speed Key",
             KeyCode.KeypadPeriod,
             "Reset ghost playback speed to 1.0x");
     }

@@ -54,6 +54,10 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
         var resetKey = _configService.PlaybackSpeedResetKey.Value;
         if (resetKey != KeyCode.None && Input.GetKeyDown(resetKey))
             _playbackService.ResetSpeed();
+
+        var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
+        if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
+            _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
     }
 
     public void Dispose()

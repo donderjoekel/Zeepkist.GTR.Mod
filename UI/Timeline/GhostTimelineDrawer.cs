@@ -3,6 +3,7 @@ using Imui.Controls;
 using Imui.Core;
 using Imui.IO.Events;
 using Imui.Rendering;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.UI;
 using UnityEngine;
@@ -24,6 +25,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
+    private readonly ConfigService _configService;
     private readonly GhostTimelineState _timelineState;
     private readonly PlaybackUiInputState _playbackUiInputState;
 
@@ -38,11 +40,13 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     public GhostTimelineDrawer(
         PhotoModeTimelineService photoModeTimelineService,
         GhostPlaybackService playbackService,
+        ConfigService configService,
         GhostTimelineState timelineState,
         PlaybackUiInputState playbackUiInputState)
     {
         _photoModeTimelineService = photoModeTimelineService;
         _playbackService = playbackService;
+        _configService = configService;
         _timelineState = timelineState;
         _playbackUiInputState = playbackUiInputState;
     }
@@ -77,7 +81,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             _playbackUiInputState.NotifyPointerOverGtrWindow();
 
         if (!open)
-            _timelineState.SetVisible(false);
+            _configService.ShowTimeline.Value = false;
     }
 
     private ImSize GetTimelineWindowSize(ImGui gui, bool hasPlaybackData)
@@ -148,6 +152,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private void DrawTimeScrubber(ImGui gui, float currentTime, float duration)
     {
         var spacing = gui.Style.Layout.Spacing;
+        gui.AddSpacingIfLayoutFrameNotEmpty();
         var scrubWidth = Mathf.Max(0f, gui.GetLayoutWidth() - SpeedButtonWidth - spacing);
         var scrubTime = currentTime;
         var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration, scrubWidth);

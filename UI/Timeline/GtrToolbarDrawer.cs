@@ -17,18 +17,17 @@ public class GtrToolbarDrawer : IZeepToolbarDrawer
 
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
-    private readonly GhostTimelineState _timelineState;
+    private readonly ConfigService _configService;
     private readonly GtrConfigToolbarDrawer _configToolbarDrawer;
 
     public GtrToolbarDrawer(
         PhotoModeTimelineService photoModeTimelineService,
         GhostPlaybackService playbackService,
-        GhostTimelineState timelineState,
         ConfigService configService)
     {
         _photoModeTimelineService = photoModeTimelineService;
         _playbackService = playbackService;
-        _timelineState = timelineState;
+        _configService = configService;
         _configToolbarDrawer = new GtrConfigToolbarDrawer(configService);
     }
 
@@ -48,8 +47,8 @@ public class GtrToolbarDrawer : IZeepToolbarDrawer
 
         if (_photoModeTimelineService.IsPhotoModeGhostsAvailable)
         {
-            if (gui.Menu("Show Timeline", _timelineState.IsVisible))
-                _timelineState.ToggleVisible();
+            if (gui.Menu("Show Timeline", _configService.ShowTimeline.Value))
+                _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
 
             gui.Separator();
             gui.Text($"Speed: {_playbackService.Speed:0.0}x");
