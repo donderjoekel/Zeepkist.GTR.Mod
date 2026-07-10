@@ -65,7 +65,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             zeepkist = deserializedGhost.Cosmetics.Zeepkist
         };
 
-        List<V5Ghost.Frame> frames = new();
+        List<V5Ghost.Frame> frames = new(deserializedGhost.DeltaFrames.Count + 1);
 
         V5Ghost.Frame previousFrame = new(
             0,

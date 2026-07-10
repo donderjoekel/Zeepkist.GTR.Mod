@@ -163,10 +163,8 @@ public class RecordingService : IEagerService
                 return string.Empty;
             }
 
-            _logger.LogInformation("Getting buffer");
-            byte[] buffer = stream.ToArray();
             _logger.LogInformation("Converting to base64");
-            return Convert.ToBase64String(buffer);
+            return Convert.ToBase64String(stream.GetBuffer(), 0, checked((int)stream.Length));
         }
         catch (Exception e)
         {

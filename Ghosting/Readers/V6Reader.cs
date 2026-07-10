@@ -59,7 +59,7 @@ public class V6Reader : GhostReaderBase<V6Ghost>
                 zeepkist = deserializedGhost.Cosmetics.Zeepkist
             };
 
-            var frames = new List<V6Ghost.Frame>();
+            var frames = new List<V6Ghost.Frame>(deserializedGhost.DeltaFrames.Count + 1);
             bool ragdollActive = deserializedGhost.InitialFrame.RagdollState;
             Vector3? ragdollPosition = null;
             Vector3? ragdollRotationEuler = null;

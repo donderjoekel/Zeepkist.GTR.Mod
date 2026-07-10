@@ -35,9 +35,10 @@ public partial class GhostRecorder
 
     private const int PositionMultiplier = 100_000;
     private const int RotationMultiplier = 100;
+    private const int InitialFrameCapacity = 4_096;
 
     private readonly PlayerLoopService _playerLoopService;
-    private readonly List<Frame> _frames = new();
+    private readonly List<Frame> _frames = new(InitialFrameCapacity);
     private readonly ILogger<GhostRecorder> _logger;
 
     private PlayerLoopSubscription _updateToken;
@@ -468,7 +469,8 @@ public partial class GhostRecorder
 
         List<DeltaFrame> deltaFrames = await Task.Run(() =>
         {
-            List<DeltaFrame> deltaFrames = new();
+            int capacity = Math.Max(0, _frames.Count - 1);
+            List<DeltaFrame> deltaFrames = new(capacity);
 
             Frame previousFrame = null;
             foreach (Frame frame in _frames)
