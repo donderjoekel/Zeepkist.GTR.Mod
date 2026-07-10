@@ -1,3 +1,5 @@
+extern alias BuffersAlias;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -225,11 +227,18 @@ public class GhostRepository
     {
         using Stream input = await content.ReadAsStreamAsync();
         using LimitedMemoryStream output = new(GhostLimits.MaxCompressedBytes);
-        byte[] copyBuffer = new byte[81_920];
-        int read;
-        while ((read = await input.ReadAsync(copyBuffer, 0, copyBuffer.Length, cancellationToken)) > 0)
-            output.Write(copyBuffer, 0, read);
-        return output.ToArray();
+        byte[] copyBuffer = BuffersAlias::System.Buffers.ArrayPool<byte>.Shared.Rent(81_920);
+        try
+        {
+            int read;
+            while ((read = await input.ReadAsync(copyBuffer, 0, copyBuffer.Length, cancellationToken)) > 0)
+                output.Write(copyBuffer, 0, read);
+            return output.ToArray();
+        }
+        finally
+        {
+            BuffersAlias::System.Buffers.ArrayPool<byte>.Shared.Return(copyBuffer);
+        }
     }
 
     private static string GetStorageKey(int recordId) => "ghosts/" + recordId;
