@@ -1,6 +1,5 @@
 using HarmonyLib;
 using Microsoft.Extensions.DependencyInjection;
-using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
@@ -12,7 +11,6 @@ public static class FlyingCameraScript_LateUpdateSwaybar
 {
     private static GtrSpectateTargetService _targetService;
     private static GtrGhostSpectateRigService _rigService;
-    private static ConfigService _configService;
 
     private static GtrSpectateTargetService TargetService =>
         _targetService ??= ServiceHelper.Instance.GetRequiredService<GtrSpectateTargetService>();
@@ -20,19 +18,12 @@ public static class FlyingCameraScript_LateUpdateSwaybar
     private static GtrGhostSpectateRigService RigService =>
         _rigService ??= ServiceHelper.Instance.GetRequiredService<GtrGhostSpectateRigService>();
 
-    private static ConfigService ConfigService =>
-        _configService ??= ServiceHelper.Instance.GetRequiredService<ConfigService>();
-
     private static void Postfix(FlyingCameraScript __instance)
     {
         if (__instance.GameMaster == null || !__instance.GameMaster.isPhotoMode)
             return;
 
         if (!TargetService.ShouldInjectGhosts)
-            return;
-
-        var freezeKey = ConfigService.PhotoModeCameraFreezeKey.Value;
-        if (freezeKey != KeyCode.None && Input.GetKey(freezeKey))
             return;
 
         int cameraState = __instance.currentCameraState;

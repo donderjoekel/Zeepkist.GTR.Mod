@@ -64,8 +64,6 @@ public class ConfigService : IEagerService
 
     public ConfigEntry<KeyCode> ToggleCursorEnabled { get; private set; }
 
-    public ConfigEntry<KeyCode> PhotoModeCameraFreezeKey { get; private set; }
-
     public ConfigEntry<KeyCode>[] PlaybackScrubProgressKeys { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedIncreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
@@ -314,38 +312,31 @@ public class ConfigService : IEagerService
 
     private void ConfigPlayback(ConfigFile config)
     {
-        PhotoModeCameraFreezeKey = config.Bind(
-            "7. Playback",
-            "1. Camera Freeze Key",
-            KeyCode.None,
-            "Hold this key in photo mode to freeze the flying camera while using the playback UI\n" +
-            "Set to None to disable");
-
         PlaybackScrubProgressKeys = new ConfigEntry<KeyCode>[10];
         for (var i = 0; i < PlaybackScrubProgressKeys.Length; i++)
         {
             PlaybackScrubProgressKeys[i] = config.Bind(
                 "7. Playback",
-                $"{i + 2}. Scrub to {i * 10}% Key",
+                $"{i + 1}. Scrub to {i * 10}% Key",
                 KeyCode.Keypad0 + i,
                 $"Seek ghost playback to {i * 10}% of duration");
         }
 
         PlaybackSpeedIncreaseKey = config.Bind(
             "7. Playback",
-            "12. Increase Playback Speed Key",
+            "11. Increase Playback Speed Key",
             KeyCode.KeypadPlus,
             "Increase ghost playback speed by 0.1x");
 
         PlaybackSpeedDecreaseKey = config.Bind(
             "7. Playback",
-            "13. Decrease Playback Speed Key",
+            "12. Decrease Playback Speed Key",
             KeyCode.KeypadMinus,
             "Decrease ghost playback speed by 0.1x");
 
         PlaybackSpeedResetKey = config.Bind(
             "7. Playback",
-            "14. Reset Playback Speed Key",
+            "13. Reset Playback Speed Key",
             KeyCode.KeypadPeriod,
             "Reset ghost playback speed to 1.0x");
     }
