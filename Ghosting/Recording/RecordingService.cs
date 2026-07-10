@@ -206,7 +206,7 @@ public class RecordingService : IEagerService
                 return;
             }
 
-            HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
+            using HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
 
             try
             {

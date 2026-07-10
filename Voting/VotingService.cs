@@ -128,7 +128,7 @@ public class VotingService : IEagerService
             return;
         }
 
-        HttpResponseMessage response = await _apiHttpClient.PostAsync(
+        using HttpResponseMessage response = await _apiHttpClient.PostAsync(
             $"vote/submit",
             new VoteResource
             {
