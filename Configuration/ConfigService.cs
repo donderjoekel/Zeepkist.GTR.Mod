@@ -1,6 +1,7 @@
 using BepInEx.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using UnityEngine;
+using ZeepSDK.Settings;
 
 namespace TNRD.Zeepkist.GTR.Configuration;
 
@@ -73,7 +74,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<float> SpectateTopDownHeight { get; private set; }
     public ConfigEntry<float> SpectateTopDownPitch { get; private set; }
 
-    public ConfigService(ConfigFile config)
+    public ConfigService(ConfigFile config, Plugin plugin)
     {
         ConfigRecords(config);
         ConfigGhosts(config);
@@ -82,6 +83,26 @@ public class ConfigService : IEagerService
         ConfigUrls(config);
         ConfigDebug(config);
         ConfigPlayback(config);
+
+        SettingsApi.ConfigureModSettingsTabs(plugin, builder =>
+        {
+            builder.Tab("Records",
+                "1. Records - General");
+            builder.Tab("Ghosts",
+                "2. Ghosts - General",
+                "2.1 Ghosts - Visibility",
+                "2.2 Ghosts - Keys",
+                "2.3 - Ghosts - Offline Ghosts");
+            builder.Tab("Record Holder",
+                "3. Record Holder - General",
+                "3.1 Record Holder - Visibility",
+                "3.2 Record Holder - Keys");
+            builder.Tab("Other",
+                "4. Discord",
+                "5. URLs",
+                "6. Debug",
+                "7. Playback");
+        });
     }
 
     private void ConfigRecords(ConfigFile config)
