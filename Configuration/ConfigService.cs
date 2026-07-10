@@ -62,8 +62,6 @@ public class ConfigService : IEagerService
         ? LocalDevelopmentGraphQLUrl
         : ProductionGraphQLUrl;
 
-    public ConfigEntry<KeyCode> ToggleCursorEnabled { get; private set; }
-
     public ConfigEntry<KeyCode>[] PlaybackScrubProgressKeys { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedIncreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
@@ -78,7 +76,6 @@ public class ConfigService : IEagerService
         ConfigRecordHolder(config);
         ConfigDiscord(config);
         ConfigUrls(config);
-        ConfigDebug(config);
         ConfigPlayback(config);
 
         SettingsApi.ConfigureModSettingsTabs(plugin, builder =>
@@ -97,7 +94,6 @@ public class ConfigService : IEagerService
             builder.Tab("Other",
                 "4. Discord",
                 "5. URLs",
-                "6. Debug",
                 "7. Playback");
         });
     }
@@ -301,15 +297,6 @@ public class ConfigService : IEagerService
             "Local GraphQL",
             false,
             "Use http://127.0.0.1:5000/ instead of production GraphQL");
-    }
-
-    private void ConfigDebug(ConfigFile config)
-    {
-        ToggleCursorEnabled = config.Bind(
-            "6. Debug",
-            "1. Toggle Cursor Enabled",
-            KeyCode.None,
-            "Toggles UnityEngine.Cursor.visible and unlocks the cursor when shown");
     }
 
     private void ConfigPlayback(ConfigFile config)
