@@ -26,7 +26,7 @@ public class GtrConfigToolbarDrawer
         if (!gui.BeginMenu("Records"))
             return;
 
-        using (gui.Vertical(width: 300))
+        using (gui.Vertical())
         {
             DrawBool(gui, _config.SubmitRecords, "Submit Records");
             gui.Separator();
@@ -41,7 +41,7 @@ public class GtrConfigToolbarDrawer
         if (!gui.BeginMenu("Ghosts"))
             return;
 
-        using (gui.Vertical(width: 300))
+        using (gui.Vertical())
         {
             DrawBool(gui, _config.EnableGhosts, "Enable Ghosts");
             gui.Separator();
@@ -59,7 +59,7 @@ public class GtrConfigToolbarDrawer
         if (!gui.BeginMenu("Record Holder"))
             return;
 
-        using (gui.Vertical(width: 300))
+        using (gui.Vertical())
         {
             DrawBool(gui, _config.ShowRecordHolder, "Show Record Holder");
             DrawBool(gui, _config.ShowWorldRecordOnHolder, "Show World Record On Holder");
