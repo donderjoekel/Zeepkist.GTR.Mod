@@ -94,7 +94,7 @@ public class ConfigService : IEagerService
             builder.Tab("Other",
                 "4. Discord",
                 "5. URLs",
-                "7. Playback");
+                "6. Playback");
         });
     }
 
@@ -302,13 +302,13 @@ public class ConfigService : IEagerService
     private void ConfigPlayback(ConfigFile config)
     {
         ShowTimeline = config.Bind(
-            "7. Playback",
+            "6. Playback",
             "1. Show Timeline",
             false,
             "Should the playback timeline window be shown in photo mode");
 
         ToggleShowTimeline = config.Bind(
-            "7. Playback",
+            "6. Playback",
             "2. Toggle Show Timeline Key",
             KeyCode.None,
             "Toggle playback timeline window visibility in photo mode");
@@ -317,26 +317,26 @@ public class ConfigService : IEagerService
         for (var i = 0; i < PlaybackScrubProgressKeys.Length; i++)
         {
             PlaybackScrubProgressKeys[i] = config.Bind(
-                "7. Playback",
+                "6. Playback",
                 $"{i + 3}. Scrub to {i * 10}% Key",
                 KeyCode.Keypad0 + i,
                 $"Seek ghost playback to {i * 10}% of duration");
         }
 
         PlaybackSpeedIncreaseKey = config.Bind(
-            "7. Playback",
+            "6. Playback",
             "13. Increase Playback Speed Key",
             KeyCode.KeypadPlus,
             "Increase ghost playback speed by 0.1x");
 
         PlaybackSpeedDecreaseKey = config.Bind(
-            "7. Playback",
+            "6. Playback",
             "14. Decrease Playback Speed Key",
             KeyCode.KeypadMinus,
             "Decrease ghost playback speed by 0.1x");
 
         PlaybackSpeedResetKey = config.Bind(
-            "7. Playback",
+            "6. Playback",
             "15. Reset Playback Speed Key",
             KeyCode.KeypadPeriod,
             "Reset ghost playback speed to 1.0x");
