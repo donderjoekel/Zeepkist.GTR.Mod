@@ -38,26 +38,19 @@ internal static class GhostInputFrameSampler
             return true;
         }
 
-        for (var i = 1; i < frames.Count; i++)
-        {
-            TFrame nextFrame = frames[i];
-            if (getTime(nextFrame) < time)
-                continue;
-
-            TFrame previousFrame = frames[i - 1];
-            float t = Mathf.InverseLerp(getTime(previousFrame), getTime(nextFrame), time);
-            float steering = Mathf.Lerp(getSteering(previousFrame), getSteering(nextFrame), t);
-            float speedKmh = Mathf.Lerp(getSpeedKmh(previousFrame), getSpeedKmh(nextFrame), t);
-            sample = new GhostInputSample(
-                getArmsUp(previousFrame),
-                getBraking(previousFrame),
-                steering,
-                getZeepkistState(previousFrame),
-                speedKmh);
-            return true;
-        }
-
-        return false;
+        int nextIndex = GhostFrameSearch.FindFirstFrameIndexAtOrAfterTime(frames, time, getTime);
+        TFrame previousFrame = frames[nextIndex - 1];
+        TFrame nextFrame = frames[nextIndex];
+        float t = Mathf.InverseLerp(getTime(previousFrame), getTime(nextFrame), time);
+        float steering = Mathf.Lerp(getSteering(previousFrame), getSteering(nextFrame), t);
+        float speedKmh = Mathf.Lerp(getSpeedKmh(previousFrame), getSpeedKmh(nextFrame), t);
+        sample = new GhostInputSample(
+            getArmsUp(previousFrame),
+            getBraking(previousFrame),
+            steering,
+            getZeepkistState(previousFrame),
+            speedKmh);
+        return true;
     }
 
     private static GhostInputSample CreateSample<TFrame>(

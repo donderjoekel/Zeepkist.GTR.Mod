@@ -74,7 +74,6 @@ public abstract class GhostBase : IGhost
 
     public void Seek(float time)
     {
-        _updateFrame = 0;
         _fixedUpdateFrame = 0;
 
         if (FrameCount == 0)
@@ -169,6 +168,7 @@ public abstract class GhostBase : IGhost
         if (time <= firstFrame.Time)
         {
             Ghost.GameObject.transform.SetPositionAndRotation(firstFrame.Position, firstFrame.Rotation);
+            _updateFrame = 0;
             AlignBulkCharacterToGhost();
             return;
         }
@@ -182,20 +182,13 @@ public abstract class GhostBase : IGhost
             return;
         }
 
-        IFrame previousFrame = firstFrame;
-        IFrame nextFrame = lastFrame;
-
-        for (int i = 1; i < FrameCount; i++)
-        {
-            IFrame frame = GetFrame(i);
-            if (frame.Time >= time)
-            {
-                nextFrame = frame;
-                previousFrame = GetFrame(i - 1);
-                _updateFrame = i - 1;
-                break;
-            }
-        }
+        int nextIndex = GhostFrameSearch.FindFirstFrameIndexAtOrAfterTime(
+            FrameCount,
+            time,
+            index => GetFrame(index).Time);
+        IFrame previousFrame = GetFrame(nextIndex - 1);
+        IFrame nextFrame = GetFrame(nextIndex);
+        _updateFrame = nextIndex - 1;
 
         ApplyInterpolatedTransform(previousFrame, nextFrame, time);
         AlignBulkCharacterToGhost();
