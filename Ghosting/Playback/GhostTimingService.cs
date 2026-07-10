@@ -69,7 +69,7 @@ public class GhostTimingService : IEagerService
 
     public void SetSpeed(float speed)
     {
-        _speed = Mathf.Clamp(speed, 0.25f, 4f);
+        _speed = Mathf.Clamp(speed, 0.1f, 4f);
     }
 
     private void ResetRaceClock()

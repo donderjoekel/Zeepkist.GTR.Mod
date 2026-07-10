@@ -16,7 +16,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private const string WindowTitle = "GTR Playback";
     private const float DefaultWindowWidth = 960f;
     private const float SpeedStep = 0.1f;
-    private const float SpeedMin = 0.25f;
+    private const float SpeedMin = 0.1f;
     private const float SpeedMax = 4f;
     private const float SpeedButtonWidth = 56f;
     private const float ScrubStep = 0.01f;

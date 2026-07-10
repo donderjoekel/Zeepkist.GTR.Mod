@@ -12,7 +12,7 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 public class GtrToolbarDrawer : IZeepToolbarDrawer
 {
     private const float SpeedStep = 0.1f;
-    private const float SpeedMin = 0.25f;
+    private const float SpeedMin = 0.1f;
     private const float SpeedMax = 4f;
 
     private readonly PhotoModeTimelineService _photoModeTimelineService;
