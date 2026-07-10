@@ -129,72 +129,10 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
         using (gui.Horizontal())
         {
-            DrawDragHandle(gui);
             DrawPlayPauseButton(gui);
             DrawTimeScrubber(gui, _scrubTime, duration);
             DrawSpeedButton(gui);
         }
-    }
-
-    private void DrawDragHandle(ImGui gui)
-    {
-        var rowHeight = gui.GetRowHeight();
-        var id = gui.GetNextControlId();
-        var rect = gui.AddSingleRowRect(new ImSize(rowHeight, rowHeight));
-        var hovered = gui.IsControlHovered(id);
-        var active = gui.IsControlActive(id);
-
-        ref readonly var style = ref hovered || active
-            ? ref gui.Style.Slider.Selected
-            : ref gui.Style.Slider.Normal;
-        gui.Box(rect, in style);
-
-        var fontSize = gui.GetFontSizeForContainerHeight(rect.H * 0.75f);
-        var textSettings = new ImTextSettings(fontSize, 0.5f, 0.5f);
-        gui.Canvas.Text("≡".AsSpan(), gui.Style.Window.TitleBar.FrontColor, rect, in textSettings);
-
-        gui.RegisterControl(id, rect);
-
-        if (gui.IsReadOnly)
-            return;
-
-        ref readonly var evt = ref gui.Input.MouseEvent;
-        switch (evt.Type)
-        {
-            case ImMouseEventType.Down or ImMouseEventType.BeginDrag when evt.LeftButton && hovered:
-                gui.SetActiveControl(id, ImControlFlag.Draggable);
-                gui.Input.UseMouseEvent();
-                break;
-            case ImMouseEventType.Drag when active:
-                MoveDrawingWindow(gui, evt.Delta);
-                gui.Input.UseMouseEvent();
-                break;
-            case ImMouseEventType.Up when active:
-                ClampDrawingWindow(gui);
-                gui.ResetActiveControl();
-                break;
-        }
-
-        if (!active)
-            ClampDrawingWindow(gui);
-    }
-
-    private static void MoveDrawingWindow(ImGui gui, Vector2 delta)
-    {
-        if (!gui.WindowManager.TryGetDrawingWindowId(out var windowId))
-            return;
-
-        ref var state = ref gui.WindowManager.GetWindowState(windowId);
-        state.Rect.Position += delta;
-    }
-
-    private static void ClampDrawingWindow(ImGui gui)
-    {
-        if (!gui.WindowManager.TryGetDrawingWindowId(out var windowId))
-            return;
-
-        ref var state = ref gui.WindowManager.GetWindowState(windowId);
-        state.Rect.Position = KeepWindowWithinSafeArea(gui, state.Rect.Position, state.Rect.Size);
     }
 
     private void DrawPlayPauseButton(ImGui gui)
@@ -313,21 +251,6 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         _speed = speed;
         _playbackService.SetSpeed(speed);
         gui.Input.UseMouseEvent();
-    }
-
-    private static Vector2 KeepWindowWithinSafeArea(ImGui gui, Vector2 position, Vector2 size)
-    {
-        var screenRect = gui.Canvas.SafeScreenRect;
-        var margin = gui.GetRowHeight();
-        var left = screenRect.Left - size.x + margin * 2f;
-        var right = screenRect.Right - margin;
-        var top = screenRect.Top - size.y;
-        var bottom = screenRect.Bottom - size.y + margin;
-
-        position.x = Mathf.Clamp(position.x, left, right);
-        position.y = Mathf.Clamp(position.y, bottom, top);
-
-        return position;
     }
 
     private static string FormatTime(float seconds)
