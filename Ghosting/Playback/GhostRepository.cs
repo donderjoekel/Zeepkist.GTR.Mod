@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
+using TNRD.Zeepkist.GTR.Utilities;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
 using ZeepSDK.Storage;
@@ -15,6 +16,18 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
 public class GhostRepository
 {
+    private sealed class SharedDownload : IDisposable
+    {
+        public CancellationTokenSource Cancellation { get; } = new();
+        public Task<Result<IGhost>> Task { get; set; }
+        public int WaiterCount { get; set; }
+
+        public void Dispose()
+        {
+            Cancellation.Dispose();
+        }
+    }
+
     public const string ClientKey = "Ghosts";
     private const int MaxConcurrentDownloads = 4;
     private const int MaxConcurrentParses = 1;
@@ -24,7 +37,7 @@ public class GhostRepository
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
     private readonly SemaphoreSlim _parseSlots = new(MaxConcurrentParses, MaxConcurrentParses);
-    private readonly Dictionary<int, Task<Result<IGhost>>> _downloads = new();
+    private readonly Dictionary<int, SharedDownload> _downloads = new();
     private readonly object _downloadsLock = new();
 
     public GhostRepository(
@@ -46,28 +59,40 @@ public class GhostRepository
         if (cachedGhost != null)
             return Result.Ok(cachedGhost);
 
-        Task<Result<IGhost>> download;
+        SharedDownload download;
         lock (_downloadsLock)
         {
             if (!_downloads.TryGetValue(recordId, out download))
             {
-                download = DownloadGhost(recordId, ghostUrl, cancellationToken);
+                download = new SharedDownload();
+                download.Task = DownloadGhost(recordId, ghostUrl, download.Cancellation.Token);
                 _downloads.Add(recordId, download);
             }
+
+            download.WaiterCount++;
         }
 
         try
         {
-            return await download;
+            return await TaskCancellation.WaitAsync(download.Task, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return Result.Fail("Ghost download wait was cancelled.");
         }
         finally
         {
             lock (_downloadsLock)
             {
-                if (_downloads.TryGetValue(recordId, out Task<Result<IGhost>> current) &&
+                download.WaiterCount--;
+                if (download.WaiterCount == 0 &&
+                    _downloads.TryGetValue(recordId, out SharedDownload current) &&
                     ReferenceEquals(current, download))
                 {
+                    if (!download.Task.IsCompleted)
+                        download.Cancellation.Cancel();
                     _downloads.Remove(recordId);
+                    download.Dispose();
                 }
             }
         }
