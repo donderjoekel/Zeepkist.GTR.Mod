@@ -101,12 +101,18 @@ public class GhostData
 
     public void SetCharacterPlaybackState(GhostCharacterPlaybackState state)
     {
+        if (CharacterPlaybackState.Equals(state))
+            return;
+
         CharacterPlaybackState = state;
         ApplyPlaybackVisibility();
     }
 
     public void SetPlaybackVisible(bool visible)
     {
+        if (PlaybackVisible == visible)
+            return;
+
         PlaybackVisible = visible;
         ApplyPlaybackVisibility();
     }
