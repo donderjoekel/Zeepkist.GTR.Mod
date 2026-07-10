@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
@@ -37,6 +38,7 @@ public class GhostRepository
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<GhostRepository> _logger;
     private readonly long _maximumCacheBytes;
     private readonly object _cacheLock = new();
     private readonly Dictionary<int, GhostCacheEntry> _cacheEntries = new();
@@ -49,11 +51,13 @@ public class GhostRepository
         IModStorage modStorage,
         GhostReaderFactory ghostReaderFactory,
         HttpClient httpClient,
+        ILogger<GhostRepository> logger,
         long maximumCacheBytes)
     {
         _modStorage = modStorage;
         _ghostReaderFactory = ghostReaderFactory;
         _httpClient = httpClient;
+        _logger = logger;
         _maximumCacheBytes = maximumCacheBytes;
         LoadCacheIndex();
     }
@@ -136,6 +140,7 @@ public class GhostRepository
         }
         catch (Exception e)
         {
+            _logger.LogWarning(e, "Unable to download ghost {RecordId}", recordId);
             return Result.Fail(new ExceptionalError(e));
         }
         finally
@@ -152,9 +157,9 @@ public class GhostRepository
             return await Task.Run(() =>
             {
                 string storageKey = GetStorageKey(recordId);
+                byte[] buffer;
                 try
                 {
-                    byte[] buffer;
                     lock (_cacheLock)
                     {
                         if (!_modStorage.BlobFileExists(storageKey))
@@ -163,15 +168,21 @@ public class GhostRepository
                         if (TouchCacheEntry(recordId, buffer.Length))
                             SaveCacheIndex();
                     }
-                    cancellationToken.ThrowIfCancellationRequested();
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(exception, "Unable to read cached ghost {RecordId}", recordId);
+                    return null;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
                     return ReadGhost(buffer);
                 }
-                catch (OperationCanceledException)
+                catch (Exception exception)
                 {
-                    throw;
-                }
-                catch
-                {
+                    _logger.LogWarning(exception, "Cached ghost {RecordId} is invalid; deleting it", recordId);
                     lock (_cacheLock)
                     {
                         _modStorage.DeleteBlob(storageKey);
@@ -242,10 +253,18 @@ public class GhostRepository
                         _cacheEntries[entry.RecordId] = entry;
                 }
             }
-            catch
+            catch (Exception exception)
             {
+                _logger.LogWarning(exception, "Ghost cache index is invalid; rebuilding it");
                 _cacheEntries.Clear();
-                _modStorage.DeleteJsonFile(CacheIndexKey);
+                try
+                {
+                    _modStorage.DeleteJsonFile(CacheIndexKey);
+                }
+                catch (Exception deleteException)
+                {
+                    _logger.LogWarning(deleteException, "Unable to delete invalid ghost cache index");
+                }
             }
         }
     }

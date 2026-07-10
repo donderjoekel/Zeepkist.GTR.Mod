@@ -132,6 +132,7 @@ public class Plugin : BaseUnityPlugin
                 provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
                 provider.GetRequiredService<GhostReaderFactory>(),
                 provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey),
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<GhostRepository>>(),
                 configService.MaximumGhostCacheMegabytes.Value * 1024L * 1024L);
         });
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
