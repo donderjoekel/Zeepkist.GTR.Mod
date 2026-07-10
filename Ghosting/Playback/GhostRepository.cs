@@ -16,13 +16,14 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 public class GhostRepository
 {
     public const string ClientKey = "Ghosts";
-    private const int MaxConcurrentDownloads = 20;
+    private const int MaxConcurrentDownloads = 4;
+    private const int MaxConcurrentParses = 1;
 
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
     private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
-    private readonly SemaphoreSlim _parseSlots = new(4, 4);
+    private readonly SemaphoreSlim _parseSlots = new(MaxConcurrentParses, MaxConcurrentParses);
     private readonly Dictionary<int, Task<Result<IGhost>>> _downloads = new();
     private readonly object _downloadsLock = new();
 

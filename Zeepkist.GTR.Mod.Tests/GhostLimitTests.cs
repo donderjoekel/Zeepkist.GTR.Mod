@@ -18,6 +18,17 @@ public class GhostLimitTests
     }
 
     [Theory]
+    [InlineData(0, 0)]
+    [InlineData(-1, 0)]
+    [InlineData(GhostLimits.MaxCompressedBytes + 1, 0)]
+    [InlineData(1024, 1024 * GhostLimits.MaxDecompressionRatio)]
+    [InlineData(GhostLimits.MaxCompressedBytes, GhostLimits.MaxDecompressedBytes)]
+    public void DecompressedLimitBoundsSizeAndRatio(int compressedBytes, int expected)
+    {
+        Assert.Equal(expected, GhostLimits.GetMaxDecompressedBytes(compressedBytes));
+    }
+
+    [Theory]
     [InlineData(-1)]
     [InlineData(GhostLimits.MaxFrames + 1)]
     public void ReadFrameCountRejectsInvalidCounts(int count)
