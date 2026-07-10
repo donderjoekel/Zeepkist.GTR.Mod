@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-audit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        shell: pwsh
+        run: |
+          dotnet restore Zeepkist.GTR.Mod.csproj
+          dotnet restore Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj
+      - name: Verify dependencies
+        shell: pwsh
+        run: ./scripts/Verify-Dependencies.ps1
+      - name: Build
+        run: dotnet build Zeepkist.GTR.Mod.csproj --configuration Release --no-restore
+      - name: Test
+        run: dotnet test Zeepkist.GTR.Mod.Tests/Zeepkist.GTR.Mod.Tests.csproj --configuration Release --no-restore
