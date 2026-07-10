@@ -42,8 +42,11 @@ public class GhostNamePositioniongService : IEagerService
         if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
             return;
 
-        ghostData.Visuals.NameDisplay.gameObject.SetActive(
-            ghostData.PlaybackVisible && _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
+        bool visible = ghostData.PlaybackVisible &&
+                       _configService.ShowGhostNames.Value &&
+                       _configService.ShowGhosts.Value;
+        if (ghostData.Visuals.NameDisplay.gameObject.activeSelf != visible)
+            ghostData.Visuals.NameDisplay.gameObject.SetActive(visible);
 
         if (_bulkModeState.IsActive)
             SetNameAlpha(ghostData, 1);

@@ -79,13 +79,22 @@ public class GhostMaterialService : IEagerService
         if (_bulkModeState.IsActive)
             return;
 
+        GameMaster master = PlayerManager.Instance?.currentMaster;
+        if (master == null)
+            return;
+
+        bool hasPlayerPosition = !master.isPhotoMode && master.carSetups is { Count: > 0 };
+        Vector3 playerPosition = hasPlayerPosition
+            ? master.carSetups[0].transform.position
+            : default;
+
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
-            UpdateRenderer(ghostData);
+            UpdateRenderer(ghostData, hasPlayerPosition, playerPosition);
         }
     }
 
-    private void UpdateRenderer(GhostData ghostData)
+    private void UpdateRenderer(GhostData ghostData, bool hasPlayerPosition, Vector3 playerPosition)
     {
         if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
             return;
@@ -94,29 +103,16 @@ public class GhostMaterialService : IEagerService
         const float maxDistance = 8f;
         float maxAlpha = UseTransparency ? 0.3f : 1f;
 
-        if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null)
-            return;
-
         float playerDistance = 1000;
-
-        if (!PlayerManager.Instance.currentMaster.isPhotoMode)
-        {
-            if (PlayerManager.Instance.currentMaster.carSetups != null &&
-                PlayerManager.Instance.currentMaster.carSetups.Count > 0)
-            {
-                playerDistance = Vector3.Distance(
-                    ghostData.GameObject.transform.position,
-                    PlayerManager.Instance.currentMaster.carSetups[0].transform.position);
-            }
-        }
+        if (hasPlayerPosition)
+            playerDistance = Vector3.Distance(ghostData.GameObject.transform.position, playerPosition);
 
         float inverseLerp = Mathf.InverseLerp(minDistance, maxDistance, playerDistance);
         float fadeAmount = Mathf.Lerp(0, maxAlpha, inverseLerp);
 
-        ghostData.Visuals.NameDisplay.theDisplayName.color = ghostData.Visuals.NameDisplay.theDisplayName.color with
-        {
-            a = inverseLerp
-        };
+        Color nameColor = ghostData.Visuals.NameDisplay.theDisplayName.color;
+        if (!Mathf.Approximately(nameColor.a, inverseLerp))
+            ghostData.Visuals.NameDisplay.theDisplayName.color = nameColor with { a = inverseLerp };
 
         if (UseTransparency)
         {
