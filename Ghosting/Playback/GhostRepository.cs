@@ -34,8 +34,8 @@ public class GhostRepository
 
     public const string ClientKey = "Ghosts";
     private const string CacheIndexKey = "ghost-cache-index";
-    private const int MaxConcurrentDownloads = 4;
-    private const int MaxConcurrentParses = 1;
+    private const int MaxConcurrentDownloads = 15;
+    private const int MaxConcurrentParses = 5;
 
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;

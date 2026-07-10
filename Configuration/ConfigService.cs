@@ -167,19 +167,19 @@ public class ConfigService : IEagerService
         MaximumGhostColours = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "3. Max Ghost Colours",
-            24,
+            32,
             new ConfigDescription(
                 "Maximum number of ghost colours to show.\n\n" +
                 "Increasing this can reduce performance.\n\n" +
                 "Set to 1 for maximum performance, but all\n" +
                 "ghosts will be the same colour.",
-                new AcceptableValueRange<int>(1, 128)
+                new AcceptableValueRange<int>(1, 64)
             )
         );
         MaximumGhostCacheMegabytes = config.Bind(
             "2.3 - Ghosts - Offline Ghosts",
             "4. Ghost Cache Size (MB)",
-            512,
+            2048,
             new ConfigDescription(
                 "Maximum disk space used by downloaded ghost files",
                 new AcceptableValueRange<int>(64, 4096)));
