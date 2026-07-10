@@ -14,7 +14,14 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 {
     private const string WindowTitle = "GTR Playback";
     private const float DefaultWindowWidth = 960f;
-    private const int PlaybackContentRows = 5;
+    private const float SpeedStep = 0.1f;
+    private const float SpeedMin = 0.25f;
+    private const float SpeedMax = 4f;
+    private const float SpeedButtonWidth = 56f;
+    private const float ScrubStep = 0.01f;
+    private const ImWindowFlag WindowFlags =
+        ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly GhostPlaybackService _playbackService;
     private readonly GhostTimelineState _timelineState;
@@ -25,6 +32,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     private float _speed = 1f;
     private bool _isScrubbing;
     private float _playbackWindowHeight;
+    private const float WindowHeightVersion = 2f;
+    private float _windowHeightVersion;
 
     public GhostTimelineDrawer(
         PhotoModeTimelineService photoModeTimelineService,
@@ -51,8 +60,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             WindowTitle.AsSpan(),
             windowSize.Width,
             windowSize.Height,
-            ImWindowAnchor.BottomRight);
-        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowRect))
+            ImWindowAnchor.BottomCenter);
+        if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowRect, WindowFlags))
             return;
 
         try
@@ -87,20 +96,22 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     private float GetPlaybackWindowHeight(ImGui gui)
     {
-        if (_playbackWindowHeight > 0f)
+        if (_playbackWindowHeight > 0f && Mathf.Approximately(_windowHeightVersion, WindowHeightVersion))
             return _playbackWindowHeight;
 
-        var contentHeight = gui.GetRowsHeightWithSpacing(PlaybackContentRows);
+        var contentHeight = gui.GetRowHeight();
         var windowPadding = gui.Style.Window.ContentPadding.Vertical;
-        _playbackWindowHeight = contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
+        var borderThickness = gui.Style.Window.Box.BorderThickness * 2f;
+        _playbackWindowHeight = contentHeight + windowPadding + borderThickness;
+        _windowHeightVersion = WindowHeightVersion;
         return _playbackWindowHeight;
     }
 
     private static float GetEmptyWindowHeight(ImGui gui)
     {
-        var contentHeight = gui.GetRowsHeightWithSpacing(1);
+        var contentHeight = gui.GetRowHeight();
         var windowPadding = gui.Style.Window.ContentPadding.Vertical;
-        return contentHeight + ImWindow.GetTitleBarHeight(gui) + windowPadding;
+        return contentHeight + windowPadding;
     }
 
     private void DrawTimeline(ImGui gui, float duration)
@@ -114,18 +125,92 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         if (!_isScrubbing)
             _scrubTime = _playbackService.CurrentTime;
 
-        using (gui.Vertical())
+        using (gui.Horizontal())
         {
+            DrawDragHandle(gui);
+            DrawPlayPauseButton(gui);
             DrawTimeScrubber(gui, _scrubTime, duration);
-            DrawTransportControls(gui);
-            DrawSpeedControl(gui);
+            DrawSpeedButton(gui);
         }
+    }
+
+    private void DrawDragHandle(ImGui gui)
+    {
+        var rowHeight = gui.GetRowHeight();
+        var id = gui.GetNextControlId();
+        var rect = gui.AddSingleRowRect(new ImSize(rowHeight, rowHeight));
+        var hovered = gui.IsControlHovered(id);
+        var active = gui.IsControlActive(id);
+
+        ref readonly var style = ref hovered || active
+            ? ref gui.Style.Slider.Selected
+            : ref gui.Style.Slider.Normal;
+        gui.Box(rect, in style);
+
+        var fontSize = gui.GetFontSizeForContainerHeight(rect.H * 0.75f);
+        var textSettings = new ImTextSettings(fontSize, 0.5f, 0.5f);
+        gui.Canvas.Text("≡".AsSpan(), gui.Style.Window.TitleBar.FrontColor, rect, in textSettings);
+
+        gui.RegisterControl(id, rect);
+
+        if (gui.IsReadOnly)
+            return;
+
+        ref readonly var evt = ref gui.Input.MouseEvent;
+        switch (evt.Type)
+        {
+            case ImMouseEventType.Down or ImMouseEventType.BeginDrag when evt.LeftButton && hovered:
+                gui.SetActiveControl(id, ImControlFlag.Draggable);
+                gui.Input.UseMouseEvent();
+                break;
+            case ImMouseEventType.Drag when active:
+                MoveDrawingWindow(gui, evt.Delta);
+                gui.Input.UseMouseEvent();
+                break;
+            case ImMouseEventType.Up when active:
+                ClampDrawingWindow(gui);
+                gui.ResetActiveControl();
+                break;
+        }
+
+        if (!active)
+            ClampDrawingWindow(gui);
+    }
+
+    private static void MoveDrawingWindow(ImGui gui, Vector2 delta)
+    {
+        if (!gui.WindowManager.TryGetDrawingWindowId(out var windowId))
+            return;
+
+        ref var state = ref gui.WindowManager.GetWindowState(windowId);
+        state.Rect.Position += delta;
+    }
+
+    private static void ClampDrawingWindow(ImGui gui)
+    {
+        if (!gui.WindowManager.TryGetDrawingWindowId(out var windowId))
+            return;
+
+        ref var state = ref gui.WindowManager.GetWindowState(windowId);
+        state.Rect.Position = KeepWindowWithinSafeArea(gui, state.Rect.Position, state.Rect.Size);
+    }
+
+    private void DrawPlayPauseButton(ImGui gui)
+    {
+        var rowHeight = gui.GetRowHeight();
+        var label = _playbackService.IsPlaying ? "⏸" : "▶";
+        ImSize buttonSize = new Vector2(rowHeight, rowHeight);
+
+        if (gui.Button(label.AsSpan(), buttonSize))
+            _playbackService.TogglePlayPause();
     }
 
     private void DrawTimeScrubber(ImGui gui, float currentTime, float duration)
     {
+        var spacing = gui.Style.Layout.Spacing;
+        var scrubWidth = Mathf.Max(0f, gui.GetLayoutWidth() - SpeedButtonWidth - spacing);
         var scrubTime = currentTime;
-        var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration);
+        var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration, scrubWidth);
         _isScrubbing = scrubberChanged || gui.IsControlActive(gui.LastControl);
 
         if (scrubberChanged)
@@ -135,14 +220,10 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         }
     }
 
-    private static bool DrawTimeScrubBar(ImGui gui, ref float time, float duration)
+    private static bool DrawTimeScrubBar(ImGui gui, ref float time, float duration, float width)
     {
-        const float step = 0.01f;
-
-        gui.AddSpacingIfLayoutFrameNotEmpty();
-
         var rowHeight = gui.GetRowHeight();
-        var rect = gui.AddSingleRowRect(new ImSize(gui.GetLayoutWidth(), rowHeight));
+        var rect = gui.AddSingleRowRect(new ImSize(width, rowHeight));
         var id = gui.GetNextControlId();
         var hovered = gui.IsControlHovered(id);
         var active = gui.IsControlActive(id);
@@ -150,25 +231,21 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         var normValue = duration > 0f ? Mathf.Clamp01(time / duration) : 0f;
         var changed = false;
 
-        ref readonly var trackStyle = ref active || hovered
+        ref readonly var trackStyle = ref hovered || active
             ? ref gui.Style.Slider.Selected
             : ref gui.Style.Slider.Normal;
         gui.Box(rect, in trackStyle);
 
-        if (normValue > 0f)
-        {
-            var fillRect = rect;
-            fillRect.W *= normValue;
-            var fillColor = hovered || active
-                ? gui.Style.Slider.Fill.FrontColor
-                : gui.Style.Slider.Fill.BackColor;
-            gui.Canvas.Rect(fillRect, fillColor, gui.Style.Slider.Normal.BorderRadius);
-        }
+        var blockW = Mathf.Max(rowHeight * 1.5f, rect.W * 0.08f);
+        var blockX = rect.X + rect.W * normValue - blockW * 0.5f;
+        blockX = Mathf.Clamp(blockX, rect.X, rect.Right - blockW);
+        var blockRect = new ImRect(blockX, rect.Y, blockW, rect.H);
+        gui.Canvas.Rect(blockRect, gui.Style.Slider.Fill.BackColor, gui.Style.Slider.Normal.BorderRadius);
 
         var timeDisplay = $"{FormatTime(time)} / {FormatTime(duration)}";
         var fontSize = gui.GetFontSizeForContainerHeight(rect.H * 0.75f);
         var textSettings = new ImTextSettings(fontSize, 0.5f, 0.5f);
-        gui.Canvas.Text(timeDisplay.AsSpan(), gui.Style.Text.Color, rect, in textSettings);
+        gui.Canvas.Text(timeDisplay.AsSpan(), gui.Style.Window.TitleBar.FrontColor, rect, in textSettings);
 
         gui.RegisterControl(id, rect);
 
@@ -199,60 +276,56 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
         time = Mathf.Clamp(normValue * duration, 0f, duration);
 
-        var precision = 1.0f / step;
+        var precision = 1.0f / ScrubStep;
         time = Mathf.Round(time * precision) / precision;
 
         return true;
     }
 
-    private void DrawTransportControls(ImGui gui)
+    private void DrawSpeedButton(ImGui gui)
     {
-        using (gui.Horizontal())
-        {
-            var rowHeight = gui.GetRowHeight();
-            const float buttonWidth = 72f;
-            const int buttonCount = 4;
-            var playbackButtonsWidth = buttonWidth * buttonCount;
-            var availableWidth = gui.GetLayoutWidth();
-            var sideSpacing = Mathf.Max(0f, (availableWidth - playbackButtonsWidth) * 0.5f);
-
-            gui.AddSpacing(sideSpacing);
-            DrawPlaybackButtons(gui, rowHeight, buttonWidth);
-            gui.AddSpacing(sideSpacing);
-        }
-    }
-
-    private void DrawPlaybackButtons(ImGui gui, float rowHeight, float buttonWidth)
-    {
-        ImSize buttonSize = new Vector2(buttonWidth, rowHeight);
-
-        if (gui.Button("-5s".AsSpan(), buttonSize))
-            _playbackService.SkipBackward();
-
-        var playPauseLabel = _playbackService.IsPlaying ? "Pause" : "Play";
-        if (gui.Button(playPauseLabel.AsSpan(), buttonSize))
-            _playbackService.TogglePlayPause();
-
-        if (gui.Button("Stop".AsSpan(), buttonSize))
-            _playbackService.Stop();
-
-        if (gui.Button("+5s".AsSpan(), buttonSize))
-            _playbackService.SkipForward();
-    }
-
-    private void DrawSpeedControl(ImGui gui)
-    {
-        var speed = _speed;
         var rowHeight = gui.GetRowHeight();
+        var label = $"{_speed:0.0}x";
+        var id = gui.GetNextControlId();
 
-        gui.SliderHeader("Speed".AsSpan(), speed, "0.00x".AsSpan());
+        gui.AddSpacingIfLayoutFrameNotEmpty();
+        var rect = gui.AddSingleRowRect(new ImSize(SpeedButtonWidth, rowHeight));
 
-        ImSize speedSize = new Vector2(gui.GetLayoutWidth(), rowHeight);
-        if (gui.Slider(ref speed, 0.25f, 4f, speedSize, 0.05f))
-        {
-            _speed = speed;
-            _playbackService.SetSpeed(speed);
-        }
+        gui.Button(id, label.AsSpan(), rect, out _);
+        var hovered = gui.IsControlHovered(id);
+
+        if (gui.IsReadOnly)
+            return;
+
+        ref readonly var evt = ref gui.Input.MouseEvent;
+        if (evt.Type != ImMouseEventType.Scroll || !hovered)
+            return;
+
+        var delta = evt.Delta.y > 0f ? SpeedStep : -SpeedStep;
+        var speed = Mathf.Clamp(_speed + delta, SpeedMin, SpeedMax);
+        speed = Mathf.Round(speed * 10f) / 10f;
+
+        if (Mathf.Approximately(speed, _speed))
+            return;
+
+        _speed = speed;
+        _playbackService.SetSpeed(speed);
+        gui.Input.UseMouseEvent();
+    }
+
+    private static Vector2 KeepWindowWithinSafeArea(ImGui gui, Vector2 position, Vector2 size)
+    {
+        var screenRect = gui.Canvas.SafeScreenRect;
+        var margin = gui.GetRowHeight();
+        var left = screenRect.Left - size.x + margin * 2f;
+        var right = screenRect.Right - margin;
+        var top = screenRect.Top - size.y;
+        var bottom = screenRect.Bottom - size.y + margin;
+
+        position.x = Mathf.Clamp(position.x, left, right);
+        position.y = Mathf.Clamp(position.y, bottom, top);
+
+        return position;
     }
 
     private static string FormatTime(float seconds)
