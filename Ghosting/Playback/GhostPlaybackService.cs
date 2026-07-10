@@ -1,5 +1,6 @@
 using System;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 using ZeepSDK.Racing;
 
@@ -19,6 +20,10 @@ public class GhostPlaybackService : IEagerService
 
     private readonly GhostTimingService _timingService;
     private readonly GhostPlayer _ghostPlayer;
+    private readonly PlayerLoopService _playerLoopService;
+
+    private float? _pendingGhostSeekTime;
+    private int _lastGhostSeekApplyFrame = -1;
 
     public GhostPlaybackState State { get; private set; } = GhostPlaybackState.Stopped;
 
@@ -27,14 +32,19 @@ public class GhostPlaybackService : IEagerService
     public float Speed => _timingService.Speed;
     public bool IsPlaying => State == GhostPlaybackState.Playing;
 
-    public GhostPlaybackService(GhostTimingService timingService, GhostPlayer ghostPlayer)
+    public GhostPlaybackService(
+        GhostTimingService timingService,
+        GhostPlayer ghostPlayer,
+        PlayerLoopService playerLoopService)
     {
         _timingService = timingService;
         _ghostPlayer = ghostPlayer;
+        _playerLoopService = playerLoopService;
 
         _ghostPlayer.GhostAdded += OnGhostsChanged;
         _ghostPlayer.GhostRemoved += OnGhostsChanged;
         RacingApi.RoundStarted += OnRoundStarted;
+        _playerLoopService.SubscribeLateUpdate(ApplyPendingGhostSeek);
         RefreshDuration();
     }
 
@@ -78,6 +88,8 @@ public class GhostPlaybackService : IEagerService
 
     public void Stop()
     {
+        _pendingGhostSeekTime = null;
+        _lastGhostSeekApplyFrame = -1;
         _timingService.StopManualPlayback();
         _ghostPlayer.StopManualPlayback();
         State = GhostPlaybackState.Stopped;
@@ -96,7 +108,10 @@ public class GhostPlaybackService : IEagerService
         RefreshDuration();
         float clampedTime = Duration > 0f ? Mathf.Clamp(time, 0f, Duration) : Mathf.Max(0f, time);
         _timingService.SetTime(clampedTime);
-        _ghostPlayer.SeekAllGhosts(clampedTime);
+        _pendingGhostSeekTime = clampedTime;
+
+        if (_lastGhostSeekApplyFrame != Time.frameCount)
+            ApplyPendingGhostSeek();
     }
 
     public void SkipBackward()
@@ -144,5 +159,15 @@ public class GhostPlaybackService : IEagerService
     private void RefreshDuration()
     {
         _timingService.SetDuration(_ghostPlayer.GetMaxDuration());
+    }
+
+    private void ApplyPendingGhostSeek()
+    {
+        if (!_pendingGhostSeekTime.HasValue)
+            return;
+
+        _ghostPlayer.SeekAllGhosts(_pendingGhostSeekTime.Value);
+        _lastGhostSeekApplyFrame = Time.frameCount;
+        _pendingGhostSeekTime = null;
     }
 }
