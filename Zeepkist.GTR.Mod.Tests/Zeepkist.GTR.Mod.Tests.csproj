@@ -28,6 +28,7 @@
     <Compile Include="..\Ghosting\Playback\GhostVisualProfile.cs" Link="Source\GhostVisualProfile.cs" />
     <Compile Include="..\Ghosting\Playback\GhostVisualProfileResolver.cs" Link="Source\GhostVisualProfileResolver.cs" />
     <Compile Include="..\Ghosting\Ghosts\GhostCharacterPlaybackState.cs" Link="Source\GhostCharacterPlaybackState.cs" />
+    <Compile Include="..\Ghosting\Ghosts\GhostFrameSearch.cs" Link="Source\GhostFrameSearch.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostBatching.cs" Link="Source\BulkGhostBatching.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostModeState.cs" Link="Source\BulkGhostModeState.cs" />
     <Compile Include="..\Ghosting\Playback\BulkGhostMeshScale.cs" Link="Source\BulkGhostMeshScale.cs" />
