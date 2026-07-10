@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
-using ZeepkistClient;
 
 namespace TNRD.Zeepkist.GTR.Patching.Patches;
 
@@ -60,7 +59,10 @@ public static class FlyingCameraScript_HandleInputs
 
     private static void Postfix(FlyingCameraScript __instance)
     {
-        if (ZeepkistNetwork.IsConnected || !ShouldInjectGhosts)
+        if (ShouldInjectGhosts)
+            TargetService.SyncCurrentRecordId(__instance);
+
+        if (!ShouldInjectGhosts)
             return;
 
         if (GetButtonDown(Camera6ActionField, __instance))

@@ -17,6 +17,7 @@ public class GtrSpectateTargetService : IEagerService, IDisposable
     private readonly PhotoModeTimelineService _photoModeTimelineService;
 
     private readonly Dictionary<Transform, int> _transformToRecordId = new();
+    private int? _currentRecordId;
 
     public GtrSpectateTargetService(
         GhostPlayer ghostPlayer,
@@ -48,7 +49,7 @@ public class GtrSpectateTargetService : IEagerService, IDisposable
 
         foreach (LoadedGhostEntry ghost in _ghostPlayer.GetLoadedGhosts())
         {
-            Transform transform = ghost.GhostData.GameObject?.transform;
+            Transform transform = GetSpectateTransform(ghost.GhostData);
             if (transform == null)
                 continue;
 
@@ -65,29 +66,110 @@ public class GtrSpectateTargetService : IEagerService, IDisposable
         ResetHelperMethod?.Invoke(camera, null);
     }
 
-    private static void ReconcileCurrentTarget(FlyingCameraScript camera)
+    public int GetCurrentTargetIndex(FlyingCameraScript camera)
     {
-        Transform currentTransform = camera.currentTarget?.transform;
-        var currentTargetExists = false;
+        if (camera.targetList.Count == 0)
+            return 0;
 
-        if (currentTransform != null)
+        if (_currentRecordId.HasValue)
         {
             for (var i = 0; i < camera.targetList.Count; i++)
             {
-                if (currentTransform == camera.targetList[i].transform)
+                Transform transform = camera.targetList[i].transform;
+                if (transform != null &&
+                    _transformToRecordId.TryGetValue(transform, out int recordId) &&
+                    recordId == _currentRecordId.Value)
                 {
-                    currentTargetExists = true;
-                    break;
+                    return i;
                 }
             }
         }
 
-        if (!currentTargetExists)
+        Transform currentTransform = camera.currentTarget?.transform;
+        if (currentTransform == null)
+            return 0;
+
+        for (var i = 0; i < camera.targetList.Count; i++)
         {
-            camera.currentTarget = camera.targetList.Count != 0
-                ? camera.targetList[0]
-                : new SpectatorZeepkistTarget();
+            if (currentTransform != camera.targetList[i].transform)
+                continue;
+
+            SyncCurrentRecordId(camera);
+            return i;
         }
+
+        return 0;
+    }
+
+    public void SyncCurrentRecordId(FlyingCameraScript camera)
+    {
+        Transform currentTransform = camera.currentTarget?.transform;
+        if (currentTransform == null ||
+            !_transformToRecordId.TryGetValue(currentTransform, out int recordId))
+        {
+            _currentRecordId = null;
+            return;
+        }
+
+        _currentRecordId = recordId;
+    }
+
+    private void ReconcileCurrentTarget(FlyingCameraScript camera)
+    {
+        if (TrySelectTargetByRecordId(camera, _currentRecordId))
+            return;
+
+        Transform currentTransform = camera.currentTarget?.transform;
+        if (currentTransform != null)
+        {
+            for (var i = 0; i < camera.targetList.Count; i++)
+            {
+                if (currentTransform != camera.targetList[i].transform)
+                    continue;
+
+                camera.currentTarget = camera.targetList[i];
+                SyncCurrentRecordId(camera);
+                return;
+            }
+        }
+
+        camera.currentTarget = camera.targetList.Count != 0
+            ? camera.targetList[0]
+            : new SpectatorZeepkistTarget();
+        SyncCurrentRecordId(camera);
+    }
+
+    private bool TrySelectTargetByRecordId(FlyingCameraScript camera, int? recordId)
+    {
+        if (!recordId.HasValue)
+            return false;
+
+        for (var i = 0; i < camera.targetList.Count; i++)
+        {
+            Transform transform = camera.targetList[i].transform;
+            if (transform == null ||
+                !_transformToRecordId.TryGetValue(transform, out int targetRecordId) ||
+                targetRecordId != recordId.Value)
+            {
+                continue;
+            }
+
+            camera.currentTarget = camera.targetList[i];
+            _currentRecordId = recordId;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Transform GetSpectateTransform(GhostData ghostData)
+    {
+        if (ghostData == null)
+            return null;
+
+        return ghostData.Visuals?.GhostModel != null
+            ? ghostData.Visuals.GhostModel.transform
+            : ghostData.GameObject?.transform;
     }
 
     private void OnPhotoModeEntered()
@@ -98,6 +180,7 @@ public class GtrSpectateTargetService : IEagerService, IDisposable
     private void OnPhotoModeExited()
     {
         _transformToRecordId.Clear();
+        _currentRecordId = null;
     }
 
     private void OnGhostsChanged(object sender, EventArgs e)

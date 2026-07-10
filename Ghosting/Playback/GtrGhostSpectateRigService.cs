@@ -71,7 +71,7 @@ public class GtrGhostSpectateRigService : IEagerService, IDisposable
             return;
 
         _rigsByRecordId[recordId] = rig;
-        _rigsByTransform[ghostData.GameObject.transform] = rig;
+        _rigsByTransform[rig.SoapboxRoot.transform] = rig;
     }
 
     private void RemoveRig(int recordId)
