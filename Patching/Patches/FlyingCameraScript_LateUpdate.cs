@@ -11,13 +11,9 @@ namespace TNRD.Zeepkist.GTR.Patching.Patches;
 public static class FlyingCameraScript_LateUpdate
 {
     private static ConfigService _configService;
-    private static GhostSpectateService _spectateService;
 
     private static ConfigService ConfigService =>
         _configService ??= ServiceHelper.Instance.GetRequiredService<ConfigService>();
-
-    private static GhostSpectateService SpectateService =>
-        _spectateService ??= ServiceHelper.Instance.GetRequiredService<GhostSpectateService>();
 
     private static bool Prefix(FlyingCameraScript __instance)
     {
@@ -25,9 +21,6 @@ public static class FlyingCameraScript_LateUpdate
             return true;
 
         PhotoModeFlyingCamera.SetCurrent(__instance);
-
-        if (SpectateService.ShouldBlockFlyingCamera)
-            return false;
 
         var freezeKey = ConfigService.PhotoModeCameraFreezeKey.Value;
         if (freezeKey == KeyCode.None || !Input.GetKey(freezeKey))

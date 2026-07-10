@@ -66,14 +66,6 @@ public class ConfigService : IEagerService
 
     public ConfigEntry<KeyCode> PhotoModeCameraFreezeKey { get; private set; }
 
-    public ConfigEntry<float> SpectateFirstPersonEyeHeight { get; private set; }
-    public ConfigEntry<float> SpectateThirdPersonDistance { get; private set; }
-    public ConfigEntry<float> SpectateThirdPersonHeight { get; private set; }
-    public ConfigEntry<float> SpectateThirdPersonLookHeight { get; private set; }
-    public ConfigEntry<float> SpectateThirdPersonSmoothTime { get; private set; }
-    public ConfigEntry<float> SpectateTopDownHeight { get; private set; }
-    public ConfigEntry<float> SpectateTopDownPitch { get; private set; }
-
     public ConfigService(ConfigFile config, Plugin plugin)
     {
         ConfigRecords(config);
@@ -323,41 +315,5 @@ public class ConfigService : IEagerService
             KeyCode.None,
             "Hold this key in photo mode to freeze the flying camera while using the playback UI\n" +
             "Set to None to disable");
-        SpectateFirstPersonEyeHeight = config.Bind(
-            "7. Playback",
-            "2. First Person Eye Height",
-            1.3f,
-            "Vertical offset above the ghost for first-person spectate camera");
-        SpectateThirdPersonDistance = config.Bind(
-            "7. Playback",
-            "3. Third Person Distance",
-            6f,
-            "Distance behind the ghost for third-person spectate camera");
-        SpectateThirdPersonHeight = config.Bind(
-            "7. Playback",
-            "4. Third Person Height",
-            2.5f,
-            "Vertical offset above the ghost for third-person spectate camera");
-        SpectateThirdPersonLookHeight = config.Bind(
-            "7. Playback",
-            "5. Third Person Look Height",
-            1f,
-            "Vertical offset on the ghost that third-person camera looks at");
-        SpectateThirdPersonSmoothTime = config.Bind(
-            "7. Playback",
-            "6. Third Person Smooth Time",
-            0.12f,
-            "Smoothing time in seconds for smooth third-person spectate camera");
-        SpectateTopDownHeight = config.Bind(
-            "7. Playback",
-            "7. Top Down Height",
-            25f,
-            "Height above the ghost for top-down spectate camera");
-        SpectateTopDownPitch = config.Bind(
-            "7. Playback",
-            "8. Top Down Pitch",
-            20f,
-            "Pitch angle in degrees for top-down spectate camera\n" +
-            "0 = straight down, higher values tilt the camera behind the ghost");
     }
 }

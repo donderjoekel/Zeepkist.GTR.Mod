@@ -7,27 +7,30 @@ using ZeepSDK.PhotoMode;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostSpectateInputDisplayService : IEagerService, IDisposable
+public class GtrGhostInputDisplayService : IEagerService, IDisposable
 {
     private const float DefaultMaxSteerAngle = 20f;
 
-    private readonly GhostSpectateService _spectateService;
+    private readonly GtrSpectateTargetService _spectateTargetService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly GhostTimingService _timingService;
+    private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _lateUpdateSubscription;
 
     private SpeedDisplay _speedDisplay;
 
-    public GhostSpectateInputDisplayService(
-        GhostSpectateService spectateService,
+    public GtrGhostInputDisplayService(
+        GtrSpectateTargetService spectateTargetService,
         GhostPlayer ghostPlayer,
         GhostTimingService timingService,
+        PhotoModeTimelineService photoModeTimelineService,
         PlayerLoopService playerLoopService)
     {
-        _spectateService = spectateService;
+        _spectateTargetService = spectateTargetService;
         _ghostPlayer = ghostPlayer;
         _timingService = timingService;
+        _photoModeTimelineService = photoModeTimelineService;
         _playerLoopService = playerLoopService;
 
         _lateUpdateSubscription = playerLoopService.SubscribeLateUpdate(OnLateUpdate);
@@ -41,10 +44,13 @@ public class GhostSpectateInputDisplayService : IEagerService, IDisposable
 
     private void OnLateUpdate()
     {
-        if (!_spectateService.IsActive)
+        if (!_photoModeTimelineService.IsPhotoModeGhostsAvailable)
+        {
+            HideDisplay();
             return;
+        }
 
-        if (!TryGetSelectedGhost(out IGhost ghost))
+        if (!TryGetActiveGhost(out IGhost ghost))
         {
             HideDisplay();
             return;
@@ -77,13 +83,19 @@ public class GhostSpectateInputDisplayService : IEagerService, IDisposable
             sample.SpeedKmh);
     }
 
-    private bool TryGetSelectedGhost(out IGhost ghost)
+    private bool TryGetActiveGhost(out IGhost ghost)
     {
         ghost = null;
-        if (!_spectateService.SelectedRecordId.HasValue)
+
+        FlyingCameraScript flyingCamera = PhotoModeFlyingCamera.Current;
+        Transform targetTransform = flyingCamera?.currentTarget?.transform;
+        if (targetTransform == null)
             return false;
 
-        if (!_ghostPlayer.TryGetGhostData(_spectateService.SelectedRecordId.Value, out GhostData ghostData))
+        if (!_spectateTargetService.TryGetRecordId(targetTransform, out int recordId))
+            return false;
+
+        if (!_ghostPlayer.TryGetGhostData(recordId, out GhostData ghostData))
             return false;
 
         ghost = ghostData.Ghost;
