@@ -12,7 +12,7 @@ namespace TNRD.Zeepkist.GTR.Core;
 public class EagerHostedService : IHostedService
 {
     private readonly ILogger<EagerHostedService> _logger;
-    private readonly IEnumerable<IEagerService> _eagerServices;
+    private readonly IReadOnlyCollection<IEagerService> _eagerServices;
 
     public EagerHostedService(
         ILogger<EagerHostedService> logger,
@@ -25,7 +25,7 @@ public class EagerHostedService : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Found {Count} eager services", _eagerServices.Count());
+        _logger.LogInformation("Found {Count} eager services", _eagerServices.Count);
 
         return Task.CompletedTask;
     }

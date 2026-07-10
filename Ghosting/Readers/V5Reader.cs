@@ -111,28 +111,4 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             frames);
     }
 
-    private CosmeticIDs ReadCosmetics(BinaryReader reader)
-    {
-        CosmeticIDs ids = new();
-        ids.zeepkist = reader.ReadInt32();
-        ids.hat = reader.ReadInt32();
-        ids.glasses = reader.ReadInt32();
-        ids.paraglider = reader.ReadInt32();
-        ids.horn = reader.ReadInt32();
-        ids.color = reader.ReadInt32();
-        ids.color_body = reader.ReadInt32();
-        ids.color_leftArm = reader.ReadInt32();
-        ids.color_rightArm = reader.ReadInt32();
-        ids.color_leftLeg = reader.ReadInt32();
-        ids.color_rightLeg = reader.ReadInt32();
-        ids.frontWheels = reader.ReadInt32();
-        ids.rearWheels = reader.ReadInt32();
-        return ids;
-    }
-
-    private static float RemapToFloat(byte input, float min, float max)
-    {
-        float normalized = input / 255f;
-        return Mathf.Lerp(min, max, normalized);
-    }
 }

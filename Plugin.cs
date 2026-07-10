@@ -91,7 +91,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<BulkGhostRenderService>();
         services.AddEagerService<GhostPlayer>();
         services.AddEagerService<GhostMaterialService>();
-        services.AddEagerService<GhostNamePositioniongService>();
+        services.AddEagerService<GhostNamePositioningService>();
         services.AddEagerService<GhostVisibilityService>();
         services.AddEagerService<GhostTimingService>();
         services.AddEagerService<LeaderboardService>();

@@ -129,7 +129,7 @@ public class VotingService : IEagerService
         }
 
         using HttpResponseMessage response = await _apiHttpClient.PostAsync(
-            $"vote/submit",
+            "vote/submit",
             new VoteResource
             {
                 Hash = currentHash,

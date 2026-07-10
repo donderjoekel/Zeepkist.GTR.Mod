@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostNamePositioniongService : IEagerService
+public class GhostNamePositioningService : IEagerService
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
@@ -14,7 +14,7 @@ public class GhostNamePositioniongService : IEagerService
     private readonly MessengerService _messengerService;
     private readonly BulkGhostModeState _bulkModeState;
 
-    public GhostNamePositioniongService(
+    public GhostNamePositioningService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
         ConfigService configService,

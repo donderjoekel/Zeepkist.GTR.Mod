@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
@@ -36,10 +35,13 @@ public partial class GhostRenderer : IDisposable
 
         bool includeInactive = visualProfile == GhostVisualProfile.Full;
         Renderer[] renderers = gameObject.GetComponentsInChildren<Renderer>(includeInactive);
-        renderers.ToList().ForEach(renderer => _rendererData.Add(new RendererData(
-            renderer,
-            visualProfile,
-            useNormalMaterialsInGhostMode)));
+        foreach (Renderer renderer in renderers)
+        {
+            _rendererData.Add(new RendererData(
+                renderer,
+                visualProfile,
+                useNormalMaterialsInGhostMode));
+        }
     }
 
     public void SwitchToNormal()
