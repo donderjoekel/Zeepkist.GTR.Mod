@@ -6,6 +6,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 public abstract class GhostBase : IGhost
 {
     private readonly GhostTimingService _timingService;
+    private readonly BulkGhostModeState _bulkModeState;
     private int _updateFrame;
     private int _fixedUpdateFrame;
 
@@ -17,9 +18,10 @@ public abstract class GhostBase : IGhost
 
     public float Duration => FrameCount > 0 ? GetFrame(FrameCount - 1).Time : 0f;
 
-    protected GhostBase(GhostTimingService timingService)
+    protected GhostBase(GhostTimingService timingService, BulkGhostModeState bulkModeState)
     {
         _timingService = timingService;
+        _bulkModeState = bulkModeState;
     }
 
     public void Initialize(GhostData ghost)
@@ -147,10 +149,16 @@ public abstract class GhostBase : IGhost
         if (_fixedUpdateFrame >= FrameCount - 1)
             return;
 
-        if (Ghost.VisualProfile == GhostVisualProfile.Full)
+        if (Ghost.VisualProfile == GhostVisualProfile.Full &&
+            !ShouldSkipFullFixedUpdateExtras())
             OnFixedUpdate(_fixedUpdateFrame);
 
         _fixedUpdateFrame++;
+    }
+
+    private bool ShouldSkipFullFixedUpdateExtras()
+    {
+        return _bulkModeState.ShouldSkipFullProfileFixedUpdateExtras(_timingService.IsManualPlaybackActive);
     }
 
     protected virtual void OnFixedUpdate(int fixedUpdateFrame)

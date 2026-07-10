@@ -16,11 +16,12 @@ public partial class V2Ghost : GhostBase
 
     public V2Ghost(
         GhostTimingService timingService,
+        BulkGhostModeState bulkModeState,
         ulong steamId,
         int soapboxId,
         int hatId,
         int colorId,
-        List<Frame> frames) : base(timingService)
+        List<Frame> frames) : base(timingService, bulkModeState)
     {
         _steamId = steamId;
         _soapboxId = soapboxId;

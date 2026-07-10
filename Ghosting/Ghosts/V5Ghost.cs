@@ -16,11 +16,12 @@ public partial class V5Ghost : GhostBase, IGhostInputProvider
 
     public V5Ghost(
         GhostTimingService timingService,
+        BulkGhostModeState bulkModeState,
         string taggedUsername,
         Color color,
         ulong steamId,
         CosmeticIDs cosmeticIds,
-        List<Frame> frames) : base(timingService)
+        List<Frame> frames) : base(timingService, bulkModeState)
     {
         _taggedUsername = taggedUsername;
         _color = color;

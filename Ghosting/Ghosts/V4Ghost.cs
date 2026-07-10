@@ -16,11 +16,12 @@ public partial class V4Ghost : GhostBase, IGhostInputProvider
 
     public V4Ghost(
         GhostTimingService timingService,
+        BulkGhostModeState bulkModeState,
         ulong steamId,
         int soapboxId,
         int hatId,
         int colorId,
-        List<Frame> frames) : base(timingService)
+        List<Frame> frames) : base(timingService, bulkModeState)
     {
         _steamId = steamId;
         _soapboxId = soapboxId;
