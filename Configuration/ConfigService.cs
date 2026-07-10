@@ -26,6 +26,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
     public ConfigEntry<int> MaximumVisibleTopRecordGhosts { get; private set; }
     public ConfigEntry<int> MaximumGhostColours { get; private set; }
+    public ConfigEntry<int> MaximumGhostCacheMegabytes { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -177,6 +178,13 @@ public class ConfigService : IEagerService
                 new AcceptableValueRange<int>(1, 128)
             )
         );
+        MaximumGhostCacheMegabytes = config.Bind(
+            "2.3 - Ghosts - Offline Ghosts",
+            "4. Ghost Cache Size (MB)",
+            512,
+            new ConfigDescription(
+                "Maximum disk space used by downloaded ghost files",
+                new AcceptableValueRange<int>(64, 4096)));
 
     }
 

@@ -126,10 +126,14 @@ public class Plugin : BaseUnityPlugin
             client.Timeout = TimeSpan.FromSeconds(60);
         });
         services.AddSingleton(provider =>
-            new GhostRepository(
+        {
+            var configService = provider.GetRequiredService<ConfigService>();
+            return new GhostRepository(
                 provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
                 provider.GetRequiredService<GhostReaderFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey)));
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey),
+                configService.MaximumGhostCacheMegabytes.Value * 1024L * 1024L);
+        });
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();

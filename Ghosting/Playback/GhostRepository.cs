@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,12 +30,16 @@ public class GhostRepository
     }
 
     public const string ClientKey = "Ghosts";
+    private const string CacheIndexKey = "ghost-cache-index";
     private const int MaxConcurrentDownloads = 4;
     private const int MaxConcurrentParses = 1;
 
     private readonly IModStorage _modStorage;
     private readonly GhostReaderFactory _ghostReaderFactory;
     private readonly HttpClient _httpClient;
+    private readonly long _maximumCacheBytes;
+    private readonly object _cacheLock = new();
+    private readonly Dictionary<int, GhostCacheEntry> _cacheEntries = new();
     private readonly SemaphoreSlim _downloadSlots = new(MaxConcurrentDownloads, MaxConcurrentDownloads);
     private readonly SemaphoreSlim _parseSlots = new(MaxConcurrentParses, MaxConcurrentParses);
     private readonly Dictionary<int, SharedDownload> _downloads = new();
@@ -43,11 +48,14 @@ public class GhostRepository
     public GhostRepository(
         IModStorage modStorage,
         GhostReaderFactory ghostReaderFactory,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        long maximumCacheBytes)
     {
         _modStorage = modStorage;
         _ghostReaderFactory = ghostReaderFactory;
         _httpClient = httpClient;
+        _maximumCacheBytes = maximumCacheBytes;
+        LoadCacheIndex();
     }
 
     public async UniTask<Result<IGhost>> GetGhost(
@@ -119,7 +127,7 @@ public class GhostRepository
             byte[] buffer = await ReadLimitedAsync(response.Content, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             IGhost downloadedGhost = await ParseGhostAsync(buffer, cancellationToken);
-            _modStorage.WriteBlob(GetStorageKey(recordId), buffer);
+            WriteCachedGhost(recordId, buffer);
             return Result.Ok(downloadedGhost);
         }
         catch (OperationCanceledException)
@@ -144,12 +152,17 @@ public class GhostRepository
             return await Task.Run(() =>
             {
                 string storageKey = GetStorageKey(recordId);
-                if (!_modStorage.BlobFileExists(storageKey))
-                    return null;
-
                 try
                 {
-                    byte[] buffer = _modStorage.ReadBlob(storageKey);
+                    byte[] buffer;
+                    lock (_cacheLock)
+                    {
+                        if (!_modStorage.BlobFileExists(storageKey))
+                            return null;
+                        buffer = _modStorage.ReadBlob(storageKey);
+                        if (TouchCacheEntry(recordId, buffer.Length))
+                            SaveCacheIndex();
+                    }
                     cancellationToken.ThrowIfCancellationRequested();
                     return ReadGhost(buffer);
                 }
@@ -159,7 +172,12 @@ public class GhostRepository
                 }
                 catch
                 {
-                    _modStorage.DeleteBlob(storageKey);
+                    lock (_cacheLock)
+                    {
+                        _modStorage.DeleteBlob(storageKey);
+                        _cacheEntries.Remove(recordId);
+                        SaveCacheIndex();
+                    }
                     return null;
                 }
             }, cancellationToken);
@@ -204,6 +222,73 @@ public class GhostRepository
     }
 
     private static string GetStorageKey(int recordId) => "ghosts/" + recordId;
+
+    private void LoadCacheIndex()
+    {
+        lock (_cacheLock)
+        {
+            if (!_modStorage.JsonFileExists(CacheIndexKey))
+                return;
+
+            try
+            {
+                GhostCacheIndex index = _modStorage.LoadFromJson<GhostCacheIndex>(CacheIndexKey);
+                if (index?.Entries == null)
+                    return;
+
+                foreach (GhostCacheEntry entry in index.Entries)
+                {
+                    if (entry.Size > 0 && _modStorage.BlobFileExists(GetStorageKey(entry.RecordId)))
+                        _cacheEntries[entry.RecordId] = entry;
+                }
+            }
+            catch
+            {
+                _cacheEntries.Clear();
+                _modStorage.DeleteJsonFile(CacheIndexKey);
+            }
+        }
+    }
+
+    private void WriteCachedGhost(int recordId, byte[] buffer)
+    {
+        lock (_cacheLock)
+        {
+            _modStorage.WriteBlob(GetStorageKey(recordId), buffer);
+            TouchCacheEntry(recordId, buffer.Length);
+
+            foreach (int evictionId in GhostCachePolicy.GetEvictionCandidates(
+                         _cacheEntries.Values,
+                         _maximumCacheBytes))
+            {
+                _modStorage.DeleteBlob(GetStorageKey(evictionId));
+                _cacheEntries.Remove(evictionId);
+            }
+
+            SaveCacheIndex();
+        }
+    }
+
+    private bool TouchCacheEntry(int recordId, int size)
+    {
+        bool isNew = !_cacheEntries.TryGetValue(recordId, out GhostCacheEntry entry);
+        if (isNew)
+        {
+            entry = new GhostCacheEntry { RecordId = recordId };
+            _cacheEntries.Add(recordId, entry);
+        }
+
+        entry.Size = size;
+        entry.LastAccess = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return isNew;
+    }
+
+    private void SaveCacheIndex()
+    {
+        _modStorage.SaveToJson(
+            CacheIndexKey,
+            new GhostCacheIndex { Entries = _cacheEntries.Values.ToList() });
+    }
 
     private Uri TransformGhostUrl(string input) =>
         ServiceUriValidator.ResolveCdnPath(ConfigService.CdnUrl, input);
