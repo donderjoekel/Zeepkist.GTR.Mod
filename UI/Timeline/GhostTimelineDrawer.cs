@@ -125,6 +125,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         if (!_isScrubbing)
             _scrubTime = _playbackService.CurrentTime;
 
+        _speed = _playbackService.Speed;
+
         using (gui.Horizontal())
         {
             DrawDragHandle(gui);

@@ -15,6 +15,7 @@ public enum GhostPlaybackState
 public class GhostPlaybackService : IEagerService
 {
     private const float SkipSeconds = 5f;
+    private const float ScrubStep = 0.01f;
 
     private readonly GhostTimingService _timingService;
     private readonly GhostPlayer _ghostPlayer;
@@ -112,6 +113,25 @@ public class GhostPlaybackService : IEagerService
     {
         _timingService.SetSpeed(speed);
     }
+
+    public void SeekToProgress(float progress)
+    {
+        RefreshDuration();
+        if (Duration <= 0f)
+            return;
+
+        var time = Mathf.Clamp01(progress) * Duration;
+        time = Mathf.Round(time / ScrubStep) * ScrubStep;
+        Seek(time);
+    }
+
+    public void AdjustSpeed(float delta)
+    {
+        var speed = Mathf.Round((Speed + delta) * 10f) / 10f;
+        SetSpeed(speed);
+    }
+
+    public void ResetSpeed() => SetSpeed(1f);
 
     private void OnGhostsChanged(object sender, EventArgs e)
     {
