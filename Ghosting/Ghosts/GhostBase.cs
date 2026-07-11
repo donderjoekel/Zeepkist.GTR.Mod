@@ -18,6 +18,17 @@ public abstract class GhostBase : IGhost
 
     public float Duration => FrameCount > 0 ? GetFrame(FrameCount - 1).Time : 0f;
 
+    internal bool TryGetAdjacentFrameTime(float currentTime, int direction, float timeEpsilon, out float adjacentTime)
+    {
+        return GhostFrameSearch.TryGetAdjacentFrameTime(
+            FrameCount,
+            currentTime,
+            direction,
+            timeEpsilon,
+            index => GetFrame(index).Time,
+            out adjacentTime);
+    }
+
     protected GhostBase(GhostTimingService timingService, BulkGhostModeState bulkModeState)
     {
         _timingService = timingService;

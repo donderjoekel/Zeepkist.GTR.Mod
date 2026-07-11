@@ -31,4 +31,38 @@ internal static class GhostFrameSearch
     {
         return FindFirstFrameIndexAtOrAfterTime(frames.Count, time, index => getTime(frames[index]));
     }
+
+    internal static bool TryGetAdjacentFrameTime(
+        int frameCount,
+        float currentTime,
+        int direction,
+        float timeEpsilon,
+        Func<int, float> getTimeAtIndex,
+        out float adjacentTime)
+    {
+        adjacentTime = 0f;
+        if (frameCount <= 0 || direction is not (1 or -1))
+            return false;
+
+        if (direction > 0)
+        {
+            int nextIndex = FindFirstFrameIndexAtOrAfterTime(
+                frameCount,
+                currentTime + timeEpsilon,
+                getTimeAtIndex);
+            if (nextIndex >= frameCount)
+                return false;
+
+            adjacentTime = getTimeAtIndex(nextIndex);
+            return true;
+        }
+
+        int nextOrEqualIndex = FindFirstFrameIndexAtOrAfterTime(frameCount, currentTime, getTimeAtIndex);
+        int prevIndex = nextOrEqualIndex - 1;
+        if (prevIndex < 0)
+            return false;
+
+        adjacentTime = getTimeAtIndex(prevIndex);
+        return true;
+    }
 }

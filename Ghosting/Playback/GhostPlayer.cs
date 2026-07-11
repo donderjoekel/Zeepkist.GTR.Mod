@@ -359,6 +359,29 @@ public partial class GhostPlayer : IEagerService
         return maxDuration;
     }
 
+    public bool TryStepFrame(float currentTime, int direction, float timeEpsilon, out float newTime)
+    {
+        newTime = currentTime;
+        if (_ghosts.Count == 0)
+            return false;
+
+        GhostBase referenceGhost = null;
+        float maxDuration = 0f;
+        foreach (IGhost ghost in _ghosts.Values)
+        {
+            if (ghost.Duration <= maxDuration || ghost is not GhostBase ghostBase)
+                continue;
+
+            maxDuration = ghost.Duration;
+            referenceGhost = ghostBase;
+        }
+
+        if (referenceGhost == null)
+            return false;
+
+        return referenceGhost.TryGetAdjacentFrameTime(currentTime, direction, timeEpsilon, out newTime);
+    }
+
     public void StartManualPlayback()
     {
         _manualPlaybackActive = true;

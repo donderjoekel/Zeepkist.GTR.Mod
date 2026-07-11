@@ -148,6 +148,14 @@ public class GhostPlaybackService : IEagerService
 
     public void ResetSpeed() => SetSpeed(1f);
 
+    public void StepFrame(int direction)
+    {
+        if (!_ghostPlayer.TryStepFrame(CurrentTime, direction, ScrubStep / 2f, out float newTime))
+            return;
+
+        Seek(newTime);
+    }
+
     private void OnGhostsChanged(object sender, EventArgs e)
     {
         RefreshDuration();
