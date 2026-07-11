@@ -61,6 +61,7 @@ jobs:
         with:
           file: ${{ steps.csproj.outputs.csproj_name }}.csproj
           version: ${{ steps.version.outputs.assembly_version }}
+          regex: '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)\.(?<revision>0|[1-9]\d*)$'
 
       - name: Publish
         run: dotnet publish --artifacts-path "C:\out"
