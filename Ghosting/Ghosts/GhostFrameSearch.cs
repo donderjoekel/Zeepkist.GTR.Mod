@@ -21,7 +21,7 @@ internal static class GhostFrameSearch
                 high = mid;
         }
 
-        return low;
+        return getTimeAtIndex(low) < time ? frameCount : low;
     }
 
     internal static int FindFirstFrameIndexAtOrAfterTime<TFrame>(
