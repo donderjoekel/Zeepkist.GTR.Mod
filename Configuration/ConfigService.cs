@@ -66,6 +66,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<KeyCode> PlaybackSpeedIncreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedResetKey { get; private set; }
+    public ConfigEntry<KeyCode> TogglePlayPauseKey { get; private set; }
     public ConfigEntry<bool> ShowTimeline { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowTimeline { get; private set; }
 
@@ -340,5 +341,11 @@ public class ConfigService : IEagerService
             "15. Reset Playback Speed Key",
             KeyCode.KeypadPeriod,
             "Reset ghost playback speed to 1.0x");
+
+        TogglePlayPauseKey = config.Bind(
+            "6. Playback",
+            "16. Toggle Play/Pause Key",
+            KeyCode.None,
+            "Toggle ghost playback play/pause in photo mode");
     }
 }

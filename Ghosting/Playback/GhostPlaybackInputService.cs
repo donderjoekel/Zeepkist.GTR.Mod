@@ -62,6 +62,10 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
         var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
         if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
             _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
+
+        var togglePlayPauseKey = _configService.TogglePlayPauseKey.Value;
+        if (togglePlayPauseKey != KeyCode.None && Input.GetKeyDown(togglePlayPauseKey))
+            _playbackService.TogglePlayPause();
     }
 
     private void TryAdjustSpeedOnRepeat(KeyCode key, ref KeyRepeatTracker tracker, float delta)
