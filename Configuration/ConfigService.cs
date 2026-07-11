@@ -327,13 +327,13 @@ public class ConfigService : IEagerService
             "6. Playback",
             "13. Increase Playback Speed Key",
             KeyCode.KeypadPlus,
-            "Increase ghost playback speed by 0.1x");
+            "Increase ghost playback speed by 0.1x; hold to repeat");
 
         PlaybackSpeedDecreaseKey = config.Bind(
             "6. Playback",
             "14. Decrease Playback Speed Key",
             KeyCode.KeypadMinus,
-            "Decrease ghost playback speed by 0.1x");
+            "Decrease ghost playback speed by 0.1x; hold to repeat");
 
         PlaybackSpeedResetKey = config.Bind(
             "6. Playback",

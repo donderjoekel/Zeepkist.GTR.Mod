@@ -15,6 +15,8 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
     private readonly PhotoModeTimelineService _photoModeTimelineService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _updateSubscription;
+    private KeyRepeatTracker _speedIncreaseRepeat;
+    private KeyRepeatTracker _speedDecreaseRepeat;
 
     public GhostPlaybackInputService(
         ConfigService configService,
@@ -43,13 +45,15 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
             _playbackService.SeekToProgress(i * 0.1f);
         }
 
-        var increaseKey = _configService.PlaybackSpeedIncreaseKey.Value;
-        if (increaseKey != KeyCode.None && Input.GetKeyDown(increaseKey))
-            _playbackService.AdjustSpeed(SpeedStep);
+        TryAdjustSpeedOnRepeat(
+            _configService.PlaybackSpeedIncreaseKey.Value,
+            ref _speedIncreaseRepeat,
+            SpeedStep);
 
-        var decreaseKey = _configService.PlaybackSpeedDecreaseKey.Value;
-        if (decreaseKey != KeyCode.None && Input.GetKeyDown(decreaseKey))
-            _playbackService.AdjustSpeed(-SpeedStep);
+        TryAdjustSpeedOnRepeat(
+            _configService.PlaybackSpeedDecreaseKey.Value,
+            ref _speedDecreaseRepeat,
+            -SpeedStep);
 
         var resetKey = _configService.PlaybackSpeedResetKey.Value;
         if (resetKey != KeyCode.None && Input.GetKeyDown(resetKey))
@@ -58,6 +62,20 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
         var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
         if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
             _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
+    }
+
+    private void TryAdjustSpeedOnRepeat(KeyCode key, ref KeyRepeatTracker tracker, float delta)
+    {
+        if (key == KeyCode.None)
+            return;
+
+        if (!tracker.TryConsumeRepeat(
+                Input.GetKey(key),
+                Input.GetKeyDown(key),
+                Time.unscaledDeltaTime))
+            return;
+
+        _playbackService.AdjustSpeed(delta);
     }
 
     public void Dispose()
