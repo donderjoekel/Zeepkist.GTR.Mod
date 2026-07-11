@@ -55,7 +55,7 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
     {
         _playbackUiInputState.BeginUiFrame();
 
-        if (!_timelineState.IsVisible || !_photoModeTimelineService.IsTimelineAvailable)
+        if (!_timelineState.ShouldShow || !_photoModeTimelineService.IsTimelineAvailable)
             return;
 
         var duration = _playbackService.Duration;

@@ -26,7 +26,7 @@ public class TimelineModeService : IEagerService, IDisposable
     }
 
     public bool IsActive =>
-        _timelineState.IsVisible && _photoModeTimelineService.IsTimelineAvailable;
+        _timelineState.ShouldShow && _photoModeTimelineService.IsTimelineAvailable;
 
     private void Update()
     {

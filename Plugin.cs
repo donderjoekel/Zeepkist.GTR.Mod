@@ -107,6 +107,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<GhostTimelineUiService>();
         services.AddEagerService<TimelineModeService>();
         services.AddEagerService<GhostTimelineVisibilityService>();
+        services.AddEagerService<GhostTimelinePauseMenuService>();
         services.AddEagerService<GhostPlaybackInputService>();
         services.AddEagerService<LeaderboardService>();
         services.AddEagerService<RecordHolderService>();
