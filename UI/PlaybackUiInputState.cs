@@ -1,17 +1,17 @@
 using TNRD.Zeepkist.GTR.Core;
-using TNRD.Zeepkist.GTR.PlayerLoop;
 
 namespace TNRD.Zeepkist.GTR.UI;
 
 public class PlaybackUiInputState : IEagerService
 {
-    private readonly PlayerLoopSubscription _updateSubscription;
-
     public bool IsPointerOverGtrWindow { get; private set; }
 
-    public PlaybackUiInputState(PlayerLoopService playerLoopService)
+    public bool IsPointerOverSpeedControl { get; private set; }
+
+    public void BeginUiFrame()
     {
-        _updateSubscription = playerLoopService.SubscribeUpdate(ResetPointerOverGtrWindow);
+        IsPointerOverGtrWindow = false;
+        IsPointerOverSpeedControl = false;
     }
 
     public void NotifyPointerOverGtrWindow()
@@ -19,8 +19,8 @@ public class PlaybackUiInputState : IEagerService
         IsPointerOverGtrWindow = true;
     }
 
-    private void ResetPointerOverGtrWindow()
+    public void NotifyPointerOverSpeedControl()
     {
-        IsPointerOverGtrWindow = false;
+        IsPointerOverSpeedControl = true;
     }
 }

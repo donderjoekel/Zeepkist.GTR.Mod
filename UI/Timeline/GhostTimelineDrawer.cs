@@ -53,6 +53,8 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
     public void OnZeepGUI(ImGui gui)
     {
+        _playbackUiInputState.BeginUiFrame();
+
         if (!_timelineState.IsVisible || !_photoModeTimelineService.IsTimelineAvailable)
             return;
 
@@ -238,6 +240,9 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
 
         gui.Button(id, label.AsSpan(), rect, out _);
         var hovered = gui.IsControlHovered(id);
+
+        if (hovered)
+            _playbackUiInputState.NotifyPointerOverSpeedControl();
 
         if (gui.IsReadOnly)
             return;
