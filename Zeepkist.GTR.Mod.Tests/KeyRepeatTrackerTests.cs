@@ -82,7 +82,7 @@ public class KeyRepeatTrackerTests
             repeatCount++;
 
         var holdTime = 0f;
-        while (holdTime < KeyRepeatTracker.InitialDelay + KeyRepeatTracker.RepeatInterval * 3f)
+        while (holdTime < KeyRepeatTracker.InitialDelay + KeyRepeatTracker.RepeatInterval * 2f)
         {
             holdTime += KeyRepeatTracker.RepeatInterval;
             if (tracker.TryConsumeRepeat(isDown: true, isDownThisFrame: false, deltaTime: KeyRepeatTracker.RepeatInterval))

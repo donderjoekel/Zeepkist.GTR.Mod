@@ -62,6 +62,9 @@ internal static class GhostFrameSearch
         if (prevIndex < 0)
             return false;
 
+        if (prevIndex == 0 && currentTime <= getTimeAtIndex(0) + timeEpsilon)
+            return false;
+
         adjacentTime = getTimeAtIndex(prevIndex);
         return true;
     }
