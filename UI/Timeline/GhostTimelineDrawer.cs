@@ -157,18 +157,27 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         gui.AddSpacingIfLayoutFrameNotEmpty();
         var scrubWidth = Mathf.Max(0f, gui.GetLayoutWidth() - SpeedButtonWidth - spacing);
         var scrubTime = currentTime;
-        var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration, scrubWidth);
+        var allowScrollStep = !_playbackService.IsPlaying;
+        var scrubberChanged = DrawTimeScrubBar(gui, ref scrubTime, duration, scrubWidth, allowScrollStep, out var frameStepped);
         _isScrubbing = scrubberChanged || gui.IsControlActive(gui.LastControl);
 
         if (scrubberChanged)
         {
             _scrubTime = scrubTime;
-            _playbackService.Seek(scrubTime);
+            if (!frameStepped)
+                _playbackService.Seek(scrubTime);
         }
     }
 
-    private static bool DrawTimeScrubBar(ImGui gui, ref float time, float duration, float width)
+    private bool DrawTimeScrubBar(
+        ImGui gui,
+        ref float time,
+        float duration,
+        float width,
+        bool allowScrollStep,
+        out bool frameStepped)
     {
+        frameStepped = false;
         var rowHeight = gui.GetRowHeight();
         var rect = gui.AddSingleRowRect(new ImSize(width, rowHeight));
         var id = gui.GetNextControlId();
@@ -218,13 +227,26 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
                 break;
         }
 
+        if (!changed && allowScrollStep && hovered && evt.Type == ImMouseEventType.Scroll)
+        {
+            var direction = evt.Delta.y > 0f ? 1 : -1;
+            _playbackService.StepFrame(direction);
+            time = _playbackService.CurrentTime;
+            changed = true;
+            frameStepped = true;
+            gui.Input.UseMouseEvent();
+        }
+
         if (!changed)
             return false;
 
-        time = Mathf.Clamp(normValue * duration, 0f, duration);
+        if (!frameStepped)
+        {
+            time = Mathf.Clamp(normValue * duration, 0f, duration);
 
-        var precision = 1.0f / ScrubStep;
-        time = Mathf.Round(time * precision) / precision;
+            var precision = 1.0f / ScrubStep;
+            time = Mathf.Round(time * precision) / precision;
+        }
 
         return true;
     }
