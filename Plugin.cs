@@ -105,6 +105,7 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton<GhostTimelineDrawer>();
         services.AddSingleton<GtrToolbarDrawer>();
         services.AddEagerService<GhostTimelineUiService>();
+        services.AddEagerService<TimelineModeService>();
         services.AddEagerService<GhostTimelineVisibilityService>();
         services.AddEagerService<GhostPlaybackInputService>();
         services.AddEagerService<LeaderboardService>();
