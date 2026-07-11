@@ -44,7 +44,7 @@ public static class FlyingCameraScript_HandleInputs_BlockSpeedZoom
         if (__instance.GameMaster == null || !__instance.GameMaster.isPhotoMode)
             return;
 
-        if (!PlaybackUiInput.IsPointerOverSpeedControl)
+        if (!PlaybackUiInput.IsPointerOverGtrWindow && !PlaybackUiInput.IsPointerOverSpeedControl)
             return;
 
         if (__instance.currentCameraState == 4)
