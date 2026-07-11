@@ -156,6 +156,27 @@ public class GhostPlaybackService : IEagerService
         Seek(newTime);
     }
 
+    public void StepTime(float deltaSeconds) => Seek(CurrentTime + deltaSeconds);
+
+    public void StepFrames(int direction, int frameCount)
+    {
+        if (frameCount <= 0 || direction is not (1 or -1))
+            return;
+
+        var time = CurrentTime;
+        var timeEpsilon = ScrubStep / 2f;
+        for (var i = 0; i < frameCount; i++)
+        {
+            if (!_ghostPlayer.TryStepFrame(time, direction, timeEpsilon, out float newTime))
+                break;
+
+            time = newTime;
+        }
+
+        if (!Mathf.Approximately(time, CurrentTime))
+            Seek(time);
+    }
+
     private void OnGhostsChanged(object sender, EventArgs e)
     {
         RefreshDuration();
