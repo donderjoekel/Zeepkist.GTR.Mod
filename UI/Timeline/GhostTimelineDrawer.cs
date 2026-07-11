@@ -230,7 +230,19 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         if (!changed && allowScrollStep && hovered && evt.Type == ImMouseEventType.Scroll)
         {
             var direction = evt.Delta.y > 0f ? 1 : -1;
-            _playbackService.StepFrame(direction);
+            TimelineScrollStep.GetScrubScrollStep(
+                IsAltHeld(),
+                IsShiftHeld(),
+                IsControlHeld(),
+                out var useFrames,
+                out var seconds,
+                out var frameCount);
+
+            if (useFrames)
+                _playbackService.StepFrames(direction, frameCount);
+            else
+                _playbackService.StepTime(direction * seconds);
+
             time = _playbackService.CurrentTime;
             changed = true;
             frameStepped = true;
@@ -294,4 +306,13 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         var remainingSeconds = seconds - minutes * 60f;
         return $"{minutes:00}:{remainingSeconds:00.000}";
     }
+
+    private static bool IsShiftHeld() =>
+        Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+    private static bool IsControlHeld() =>
+        Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+
+    private static bool IsAltHeld() =>
+        Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
 }
