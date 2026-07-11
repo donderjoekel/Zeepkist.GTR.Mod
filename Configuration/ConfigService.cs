@@ -67,6 +67,8 @@ public class ConfigService : IEagerService
     public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
     public ConfigEntry<KeyCode> PlaybackSpeedResetKey { get; private set; }
     public ConfigEntry<KeyCode> TogglePlayPauseKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackPreviousFrameKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackNextFrameKey { get; private set; }
     public ConfigEntry<bool> ShowTimeline { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowTimeline { get; private set; }
 
@@ -347,5 +349,17 @@ public class ConfigService : IEagerService
             "16. Toggle Play/Pause Key",
             KeyCode.None,
             "Toggle ghost playback play/pause in photo mode");
+
+        PlaybackPreviousFrameKey = config.Bind(
+            "6. Playback",
+            "17. Previous Frame Key",
+            KeyCode.Comma,
+            "Step ghost playback back one recorded frame");
+
+        PlaybackNextFrameKey = config.Bind(
+            "6. Playback",
+            "18. Next Frame Key",
+            KeyCode.Period,
+            "Step ghost playback forward one recorded frame");
     }
 }
