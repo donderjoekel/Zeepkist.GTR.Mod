@@ -97,7 +97,8 @@ public class ConfigService : IEagerService
                 "3.2 Record Holder - Keys");
             builder.Tab("Other",
                 "4. Discord",
-                "5. URLs",
+                "5. URLs");
+            builder.Tab("Playback",
                 "6. Playback");
         });
     }
