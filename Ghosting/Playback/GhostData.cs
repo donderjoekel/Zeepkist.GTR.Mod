@@ -41,6 +41,20 @@ public class GhostData
         Ghost = ghost;
     }
 
+    public void SetIdentity(int recordId, string displayName)
+    {
+        RecordId = recordId;
+        DisplayName = string.IsNullOrWhiteSpace(displayName)
+            ? $"Ghost #{recordId}"
+            : displayName;
+    }
+
+    public void ClearIdentity()
+    {
+        RecordId = 0;
+        DisplayName = null;
+    }
+
     public void PrepareForCosmeticsReuse()
     {
         DisposeRenderer();
@@ -87,12 +101,18 @@ public class GhostData
 
     public void SetCharacterPlaybackState(GhostCharacterPlaybackState state)
     {
+        if (CharacterPlaybackState.Equals(state))
+            return;
+
         CharacterPlaybackState = state;
         ApplyPlaybackVisibility();
     }
 
     public void SetPlaybackVisible(bool visible)
     {
+        if (PlaybackVisible == visible)
+            return;
+
         PlaybackVisible = visible;
         ApplyPlaybackVisibility();
     }
@@ -112,6 +132,8 @@ public class GhostData
 
     public IGhost Ghost { get; private set; }
     public GhostType Type { get; private set; }
+    public int RecordId { get; private set; }
+    public string DisplayName { get; private set; }
     public GhostVisualProfile VisualProfile { get; }
     public bool IsInstanced { get; }
     public bool Active { get; private set; }

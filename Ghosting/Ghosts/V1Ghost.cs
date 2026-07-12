@@ -11,7 +11,8 @@ public partial class V1Ghost : GhostBase
 {
     private readonly List<Frame> _frames;
 
-    public V1Ghost(GhostTimingService timingService, List<Frame> frames) : base(timingService)
+    public V1Ghost(GhostTimingService timingService, BulkGhostModeState bulkModeState, List<Frame> frames)
+        : base(timingService, bulkModeState)
     {
         _frames = frames;
     }

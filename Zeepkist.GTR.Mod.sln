@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zeepkist.GTR.Mod", "Zeepkist.GTR.Mod.csproj", "{FB0B2F5D-2B41-463A-870C-E155CE401CCD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zeepkist.GTR.Mod.Tests", "Zeepkist.GTR.Mod.Tests\Zeepkist.GTR.Mod.Tests.csproj", "{D609D59C-74C1-4409-AA93-3E9517AC32AC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB0B2F5D-2B41-463A-870C-E155CE401CCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB0B2F5D-2B41-463A-870C-E155CE401CCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB0B2F5D-2B41-463A-870C-E155CE401CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB0B2F5D-2B41-463A-870C-E155CE401CCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D609D59C-74C1-4409-AA93-3E9517AC32AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D609D59C-74C1-4409-AA93-3E9517AC32AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D609D59C-74C1-4409-AA93-3E9517AC32AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D609D59C-74C1-4409-AA93-3E9517AC32AC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

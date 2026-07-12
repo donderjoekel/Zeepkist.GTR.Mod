@@ -26,6 +26,7 @@ public partial class GhostPlayer : IEagerService
     private readonly BulkGhostRenderService _bulkGhostRenderService;
 
     private bool _roundStarted;
+    private bool _manualPlaybackActive;
     private bool _paused;
 
     public IEnumerable<GhostData> ActiveGhosts => _ghostData.Values;
@@ -115,6 +116,7 @@ public partial class GhostPlayer : IEagerService
         ghostData.CurrentHorn?.Stop();
         ghostData.CurrentHorn?.Cleanup();
         ghostData.CurrentHorn = null;
+        ghostData.ClearIdentity();
         ghostData.ResetPlaybackState();
         ghostData.SetActive(false);
     }
@@ -195,6 +197,25 @@ public partial class GhostPlayer : IEagerService
         return _ghosts.Keys.ToList();
     }
 
+    public bool TryGetGhostData(int recordId, out GhostData ghostData)
+    {
+        return _ghostData.TryGetValue(recordId, out ghostData);
+    }
+
+    public IReadOnlyList<LoadedGhostEntry> GetLoadedGhosts()
+    {
+        return _ghosts.Keys
+            .Select(recordId => new LoadedGhostEntry(
+                recordId,
+                _ghostData[recordId].DisplayName,
+                _ghosts[recordId].Duration,
+                _ghostData[recordId],
+                _ghosts[recordId]))
+            .OrderBy(entry => entry.Duration)
+            .ThenBy(entry => entry.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public bool HasGhost(int recordId)
     {
         return _ghosts.ContainsKey(recordId);
@@ -234,6 +255,7 @@ public partial class GhostPlayer : IEagerService
         }
 
         ghostData.Initialize(type, ghost);
+        ghostData.SetIdentity(recordId, steamName);
         ghost.Initialize(ghostData);
         if (visualProfile == GhostVisualProfile.Full)
         {
@@ -322,9 +344,77 @@ public partial class GhostPlayer : IEagerService
         _paused = false;
     }
 
+    public float GetMaxDuration()
+    {
+        if (_ghosts.Count == 0)
+            return 0f;
+
+        float maxDuration = 0f;
+        foreach (IGhost ghost in _ghosts.Values)
+        {
+            if (ghost.Duration > maxDuration)
+                maxDuration = ghost.Duration;
+        }
+
+        return maxDuration;
+    }
+
+    public bool TryStepFrame(float currentTime, int direction, float timeEpsilon, out float newTime)
+    {
+        newTime = currentTime;
+        if (_ghosts.Count == 0)
+            return false;
+
+        GhostBase referenceGhost = null;
+        float maxDuration = 0f;
+        foreach (IGhost ghost in _ghosts.Values)
+        {
+            if (ghost.Duration <= maxDuration || ghost is not GhostBase ghostBase)
+                continue;
+
+            maxDuration = ghost.Duration;
+            referenceGhost = ghostBase;
+        }
+
+        if (referenceGhost == null)
+            return false;
+
+        return referenceGhost.TryGetAdjacentFrameTime(currentTime, direction, timeEpsilon, out newTime);
+    }
+
+    public void StartManualPlayback()
+    {
+        _manualPlaybackActive = true;
+        _paused = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Start();
+        }
+    }
+
+    public void StopManualPlayback()
+    {
+        _manualPlaybackActive = false;
+        _paused = false;
+
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Stop();
+        }
+    }
+
+    public void SeekAllGhosts(float time)
+    {
+        foreach ((int _, IGhost ghost) in _ghosts)
+        {
+            ghost.Seek(time);
+        }
+    }
+
     private void Update()
     {
-        if (!_roundStarted)
+        if (!_roundStarted && !_manualPlaybackActive)
             return;
 
         if (_paused)
@@ -352,7 +442,7 @@ public partial class GhostPlayer : IEagerService
 
     private void FixedUpdate()
     {
-        if (!_roundStarted)
+        if (!_roundStarted && !_manualPlaybackActive)
             return;
 
         if (_paused)

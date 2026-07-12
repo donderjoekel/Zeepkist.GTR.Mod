@@ -1,0 +1,65 @@
+name: Normalize mod version
+description: Split a semver label into a BepInEx-compatible assembly version and a human-readable release label.
+
+inputs:
+  version_input:
+    description: Version label (e.g. 1.3.0-beta.1 or v1.3.0-beta.1)
+    required: true
+
+outputs:
+  label:
+    description: Semver label without leading v (used for GitHub tags and asset names)
+    value: ${{ steps.normalize.outputs.label }}
+  assembly_version:
+    description: Four-part numeric version for the csproj / BepInEx plugin loader
+    value: ${{ steps.normalize.outputs.assembly_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Normalize version
+      id: normalize
+      shell: pwsh
+      run: |
+        $raw = "${{ inputs.version_input }}".Trim()
+        $raw = $raw -replace '^v',''
+
+        if ([string]::IsNullOrWhiteSpace($raw)) {
+          throw "Version input is required."
+        }
+
+        $stageMap = @{
+          alpha = 1
+          beta  = 2
+          rc    = 3
+        }
+
+        if ($raw -match '^(\d+)\.(\d+)\.(\d+)$') {
+          $major = [int]$Matches[1]
+          $minor = [int]$Matches[2]
+          $patch = [int]$Matches[3]
+          $assemblyVersion = "$major.$minor.$patch.0"
+        }
+        elseif ($raw -match '^(\d+)\.(\d+)\.(\d+)-(alpha|beta|rc)\.(\d+)$') {
+          $major = [int]$Matches[1]
+          $minor = [int]$Matches[2]
+          $patch = [int]$Matches[3]
+          $stage = $Matches[4]
+          $iteration = [int]$Matches[5]
+
+          if ($iteration -lt 1 -or $iteration -gt 99) {
+            throw "Pre-release iteration must be between 1 and 99 (got $iteration)."
+          }
+
+          $stageIndex = $stageMap[$stage]
+          $revision = ($stageIndex * 100) + $iteration
+          $assemblyVersion = "$major.$minor.$patch.$revision"
+        }
+        else {
+          throw "Unsupported version format '$raw'. Use major.minor.patch or major.minor.patch-alpha|beta|rc.N (e.g. 1.3.0-beta.1)."
+        }
+
+        "label=$raw" >> $env:GITHUB_OUTPUT
+        "assembly_version=$assemblyVersion" >> $env:GITHUB_OUTPUT
+        "VERSION=$assemblyVersion" >> $env:GITHUB_ENV
+        "RELEASE_LABEL=$raw" >> $env:GITHUB_ENV

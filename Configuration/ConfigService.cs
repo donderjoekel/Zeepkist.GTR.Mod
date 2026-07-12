@@ -1,6 +1,7 @@
 using BepInEx.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using UnityEngine;
+using ZeepSDK.Settings;
 
 namespace TNRD.Zeepkist.GTR.Configuration;
 
@@ -61,13 +62,45 @@ public class ConfigService : IEagerService
         ? LocalDevelopmentGraphQLUrl
         : ProductionGraphQLUrl;
 
-    public ConfigService(ConfigFile config)
+    public ConfigEntry<KeyCode>[] PlaybackScrubProgressKeys { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackSpeedIncreaseKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackSpeedDecreaseKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackSpeedResetKey { get; private set; }
+    public ConfigEntry<KeyCode> TogglePlayPauseKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackPreviousFrameKey { get; private set; }
+    public ConfigEntry<KeyCode> PlaybackNextFrameKey { get; private set; }
+    public ConfigEntry<bool> ShowTimeline { get; private set; }
+    public ConfigEntry<KeyCode> ToggleShowTimeline { get; private set; }
+    public ConfigEntry<bool> InvertTimelineScrubScroll { get; private set; }
+
+    public ConfigService(ConfigFile config, Plugin plugin)
     {
         ConfigRecords(config);
         ConfigGhosts(config);
         ConfigRecordHolder(config);
         ConfigDiscord(config);
         ConfigUrls(config);
+        ConfigPlayback(config);
+
+        SettingsApi.ConfigureModSettingsTabs(plugin, builder =>
+        {
+            builder.Tab("Records",
+                "1. Records - General");
+            builder.Tab("Ghosts",
+                "2. Ghosts - General",
+                "2.1 Ghosts - Visibility",
+                "2.2 Ghosts - Keys",
+                "2.3 - Ghosts - Offline Ghosts");
+            builder.Tab("Record Holder",
+                "3. Record Holder - General",
+                "3.1 Record Holder - Visibility",
+                "3.2 Record Holder - Keys");
+            builder.Tab("Other",
+                "4. Discord",
+                "5. URLs");
+            builder.Tab("Playback",
+                "6. Playback");
+        });
     }
 
     private void ConfigRecords(ConfigFile config)
@@ -269,5 +302,72 @@ public class ConfigService : IEagerService
             "Local GraphQL",
             false,
             "Use http://127.0.0.1:5000/ instead of production GraphQL");
+    }
+
+    private void ConfigPlayback(ConfigFile config)
+    {
+        ShowTimeline = config.Bind(
+            "6. Playback",
+            "1. Show Timeline",
+            false,
+            "Should the playback timeline window be shown in photo mode");
+
+        ToggleShowTimeline = config.Bind(
+            "6. Playback",
+            "2. Toggle Show Timeline Key",
+            KeyCode.None,
+            "Toggle playback timeline window visibility in photo mode");
+
+        PlaybackScrubProgressKeys = new ConfigEntry<KeyCode>[10];
+        for (var i = 0; i < PlaybackScrubProgressKeys.Length; i++)
+        {
+            PlaybackScrubProgressKeys[i] = config.Bind(
+                "6. Playback",
+                $"{i + 3}. Scrub to {i * 10}% Key",
+                KeyCode.Keypad0 + i,
+                $"Seek ghost playback to {i * 10}% of duration");
+        }
+
+        PlaybackSpeedIncreaseKey = config.Bind(
+            "6. Playback",
+            "13. Increase Playback Speed Key",
+            KeyCode.KeypadPlus,
+            "Increase ghost playback speed by 0.1x; hold to repeat");
+
+        PlaybackSpeedDecreaseKey = config.Bind(
+            "6. Playback",
+            "14. Decrease Playback Speed Key",
+            KeyCode.KeypadMinus,
+            "Decrease ghost playback speed by 0.1x; hold to repeat");
+
+        PlaybackSpeedResetKey = config.Bind(
+            "6. Playback",
+            "15. Reset Playback Speed Key",
+            KeyCode.KeypadPeriod,
+            "Reset ghost playback speed to 1.0x");
+
+        TogglePlayPauseKey = config.Bind(
+            "6. Playback",
+            "16. Toggle Play/Pause Key",
+            KeyCode.None,
+            "Toggle ghost playback play/pause in photo mode");
+
+        PlaybackPreviousFrameKey = config.Bind(
+            "6. Playback",
+            "17. Previous Frame Key",
+            KeyCode.Comma,
+            "Step ghost playback back one recorded frame");
+
+        PlaybackNextFrameKey = config.Bind(
+            "6. Playback",
+            "18. Next Frame Key",
+            KeyCode.Period,
+            "Step ghost playback forward one recorded frame");
+
+        InvertTimelineScrubScroll = config.Bind(
+            "6. Playback",
+            "19. Invert Timeline Scrub Scroll",
+            false,
+            "Invert mouse wheel direction when scrubbing playback time on the timeline");
     }
 }

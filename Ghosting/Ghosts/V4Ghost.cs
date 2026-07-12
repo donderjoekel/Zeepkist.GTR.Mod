@@ -6,7 +6,7 @@ using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V4Ghost : GhostBase
+public partial class V4Ghost : GhostBase, IGhostInputProvider
 {
     private readonly ulong _steamId;
     private readonly int _soapboxId;
@@ -16,11 +16,12 @@ public partial class V4Ghost : GhostBase
 
     public V4Ghost(
         GhostTimingService timingService,
+        BulkGhostModeState bulkModeState,
         ulong steamId,
         int soapboxId,
         int hatId,
         int colorId,
-        List<Frame> frames) : base(timingService)
+        List<Frame> frames) : base(timingService, bulkModeState)
     {
         _steamId = steamId;
         _soapboxId = soapboxId;
@@ -42,5 +43,17 @@ public partial class V4Ghost : GhostBase
     protected override IFrame GetFrame(int index)
     {
         return _frames[index];
+    }
+
+    public bool TrySampleInputAtTime(float time, out GhostInputSample sample)
+    {
+        return GhostInputFrameSampler.TrySample(
+            _frames,
+            time,
+            frame => frame.Time,
+            frame => frame.Steering,
+            frame => frame.ArmsUp,
+            frame => frame.IsBraking,
+            out sample);
     }
 }
