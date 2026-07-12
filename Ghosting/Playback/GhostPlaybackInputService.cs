@@ -33,6 +33,10 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
 
     private void OnUpdate()
     {
+        var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
+        if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
+            _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
+
         if (!_photoModeTimelineService.IsTimelineAvailable)
             return;
 
@@ -58,10 +62,6 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
         var resetKey = _configService.PlaybackSpeedResetKey.Value;
         if (resetKey != KeyCode.None && Input.GetKeyDown(resetKey))
             _playbackService.ResetSpeed();
-
-        var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
-        if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
-            _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
 
         var togglePlayPauseKey = _configService.TogglePlayPauseKey.Value;
         if (togglePlayPauseKey != KeyCode.None && Input.GetKeyDown(togglePlayPauseKey))
