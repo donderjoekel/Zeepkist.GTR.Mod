@@ -3,8 +3,8 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 public class GhostTimelineState
 {
     public bool IsVisible { get; private set; }
-    public bool IsHiddenByPauseMenu { get; private set; }
-    public bool ShouldShow => IsVisible && !IsHiddenByPauseMenu;
+    public bool IsHiddenByOverlay { get; private set; }
+    public bool ShouldShow => IsVisible && !IsHiddenByOverlay;
 
     public void ToggleVisible()
     {
@@ -16,8 +16,8 @@ public class GhostTimelineState
         IsVisible = visible;
     }
 
-    public void SetHiddenByPauseMenu(bool hidden)
+    public void SetHiddenByOverlay(bool hidden)
     {
-        IsHiddenByPauseMenu = hidden;
+        IsHiddenByOverlay = hidden;
     }
 }
