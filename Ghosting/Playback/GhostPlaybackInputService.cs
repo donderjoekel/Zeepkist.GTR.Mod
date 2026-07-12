@@ -1,6 +1,7 @@
 using System;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 
@@ -13,6 +14,7 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
     private readonly ConfigService _configService;
     private readonly GhostPlaybackService _playbackService;
     private readonly PhotoModeTimelineService _photoModeTimelineService;
+    private readonly MessengerService _messengerService;
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _updateSubscription;
     private KeyRepeatTracker _speedIncreaseRepeat;
@@ -22,11 +24,13 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
         ConfigService configService,
         GhostPlaybackService playbackService,
         PhotoModeTimelineService photoModeTimelineService,
+        MessengerService messengerService,
         PlayerLoopService playerLoopService)
     {
         _configService = configService;
         _playbackService = playbackService;
         _photoModeTimelineService = photoModeTimelineService;
+        _messengerService = messengerService;
         _playerLoopService = playerLoopService;
         _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
     }
@@ -35,7 +39,16 @@ public class GhostPlaybackInputService : IEagerService, IDisposable
     {
         var toggleTimelineKey = _configService.ToggleShowTimeline.Value;
         if (toggleTimelineKey != KeyCode.None && Input.GetKeyDown(toggleTimelineKey))
+        {
             _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
+
+            if (!_photoModeTimelineService.IsPhotoModeActive)
+            {
+                _messengerService.LogWarning(_configService.ShowTimeline.Value
+                    ? "Timeline enabled"
+                    : "Timeline disabled");
+            }
+        }
 
         if (!_photoModeTimelineService.IsTimelineAvailable)
             return;
