@@ -192,11 +192,11 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
             : ref gui.Style.Slider.Normal;
         gui.Box(rect, in trackStyle);
 
-        var blockW = Mathf.Max(rowHeight * 1.5f, rect.W * 0.08f);
-        var blockX = rect.X + rect.W * normValue - blockW * 0.5f;
-        blockX = Mathf.Clamp(blockX, rect.X, rect.Right - blockW);
-        var blockRect = new ImRect(blockX, rect.Y, blockW, rect.H);
-        gui.Canvas.Rect(blockRect, gui.Style.Slider.Fill.BackColor, gui.Style.Slider.Normal.BorderRadius);
+        if (normValue > 0f)
+        {
+            var fillRect = new ImRect(rect.X, rect.Y, rect.W * normValue, rect.H);
+            gui.Box(fillRect, gui.Style.Slider.Fill);
+        }
 
         var timeDisplay = $"{FormatTime(time)} / {FormatTime(duration)}";
         var fontSize = gui.GetFontSizeForContainerHeight(rect.H * 0.75f);
