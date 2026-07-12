@@ -230,6 +230,9 @@ public class GhostTimelineDrawer : IZeepGUIDrawer
         if (!changed && allowScrollStep && hovered && evt.Type == ImMouseEventType.Scroll)
         {
             var direction = evt.Delta.y > 0f ? 1 : -1;
+            if (_configService.InvertTimelineScrubScroll.Value)
+                direction = -direction;
+
             TimelineScrollStep.GetScrubScrollStep(
                 IsAltHeld(),
                 IsShiftHeld(),

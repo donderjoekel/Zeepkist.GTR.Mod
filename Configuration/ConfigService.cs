@@ -71,6 +71,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<KeyCode> PlaybackNextFrameKey { get; private set; }
     public ConfigEntry<bool> ShowTimeline { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowTimeline { get; private set; }
+    public ConfigEntry<bool> InvertTimelineScrubScroll { get; private set; }
 
     public ConfigService(ConfigFile config, Plugin plugin)
     {
@@ -361,5 +362,11 @@ public class ConfigService : IEagerService
             "18. Next Frame Key",
             KeyCode.Period,
             "Step ghost playback forward one recorded frame");
+
+        InvertTimelineScrubScroll = config.Bind(
+            "6. Playback",
+            "19. Invert Timeline Scrub Scroll",
+            false,
+            "Invert mouse wheel direction when scrubbing playback time on the timeline");
     }
 }

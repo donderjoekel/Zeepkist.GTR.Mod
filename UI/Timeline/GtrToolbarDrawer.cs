@@ -50,6 +50,9 @@ public class GtrToolbarDrawer : IZeepToolbarDrawer
             if (gui.Menu("Show Timeline", _configService.ShowTimeline.Value))
                 _configService.ShowTimeline.Value = !_configService.ShowTimeline.Value;
 
+            if (gui.Menu("Invert Scrub Scroll", _configService.InvertTimelineScrubScroll.Value))
+                _configService.InvertTimelineScrubScroll.Value = !_configService.InvertTimelineScrubScroll.Value;
+
             gui.Separator();
             gui.Text($"Speed: {_playbackService.Speed:0.0}x");
 
