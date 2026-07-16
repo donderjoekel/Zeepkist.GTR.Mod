@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event.release.prerelease != true
     runs-on: windows-2025
     steps:
       - name: Extract version (trim leading v)

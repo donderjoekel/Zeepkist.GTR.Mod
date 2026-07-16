@@ -72,7 +72,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             deserializedGhost.InitialFrame.Position,
             Quaternion.Euler(deserializedGhost.InitialFrame.Rotation),
             deserializedGhost.InitialFrame.Speed,
-            deserializedGhost.InitialFrame.Steering,
+            GhostSteeringCodec.FromByte(deserializedGhost.InitialFrame.Steering),
             (InputFlags)(byte)deserializedGhost.InitialFrame.InputFlags,
             (SoapboxFlags)(byte)deserializedGhost.InitialFrame.SoapboxFlags);
 
@@ -96,7 +96,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
                         deltaFrame.Rotation.Y / rotationMultiplier,
                         deltaFrame.Rotation.Z / rotationMultiplier)),
                 deltaFrame.Speed,
-                deltaFrame.Steering,
+                GhostSteeringCodec.FromByte(deltaFrame.Steering),
                 (InputFlags)(byte)deltaFrame.InputFlags,
                 (SoapboxFlags)(byte)deltaFrame.SoapboxFlags);
             frames.Add(frame);
@@ -110,5 +110,4 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             cosmetics,
             frames);
     }
-
 }
