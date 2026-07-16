@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Core;
-using TNRD.Zeepkist.GTR.PlayerLoop;
-using UnityEngine;
+using TNRD.Zeepkist.GTR.Patching.Patches;
 using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.UI.Timeline;
@@ -9,78 +9,46 @@ namespace TNRD.Zeepkist.GTR.UI.Timeline;
 public class GhostTimelineOverlayVisibilityService : IEagerService, IDisposable
 {
     private readonly GhostTimelineState _timelineState;
-    private readonly PlayerLoopService _playerLoopService;
-    private readonly PlayerLoopSubscription _updateSubscription;
+    private readonly HashSet<BaseUI> _openOverlays = new();
 
-    private PauseMenuUI _pauseMenu;
-    private SettingsUI _settingsUi;
-    private OnlineTabLeaderboardUI _gameplayLeaderboard;
-    private OnlineTabLeaderboardUI[] _leaderboardInstances;
-
-    public GhostTimelineOverlayVisibilityService(
-        GhostTimelineState timelineState,
-        PlayerLoopService playerLoopService)
+    public GhostTimelineOverlayVisibilityService(GhostTimelineState timelineState)
     {
         _timelineState = timelineState;
-        _playerLoopService = playerLoopService;
-        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
 
-        RacingApi.PlayerSpawned += RefreshUiReferences;
-        RefreshUiReferences();
+        BaseUI_OverlayVisibility.OverlayOpened += OnOverlayOpened;
+        BaseUI_OverlayVisibility.OverlayClosed += OnOverlayClosed;
+        RacingApi.PlayerSpawned += ResetOverlayState;
+        RacingApi.Quit += ResetOverlayState;
     }
 
-    private void OnUpdate()
+    private void OnOverlayOpened(BaseUI ui)
     {
-        EnsureUiReferences();
-
-        var hide = IsOpen(_pauseMenu)
-            || IsOpen(_settingsUi)
-            || IsAnyLeaderboardOpen();
-
-        _timelineState.SetHiddenByOverlay(hide);
+        if (_openOverlays.Add(ui))
+            UpdateHiddenState();
     }
 
-    private void EnsureUiReferences()
+    private void OnOverlayClosed(BaseUI ui)
     {
-        if (_pauseMenu == null)
-            _pauseMenu = UnityEngine.Object.FindObjectOfType<PauseMenuUI>(true);
-
-        if (_settingsUi == null)
-            _settingsUi = UnityEngine.Object.FindObjectOfType<SettingsUI>(true);
-
-        if (_gameplayLeaderboard == null)
-            _gameplayLeaderboard = PlayerManager.Instance?.currentMaster?.OnlineGameplayUI?.OnlineTabLeaderboard;
+        if (_openOverlays.Remove(ui))
+            UpdateHiddenState();
     }
 
-    private void RefreshUiReferences()
+    private void UpdateHiddenState()
     {
-        _pauseMenu = null;
-        _settingsUi = null;
-        _gameplayLeaderboard = null;
-        _leaderboardInstances = null;
-        EnsureUiReferences();
+        _timelineState.SetHiddenByOverlay(_openOverlays.Count > 0);
     }
 
-    private bool IsAnyLeaderboardOpen()
+    private void ResetOverlayState()
     {
-        if (IsOpen(_gameplayLeaderboard))
-            return true;
-
-        _leaderboardInstances ??= UnityEngine.Object.FindObjectsOfType<OnlineTabLeaderboardUI>(true);
-        foreach (var leaderboard in _leaderboardInstances)
-        {
-            if (IsOpen(leaderboard))
-                return true;
-        }
-
-        return false;
+        _openOverlays.Clear();
+        _timelineState.SetHiddenByOverlay(false);
     }
-
-    private static bool IsOpen(BaseUI ui) => ui != null && ui.IsOpen;
 
     public void Dispose()
     {
-        RacingApi.PlayerSpawned -= RefreshUiReferences;
-        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
+        BaseUI_OverlayVisibility.OverlayOpened -= OnOverlayOpened;
+        BaseUI_OverlayVisibility.OverlayClosed -= OnOverlayClosed;
+        RacingApi.PlayerSpawned -= ResetOverlayState;
+        RacingApi.Quit -= ResetOverlayState;
     }
 }
