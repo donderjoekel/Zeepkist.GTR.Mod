@@ -180,7 +180,7 @@ public class ConfigService : IEagerService
             "Toggles if the global personal best should be shown");
 
         MaximumVisibleOfflineGhosts = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
@@ -189,7 +189,7 @@ public class ConfigService : IEagerService
             )
         );
         MaximumVisibleTopRecordGhosts = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "2. Top Record Ghosts",
             500,
             new ConfigDescription(
@@ -198,7 +198,7 @@ public class ConfigService : IEagerService
             )
         );
         MaximumGhostColours = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "3. Max Ghost Colours",
             32,
             new ConfigDescription(
@@ -210,7 +210,7 @@ public class ConfigService : IEagerService
             )
         );
         MaximumGhostCacheMegabytes = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "4. Ghost Cache Size (MB)",
             2048,
             new ConfigDescription(
