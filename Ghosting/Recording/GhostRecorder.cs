@@ -35,9 +35,10 @@ public partial class GhostRecorder
 
     private const int PositionMultiplier = 100_000;
     private const int RotationMultiplier = 100;
+    private const int InitialFrameCapacity = 4_096;
 
     private readonly PlayerLoopService _playerLoopService;
-    private readonly List<Frame> _frames = new();
+    private readonly List<Frame> _frames = new(InitialFrameCapacity);
     private readonly ILogger<GhostRecorder> _logger;
 
     private PlayerLoopSubscription _updateToken;
@@ -49,6 +50,9 @@ public partial class GhostRecorder
     private bool _isHorn;
     private bool _isArmsUp;
     private bool _isRagdoll;
+    private Transform _ragdollRoot;
+    private Rigidbody[] _ragdollRigidbodies;
+    private Renderer[] _ragdollRenderers;
 
     public GhostRecorder(PlayerLoopService playerLoopService, ILogger<GhostRecorder> logger)
     {
@@ -173,17 +177,34 @@ public partial class GhostRecorder
         if (!_isRagdoll)
             return new RagdollFrameTransform(root.position, root.rotation);
 
-        if (TryGetRagdollRigidbodyFrame(root, out UnityEngine.Vector3 rigidbodyCenter, out Quaternion rigidbodyRotation))
+        CacheRagdollComponents(root);
+
+        if (TryGetRagdollRigidbodyFrame(
+                root,
+                _ragdollRigidbodies,
+                out UnityEngine.Vector3 rigidbodyCenter,
+                out Quaternion rigidbodyRotation))
             return new RagdollFrameTransform(rigidbodyCenter, rigidbodyRotation);
 
-        if (TryGetRagdollRendererCenter(root, out UnityEngine.Vector3 rendererCenter))
+        if (TryGetRagdollRendererCenter(_ragdollRenderers, out UnityEngine.Vector3 rendererCenter))
             return new RagdollFrameTransform(rendererCenter, root.rotation);
 
         return new RagdollFrameTransform(root.position, root.rotation);
     }
 
+    private void CacheRagdollComponents(Transform root)
+    {
+        if (_ragdollRoot == root)
+            return;
+
+        _ragdollRoot = root;
+        _ragdollRigidbodies = root.GetComponentsInChildren<Rigidbody>(false);
+        _ragdollRenderers = root.GetComponentsInChildren<Renderer>(false);
+    }
+
     private static bool TryGetRagdollRigidbodyFrame(
         Transform root,
+        Rigidbody[] rigidbodies,
         out UnityEngine.Vector3 center,
         out Quaternion rotation)
     {
@@ -192,8 +213,7 @@ public partial class GhostRecorder
         if (root == null)
             return false;
 
-        Rigidbody[] rigidbodies = root.GetComponentsInChildren<Rigidbody>(false);
-        if (rigidbodies.Length == 0)
+        if (rigidbodies == null || rigidbodies.Length == 0)
             return false;
 
         int count = 0;
@@ -230,14 +250,10 @@ public partial class GhostRecorder
                name.Contains("spine");
     }
 
-    private static bool TryGetRagdollRendererCenter(Transform root, out UnityEngine.Vector3 center)
+    private static bool TryGetRagdollRendererCenter(Renderer[] renderers, out UnityEngine.Vector3 center)
     {
         center = UnityEngine.Vector3.zero;
-        if (root == null)
-            return false;
-
-        Renderer[] renderers = root.GetComponentsInChildren<Renderer>(false);
-        if (renderers.Length == 0)
+        if (renderers == null || renderers.Length == 0)
             return false;
 
         bool hasBounds = false;
@@ -468,7 +484,8 @@ public partial class GhostRecorder
 
         List<DeltaFrame> deltaFrames = await Task.Run(() =>
         {
-            List<DeltaFrame> deltaFrames = new();
+            int capacity = Math.Max(0, _frames.Count - 1);
+            List<DeltaFrame> deltaFrames = new(capacity);
 
             Frame previousFrame = null;
             foreach (Frame frame in _frames)

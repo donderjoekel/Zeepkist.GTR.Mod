@@ -34,6 +34,7 @@
     <Compile Include="..\Ghosting\Playback\BulkGhostMeshScale.cs" Link="Source\BulkGhostMeshScale.cs" />
     <Compile Include="..\Ghosting\Playback\GhostLoadBudget.cs" Link="Source\GhostLoadBudget.cs" />
     <Compile Include="..\Ghosting\Playback\GhostLoadProgress.cs" Link="Source\GhostLoadProgress.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostCacheIndex.cs" Link="Source\GhostCacheIndex.cs" />
     <Compile Include="..\Ghosting\Playback\GhostReconciliation.cs" Link="Source\GhostReconciliation.cs" />
     <Compile Include="..\Ghosting\Playback\KeyRepeatTracker.cs" Link="Source\KeyRepeatTracker.cs" />
     <Compile Include="..\UI\Timeline\GhostTimelineState.cs" Link="Source\GhostTimelineState.cs" />
@@ -42,6 +43,7 @@
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
     <Compile Include="..\Ghosting\Readers\GhostVersionReader.cs" Link="Source\GhostVersionReader.cs" />
     <Compile Include="..\Ghosting\Readers\LimitedMemoryStream.cs" Link="Source\LimitedMemoryStream.cs" />
+    <Compile Include="..\Utilities\TaskCancellation.cs" Link="Source\TaskCancellation.cs" />
     <Compile Include="..\GraphQL\LevelGraphqlIdentity.cs" Link="Source\LevelGraphqlIdentity.cs" />
   </ItemGroup>
 </Project>

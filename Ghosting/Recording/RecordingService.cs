@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Configuration;
@@ -24,7 +23,6 @@ public class RecordingService : IEagerService
     private readonly ApiHttpClient _apiHttpClient;
     private readonly ConfigService _configService;
 
-    private CancellationTokenSource _cancellationTokenSource;
     private GhostRecorder _activeGhostRecorder;
 
     private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
@@ -57,8 +55,6 @@ public class RecordingService : IEagerService
         if (!CanRecord)
             return;
 
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource();
         _logger.LogInformation("Creating new recorder");
         _activeGhostRecorder = _ghostRecorderFactory.Create();
     }
@@ -135,7 +131,7 @@ public class RecordingService : IEagerService
         string ghostData = await ProcessGhostRecorder(ghostRecorder);
         if (string.IsNullOrEmpty(ghostData))
         {
-            _logger.LogWarning("Something went wrong here");
+            _logger.LogWarning("Ghost serialization returned no data; record will not be submitted");
             return;
         }
 
@@ -163,10 +159,8 @@ public class RecordingService : IEagerService
                 return string.Empty;
             }
 
-            _logger.LogInformation("Getting buffer");
-            byte[] buffer = stream.ToArray();
             _logger.LogInformation("Converting to base64");
-            return Convert.ToBase64String(buffer);
+            return Convert.ToBase64String(stream.GetBuffer(), 0, checked((int)stream.Length));
         }
         catch (Exception e)
         {
@@ -200,15 +194,7 @@ public class RecordingService : IEagerService
 
         try
         {
-            bool loginOrRefresh = await _apiHttpClient.LoginOrRefresh();
-            if (!loginOrRefresh)
-            {
-                _messengerService.LogError("Authentication failed, unable to submit record");
-                _logger.LogError("Authentication failed, unable to submit record");
-                return;
-            }
-
-            HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
+            using HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
 
             try
             {

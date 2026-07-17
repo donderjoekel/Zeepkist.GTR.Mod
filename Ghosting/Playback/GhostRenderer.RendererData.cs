@@ -26,6 +26,9 @@ public partial class GhostRenderer
         private readonly Dictionary<Material, MaterialRenderState> _normalMaterialStates = new();
         private readonly bool _ownsMaterials;
         private readonly bool _useNormalMaterialsInGhostMode;
+        private float _lastFade = float.NaN;
+        private Color _lastGhostColor;
+        private bool _hasLastGhostColor;
 
         public RendererData(
             Renderer renderer,
@@ -106,6 +109,10 @@ public partial class GhostRenderer
         {
             if (!_ownsMaterials)
                 return;
+            if (Mathf.Approximately(_lastFade, fade))
+                return;
+
+            _lastFade = fade;
 
             foreach (Material normalMaterial in _normalMaterials)
                 SetMaterialAlpha(normalMaterial, fade, _normalMaterialStates);
@@ -115,12 +122,17 @@ public partial class GhostRenderer
         {
             if (!_ownsMaterials)
                 return;
+            if (_hasLastGhostColor && _lastGhostColor == color)
+                return;
 
             if (_useNormalMaterialsInGhostMode)
             {
                 SetFade(color.a);
                 return;
             }
+
+            _lastGhostColor = color;
+            _hasLastGhostColor = true;
 
             foreach (Material ghostMaterial in _ghostMaterials)
                 SetMaterialColor(ghostMaterial, color);

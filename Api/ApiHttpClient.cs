@@ -39,9 +39,8 @@ public class ApiHttpClient
         _logger = logger;
     }
 
-    private static string CreateAuthenticationTicket()
+    private static string FormatAuthenticationTicket(AuthTicket authSessionTicket)
     {
-        AuthTicket authSessionTicket = SteamUser.GetAuthSessionTicket(new NetIdentity());
         StringBuilder stringBuilder = new();
         foreach (byte b in authSessionTicket.Data)
             stringBuilder.AppendFormat("{0:x2}", b);
@@ -108,10 +107,11 @@ public class ApiHttpClient
 
     private async UniTask<bool> LoginCore()
     {
+        using AuthTicket authenticationTicket = SteamUser.GetAuthSessionTicket(new NetIdentity());
         LoginPostResource data = new()
         {
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
-            AuthenticationTicket = CreateAuthenticationTicket(),
+            AuthenticationTicket = FormatAuthenticationTicket(authenticationTicket),
             SteamId = SteamClient.SteamId.ToString()
         };
 

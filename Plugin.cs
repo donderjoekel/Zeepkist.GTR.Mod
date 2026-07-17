@@ -92,7 +92,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<BulkGhostRenderService>();
         services.AddEagerService<GhostPlayer>();
         services.AddEagerService<GhostMaterialService>();
-        services.AddEagerService<GhostNamePositioniongService>();
+        services.AddEagerService<GhostNamePositioningService>();
         services.AddEagerService<GhostVisibilityService>();
         services.AddEagerService<GhostTimingService>();
         services.AddEagerService<GhostPlaybackService>();
@@ -141,10 +141,15 @@ public class Plugin : BaseUnityPlugin
             client.Timeout = TimeSpan.FromSeconds(60);
         });
         services.AddSingleton(provider =>
-            new GhostRepository(
+        {
+            var configService = provider.GetRequiredService<ConfigService>();
+            return new GhostRepository(
                 provider.GetRequiredService<ZeepSDK.Storage.IModStorage>(),
                 provider.GetRequiredService<GhostReaderFactory>(),
-                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey)));
+                provider.GetRequiredService<IHttpClientFactory>().CreateClient(GhostRepository.ClientKey),
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<GhostRepository>>(),
+                configService.MaximumGhostCacheMegabytes.Value * 1024L * 1024L);
+        });
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
         {
             var configService = provider.GetRequiredService<ConfigService>();

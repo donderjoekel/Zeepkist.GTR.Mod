@@ -76,69 +76,54 @@ public partial class PlayerLoopService
 
         private void Update()
         {
-            foreach (PlayerLoopSubscription subscription in _updatesToRemove)
-            {
-                _updates.Remove(subscription);
-            }
-
-            _updatesToRemove.Clear();
-
-            foreach (KeyValuePair<PlayerLoopSubscription, Action> kvp in _updates)
-            {
-                try
-                {
-                    kvp.Value();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
-            }
+            Dispatch(_updates, _updatesToRemove, "Update");
         }
 
         private void FixedUpdate()
         {
-            foreach (PlayerLoopSubscription subscription in _fixedUpdatesToRemove)
-            {
-                _fixedUpdates.Remove(subscription);
-            }
-
-            _fixedUpdatesToRemove.Clear();
-
-            foreach (KeyValuePair<PlayerLoopSubscription, Action> kvp in _fixedUpdates)
-            {
-                try
-                {
-                    kvp.Value();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
-            }
+            Dispatch(_fixedUpdates, _fixedUpdatesToRemove, "FixedUpdate");
         }
 
         private void LateUpdate()
         {
-            foreach (PlayerLoopSubscription subscription in _lateUpdatesToRemove)
-                _lateUpdates.Remove(subscription);
+            Dispatch(_lateUpdates, _lateUpdatesToRemove, "LateUpdate");
+        }
 
-            _lateUpdatesToRemove.Clear();
+        private void Dispatch(
+            Dictionary<PlayerLoopSubscription, Action> subscriptions,
+            HashSet<PlayerLoopSubscription> subscriptionsToRemove,
+            string phase)
+        {
+            RemovePendingSubscriptions(subscriptions, subscriptionsToRemove);
 
-            foreach (KeyValuePair<PlayerLoopSubscription, Action> kvp in _lateUpdates)
+            foreach (KeyValuePair<PlayerLoopSubscription, Action> subscription in subscriptions)
             {
                 try
                 {
-                    kvp.Value();
+                    subscription.Value();
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    Console.WriteLine(e);
-                    throw;
+                    _logger.LogError(
+                        exception,
+                        "Player loop {Phase} subscription failed; unsubscribing {Subscription}",
+                        phase,
+                        subscription.Key);
+                    subscriptionsToRemove.Add(subscription.Key);
                 }
             }
+
+            RemovePendingSubscriptions(subscriptions, subscriptionsToRemove);
+        }
+
+        private static void RemovePendingSubscriptions(
+            Dictionary<PlayerLoopSubscription, Action> subscriptions,
+            HashSet<PlayerLoopSubscription> subscriptionsToRemove)
+        {
+            foreach (PlayerLoopSubscription subscription in subscriptionsToRemove)
+                subscriptions.Remove(subscription);
+
+            subscriptionsToRemove.Clear();
         }
 
         public void SetLogger(ILogger logger)

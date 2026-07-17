@@ -65,7 +65,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             zeepkist = deserializedGhost.Cosmetics.Zeepkist
         };
 
-        List<V5Ghost.Frame> frames = new();
+        List<V5Ghost.Frame> frames = new(deserializedGhost.DeltaFrames.Count + 1);
 
         V5Ghost.Frame previousFrame = new(
             0,
@@ -109,24 +109,5 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             deserializedGhost.SteamId,
             cosmetics,
             frames);
-    }
-
-    private CosmeticIDs ReadCosmetics(BinaryReader reader)
-    {
-        CosmeticIDs ids = new();
-        ids.zeepkist = reader.ReadInt32();
-        ids.hat = reader.ReadInt32();
-        ids.glasses = reader.ReadInt32();
-        ids.paraglider = reader.ReadInt32();
-        ids.horn = reader.ReadInt32();
-        ids.color = reader.ReadInt32();
-        ids.color_body = reader.ReadInt32();
-        ids.color_leftArm = reader.ReadInt32();
-        ids.color_rightArm = reader.ReadInt32();
-        ids.color_leftLeg = reader.ReadInt32();
-        ids.color_rightLeg = reader.ReadInt32();
-        ids.frontWheels = reader.ReadInt32();
-        ids.rearWheels = reader.ReadInt32();
-        return ids;
     }
 }

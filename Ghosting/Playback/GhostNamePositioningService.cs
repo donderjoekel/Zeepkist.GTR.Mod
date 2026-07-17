@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostNamePositioniongService : IEagerService
+public class GhostNamePositioningService : IEagerService
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
@@ -14,7 +14,7 @@ public class GhostNamePositioniongService : IEagerService
     private readonly MessengerService _messengerService;
     private readonly BulkGhostModeState _bulkModeState;
 
-    public GhostNamePositioniongService(
+    public GhostNamePositioningService(
         PlayerLoopService playerLoopService,
         GhostPlayer ghostPlayer,
         ConfigService configService,
@@ -42,8 +42,11 @@ public class GhostNamePositioniongService : IEagerService
         if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
             return;
 
-        ghostData.Visuals.NameDisplay.gameObject.SetActive(
-            ghostData.PlaybackVisible && _configService.ShowGhostNames.Value && _configService.ShowGhosts.Value);
+        bool visible = ghostData.PlaybackVisible &&
+                       _configService.ShowGhostNames.Value &&
+                       _configService.ShowGhosts.Value;
+        if (ghostData.Visuals.NameDisplay.gameObject.activeSelf != visible)
+            ghostData.Visuals.NameDisplay.gameObject.SetActive(visible);
 
         if (_bulkModeState.IsActive)
             SetNameAlpha(ghostData, 1);

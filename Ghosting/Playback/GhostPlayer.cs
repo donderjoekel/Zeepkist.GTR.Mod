@@ -428,8 +428,9 @@ public partial class GhostPlayer : IEagerService
             {
                 ghost.Update();
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logger.LogWarning(exception, "Removing ghost {RecordId} after Update failed", id);
                 _ghostsToRemove.Add(id);
             }
         }
@@ -456,8 +457,9 @@ public partial class GhostPlayer : IEagerService
             {
                 ghost.FixedUpdate();
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                _logger.LogWarning(exception, "Removing ghost {RecordId} after FixedUpdate failed", id);
                 _ghostsToRemove.Add(id);
             }
         }

@@ -24,7 +24,7 @@ public class UserService
             Id = id.ToString()
         };
 
-        HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateDiscordId", resource);
+        using HttpResponseMessage response = await _apiHttpClient.PostAsync("user/updateDiscordId", resource);
 
         if (response.IsSuccessStatusCode)
         {

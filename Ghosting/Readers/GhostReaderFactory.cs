@@ -63,7 +63,7 @@ public class GhostReaderFactory
     {
         using MemoryStream input = new(buffer, false);
         using GZipStream gzip = new(input, CompressionMode.Decompress);
-        using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+        using LimitedMemoryStream output = new(GhostLimits.GetMaxDecompressedBytes(buffer.Length));
         gzip.CopyTo(output);
         return output.ToArray();
     }
@@ -71,7 +71,7 @@ public class GhostReaderFactory
     private static byte[] DecompressLzma(byte[] buffer)
     {
         using MemoryStream input = new(buffer, false);
-        using LimitedMemoryStream output = new(GhostLimits.MaxDecompressedBytes);
+        using LimitedMemoryStream output = new(GhostLimits.GetMaxDecompressedBytes(buffer.Length));
         LZMACompressor.Shared.Decompress(input, output);
         return output.ToArray();
     }

@@ -27,6 +27,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<int> MaximumVisibleOfflineGhosts { get; private set; }
     public ConfigEntry<int> MaximumVisibleTopRecordGhosts { get; private set; }
     public ConfigEntry<int> MaximumGhostColours { get; private set; }
+    public ConfigEntry<int> MaximumGhostCacheMegabytes { get; private set; }
 
     public ConfigEntry<KeyCode> ToggleEnableGhosts { get; private set; }
     public ConfigEntry<KeyCode> ToggleShowGhosts { get; private set; }
@@ -178,9 +179,8 @@ public class ConfigService : IEagerService
             KeyCode.None,
             "Toggles if the global personal best should be shown");
 
-        // TODO: Replace max 1000 with int.MaxValue once pagination added
         MaximumVisibleOfflineGhosts = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "1. Personal Best Ghosts",
             -1,
             new ConfigDescription(
@@ -188,9 +188,8 @@ public class ConfigService : IEagerService
                 new AcceptableValueRange<int>(-1, 1000)
             )
         );
-        // TODO: Replace max 1000 with int.MaxValue once pagination added
         MaximumVisibleTopRecordGhosts = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "2. Top Record Ghosts",
             500,
             new ConfigDescription(
@@ -199,17 +198,24 @@ public class ConfigService : IEagerService
             )
         );
         MaximumGhostColours = config.Bind(
-            "2.3 - Ghosts - Offline Ghosts",
+            "2.3 Ghosts - Offline Ghosts",
             "3. Max Ghost Colours",
-            24,
+            32,
             new ConfigDescription(
                 "Maximum number of ghost colours to show.\n\n" +
                 "Increasing this can reduce performance.\n\n" +
                 "Set to 1 for maximum performance, but all\n" +
                 "ghosts will be the same colour.",
-                new AcceptableValueRange<int>(1, 128)
+                new AcceptableValueRange<int>(1, 64)
             )
         );
+        MaximumGhostCacheMegabytes = config.Bind(
+            "2.3 Ghosts - Offline Ghosts",
+            "4. Ghost Cache Size (MB)",
+            2048,
+            new ConfigDescription(
+                "Maximum disk space used by downloaded ghost files",
+                new AcceptableValueRange<int>(64, 4096)));
 
     }
 
