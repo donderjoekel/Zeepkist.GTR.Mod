@@ -163,13 +163,13 @@ public class TournamentsDrawer : IZeepGUIDrawer
                 return;
             }
 
-            gui.Text(tournament.LevelName.AsSpan());
-            gui.Text($"by {tournament.LevelAuthor}".AsSpan(), secondary);
-            gui.AddSpacing(4f);
-            gui.Text($"{tournament.TypeLabel}  ·  {tournament.Slug}".AsSpan(), secondary);
+            gui.Text($"{tournament.TypeLabel}  ·  {tournament.Slug}".AsSpan());
             gui.Text(
                 $"Ends {FormatUtc(tournament.EndAt)}  ({FormatRemaining(tournament.EndAt)})".AsSpan(),
                 secondary);
+            gui.AddSpacing(4f);
+            gui.Text(tournament.LevelName.AsSpan());
+            gui.Text($"by {tournament.LevelAuthor}".AsSpan(), secondary);
 
             gui.Separator();
             gui.Text("Medal times".AsSpan(), secondary);
