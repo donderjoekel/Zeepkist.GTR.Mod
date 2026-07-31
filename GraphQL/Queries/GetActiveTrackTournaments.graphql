@@ -31,7 +31,7 @@ query GetActiveTrackTournaments($now: Datetime!) {
           }
         }
       }
-      trackTournamentResults(first: 10, orderBy: [RANK_ASC]) {
+      trackTournamentResults(orderBy: [RANK_ASC]) {
         totalCount
         nodes {
           rank

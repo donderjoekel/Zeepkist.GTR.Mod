@@ -10398,7 +10398,7 @@ namespace TNRD.Zeepkist.GTR
     ///           }
     ///         }
     ///       }
-    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///       trackTournamentResults(orderBy: [ RANK_ASC ]) {
     ///         __typename
     ///         totalCount
     ///         nodes {
@@ -10983,17 +10983,6 @@ namespace TNRD.Zeepkist.GTR
             0x74,
             0x73,
             0x28,
-            0x66,
-            0x69,
-            0x72,
-            0x73,
-            0x74,
-            0x3a,
-            0x20,
-            0x31,
-            0x30,
-            0x2c,
-            0x20,
             0x6f,
             0x72,
             0x64,
@@ -11117,7 +11106,7 @@ namespace TNRD.Zeepkist.GTR
             0x20,
             0x7d
         };
-        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "0d921c5d8090cb6ad794eabb98aa0d1e");
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "fe59212f0b1099b6565ff85575e5069d");
 
         public override global::System.String ToString()
         {
@@ -11163,7 +11152,7 @@ namespace TNRD.Zeepkist.GTR
     ///           }
     ///         }
     ///       }
-    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///       trackTournamentResults(orderBy: [ RANK_ASC ]) {
     ///         __typename
     ///         totalCount
     ///         nodes {
@@ -11269,7 +11258,7 @@ namespace TNRD.Zeepkist.GTR
     ///           }
     ///         }
     ///       }
-    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///       trackTournamentResults(orderBy: [ RANK_ASC ]) {
     ///         __typename
     ///         totalCount
     ///         nodes {
