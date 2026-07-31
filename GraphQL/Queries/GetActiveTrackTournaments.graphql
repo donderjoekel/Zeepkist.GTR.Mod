@@ -1,0 +1,47 @@
+query GetActiveTrackTournaments($now: Datetime!) {
+  trackTournaments(
+    filter: {
+      startAt: { lessThanOrEqualTo: $now }
+      endAt: { greaterThanOrEqualTo: $now }
+      finalizedAt: { isNull: true }
+    }
+    orderBy: [END_AT_ASC]
+  ) {
+    nodes {
+      id
+      type
+      slug
+      startAt
+      endAt
+      level {
+        id
+        xxHash
+        hash
+        levelItems(first: 1, filter: { deleted: { equalTo: false } }) {
+          nodes {
+            name
+            workshopId
+            fileUid
+            fileAuthor
+            imageUrl
+            validationTimeAuthor
+            validationTimeGold
+            validationTimeSilver
+            validationTimeBronze
+          }
+        }
+      }
+      trackTournamentResults(first: 10, orderBy: [RANK_ASC]) {
+        totalCount
+        nodes {
+          rank
+          time
+          points
+          user {
+            steamName
+          }
+        }
+      }
+    }
+  }
+}

@@ -28,6 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTopRecordGhostsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetTotalUserCountQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetActiveTrackTournamentsQuery>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GtrClient>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGtrClient>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<ClientServiceProvider>(sp)));
             return new global::StrawberryShake.ClientBuilder<global::TNRD.Zeepkist.GTR.State.GtrClientStoreAccessor>("GtrClient", services, serviceCollection);
@@ -59,6 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer, global::StrawberryShake.Serialization.TimeSpanSerializer>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer, global::StrawberryShake.Serialization.JsonSerializer>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer>(services, new global::StrawberryShake.Serialization.StringSerializer("BigInt"));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializer>(services, new global::StrawberryShake.Serialization.StringSerializer("Datetime"));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.Serialization.ISerializerResolver>(services, sp => new global::StrawberryShake.Serialization.SerializerResolver(global::System.Linq.Enumerable.Concat(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.Serialization.ISerializer>>(parentServices), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::System.Collections.Generic.IEnumerable<global::StrawberryShake.Serialization.ISerializer>>(sp))));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>, global::TNRD.Zeepkist.GTR.State.GetAdditionalGhostsResultFactory>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsResult>>(sp));
@@ -148,6 +150,14 @@ namespace Microsoft.Extensions.DependencyInjection
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetWorldRecordHolderQuery>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>, global::TNRD.Zeepkist.GTR.State.GetActiveTrackTournamentsResultFactory>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultDataFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationRequestFactory>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery>(sp));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>, global::TNRD.Zeepkist.GTR.State.GetActiveTrackTournamentsBuilder>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IOperationExecutor<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>>(services, sp => new global::StrawberryShake.OperationExecutor<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>(global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.Transport.Http.IHttpConnection>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationResultBuilder<global::System.Text.Json.JsonDocument, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>>(sp), () => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>>(sp), global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::StrawberryShake.IOperationStore>(sp), strategy));
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IResultPatcher<global::System.Text.Json.JsonDocument>, global::StrawberryShake.Json.JsonResultPatcher>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GetActiveTrackTournamentsQuery>(services);
+            global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GetActiveTrackTournamentsQuery>(sp));
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::StrawberryShake.IEntityIdSerializer, global::TNRD.Zeepkist.GTR.State.GtrClientEntityIdFactory>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.GtrClient>(services);
             global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<global::TNRD.Zeepkist.GTR.IGtrClient>(services, sp => global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<global::TNRD.Zeepkist.GTR.GtrClient>(sp));
@@ -3869,6 +3879,848 @@ namespace TNRD.Zeepkist.GTR
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial interface IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User_User : IGetWorldRecordHolder_WorldRecordGlobals_Nodes_Record_User
+    {
+    }
+
+    /// <summary>
+    /// The root query type which gives access points into the data universe.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsResult : global::System.IEquatable<GetActiveTrackTournamentsResult>, IGetActiveTrackTournamentsResult
+    {
+        public GetActiveTrackTournamentsResult(global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments? trackTournaments)
+        {
+            TrackTournaments = trackTournaments;
+        }
+
+        /// <summary>
+        /// Reads and enables pagination through a set of `TrackTournament`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments? TrackTournaments { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournamentsResult? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (((TrackTournaments is null && other.TrackTournaments is null) || TrackTournaments != null && TrackTournaments.Equals(other.TrackTournaments)));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournamentsResult)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                if (TrackTournaments != null)
+                {
+                    hash ^= 397 * TrackTournaments.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournament` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection>, IGetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection
+    {
+        public GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes> nodes)
+        {
+            Nodes = nodes;
+        }
+
+        /// <summary>
+        /// A list of `TrackTournament` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes> Nodes { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::StrawberryShake.Internal.ComparisonHelper.SequenceEqual(Nodes, other.Nodes));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                foreach (var Nodes_elm in Nodes)
+                {
+                    hash ^= 397 * Nodes_elm.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament>, IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament(global::System.Int32 id, global::System.Int32 type, global::System.String slug, global::System.String startAt, global::System.String endAt, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level? level, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults trackTournamentResults)
+        {
+            Id = id;
+            Type = type;
+            Slug = slug;
+            StartAt = startAt;
+            EndAt = endAt;
+            Level = level;
+            TrackTournamentResults = trackTournamentResults;
+        }
+
+        public global::System.Int32 Id { get; }
+        public global::System.Int32 Type { get; }
+        public global::System.String Slug { get; }
+        public global::System.String StartAt { get; }
+        public global::System.String EndAt { get; }
+        /// <summary>
+        /// Reads a single `Level` that is related to this `TrackTournament`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level? Level { get; }
+        /// <summary>
+        /// Reads and enables pagination through a set of `TrackTournamentResult`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults TrackTournamentResults { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::System.Object.Equals(Id, other.Id)) && global::System.Object.Equals(Type, other.Type) && Slug.Equals(other.Slug) && StartAt.Equals(other.StartAt) && EndAt.Equals(other.EndAt) && ((Level is null && other.Level is null) || Level != null && Level.Equals(other.Level)) && TrackTournamentResults.Equals(other.TrackTournamentResults);
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * Id.GetHashCode();
+                hash ^= 397 * Type.GetHashCode();
+                hash ^= 397 * Slug.GetHashCode();
+                hash ^= 397 * StartAt.GetHashCode();
+                hash ^= 397 * EndAt.GetHashCode();
+                if (Level != null)
+                {
+                    hash ^= 397 * Level.GetHashCode();
+                }
+
+                hash ^= 397 * TrackTournamentResults.GetHashCode();
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level>, IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level(global::System.Int32 id, global::System.String xxHash, global::System.String hash, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems levelItems)
+        {
+            Id = id;
+            XxHash = xxHash;
+            Hash = hash;
+            LevelItems = levelItems;
+        }
+
+        public global::System.Int32 Id { get; }
+        public global::System.String XxHash { get; }
+        public global::System.String Hash { get; }
+        /// <summary>
+        /// Reads and enables pagination through a set of `LevelItem`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems LevelItems { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::System.Object.Equals(Id, other.Id)) && XxHash.Equals(other.XxHash) && Hash.Equals(other.Hash) && LevelItems.Equals(other.LevelItems);
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * Id.GetHashCode();
+                hash ^= 397 * XxHash.GetHashCode();
+                hash ^= 397 * Hash.GetHashCode();
+                hash ^= 397 * LevelItems.GetHashCode();
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournamentResult` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection>, IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection(global::System.Int32 totalCount, global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes> nodes)
+        {
+            TotalCount = totalCount;
+            Nodes = nodes;
+        }
+
+        /// <summary>
+        /// The count of *all* `TrackTournamentResult` you could get from the connection.
+        /// </summary>
+        public global::System.Int32 TotalCount { get; }
+        /// <summary>
+        /// A list of `TrackTournamentResult` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes> Nodes { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::System.Object.Equals(TotalCount, other.TotalCount)) && global::StrawberryShake.Internal.ComparisonHelper.SequenceEqual(Nodes, other.Nodes);
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * TotalCount.GetHashCode();
+                foreach (var Nodes_elm in Nodes)
+                {
+                    hash ^= 397 * Nodes_elm.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A connection to a list of `LevelItem` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection>, IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes> nodes)
+        {
+            Nodes = nodes;
+        }
+
+        /// <summary>
+        /// A list of `LevelItem` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes> Nodes { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::StrawberryShake.Internal.ComparisonHelper.SequenceEqual(Nodes, other.Nodes));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                foreach (var Nodes_elm in Nodes)
+                {
+                    hash ^= 397 * Nodes_elm.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult>, IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult(global::System.Int32 rank, global::System.Double time, global::System.Int32 points, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User? user)
+        {
+            Rank = rank;
+            Time = time;
+            Points = points;
+            User = user;
+        }
+
+        public global::System.Int32 Rank { get; }
+        public global::System.Double Time { get; }
+        public global::System.Int32 Points { get; }
+        /// <summary>
+        /// Reads a single `User` that is related to this `TrackTournamentResult`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User? User { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (global::System.Object.Equals(Rank, other.Rank)) && global::System.Object.Equals(Time, other.Time) && global::System.Object.Equals(Points, other.Points) && ((User is null && other.User is null) || User != null && User.Equals(other.User));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * Rank.GetHashCode();
+                hash ^= 397 * Time.GetHashCode();
+                hash ^= 397 * Points.GetHashCode();
+                if (User != null)
+                {
+                    hash ^= 397 * User.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem>, IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem(global::System.String name, global::System.String workshopId, global::System.String fileUid, global::System.String fileAuthor, global::System.String imageUrl, global::System.Double validationTimeAuthor, global::System.Double validationTimeGold, global::System.Double validationTimeSilver, global::System.Double validationTimeBronze)
+        {
+            Name = name;
+            WorkshopId = workshopId;
+            FileUid = fileUid;
+            FileAuthor = fileAuthor;
+            ImageUrl = imageUrl;
+            ValidationTimeAuthor = validationTimeAuthor;
+            ValidationTimeGold = validationTimeGold;
+            ValidationTimeSilver = validationTimeSilver;
+            ValidationTimeBronze = validationTimeBronze;
+        }
+
+        public global::System.String Name { get; }
+        public global::System.String WorkshopId { get; }
+        public global::System.String FileUid { get; }
+        public global::System.String FileAuthor { get; }
+        public global::System.String ImageUrl { get; }
+        public global::System.Double ValidationTimeAuthor { get; }
+        public global::System.Double ValidationTimeGold { get; }
+        public global::System.Double ValidationTimeSilver { get; }
+        public global::System.Double ValidationTimeBronze { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (Name.Equals(other.Name)) && WorkshopId.Equals(other.WorkshopId) && FileUid.Equals(other.FileUid) && FileAuthor.Equals(other.FileAuthor) && ImageUrl.Equals(other.ImageUrl) && global::System.Object.Equals(ValidationTimeAuthor, other.ValidationTimeAuthor) && global::System.Object.Equals(ValidationTimeGold, other.ValidationTimeGold) && global::System.Object.Equals(ValidationTimeSilver, other.ValidationTimeSilver) && global::System.Object.Equals(ValidationTimeBronze, other.ValidationTimeBronze);
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                hash ^= 397 * Name.GetHashCode();
+                hash ^= 397 * WorkshopId.GetHashCode();
+                hash ^= 397 * FileUid.GetHashCode();
+                hash ^= 397 * FileAuthor.GetHashCode();
+                hash ^= 397 * ImageUrl.GetHashCode();
+                hash ^= 397 * ValidationTimeAuthor.GetHashCode();
+                hash ^= 397 * ValidationTimeGold.GetHashCode();
+                hash ^= 397 * ValidationTimeSilver.GetHashCode();
+                hash ^= 397 * ValidationTimeBronze.GetHashCode();
+                return hash;
+            }
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User : global::System.IEquatable<GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User>, IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User
+    {
+        public GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User(global::System.String? steamName)
+        {
+            SteamName = steamName;
+        }
+
+        public global::System.String? SteamName { get; }
+
+        public virtual global::System.Boolean Equals(GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User? other)
+        {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (other.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return (((SteamName is null && other.SteamName is null) || SteamName != null && SteamName.Equals(other.SteamName)));
+        }
+
+        public override global::System.Boolean Equals(global::System.Object? obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User)obj);
+        }
+
+        public override global::System.Int32 GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 5;
+                if (SteamName != null)
+                {
+                    hash ^= 397 * SteamName.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The root query type which gives access points into the data universe.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournamentsResult
+    {
+        /// <summary>
+        /// Reads and enables pagination through a set of `TrackTournament`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments? TrackTournaments { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournament` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments
+    {
+        /// <summary>
+        /// A list of `TrackTournament` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes> Nodes { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournament` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection : IGetActiveTrackTournaments_TrackTournaments
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes
+    {
+        public global::System.Int32 Id { get; }
+        public global::System.Int32 Type { get; }
+        public global::System.String Slug { get; }
+        public global::System.String StartAt { get; }
+        public global::System.String EndAt { get; }
+        /// <summary>
+        /// Reads a single `Level` that is related to this `TrackTournament`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level? Level { get; }
+        /// <summary>
+        /// Reads and enables pagination through a set of `TrackTournamentResult`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults TrackTournamentResults { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament : IGetActiveTrackTournaments_TrackTournaments_Nodes
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level
+    {
+        public global::System.Int32 Id { get; }
+        public global::System.String XxHash { get; }
+        public global::System.String Hash { get; }
+        /// <summary>
+        /// Reads and enables pagination through a set of `LevelItem`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems LevelItems { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level : IGetActiveTrackTournaments_TrackTournaments_Nodes_Level
+    {
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournamentResult` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults
+    {
+        /// <summary>
+        /// The count of *all* `TrackTournamentResult` you could get from the connection.
+        /// </summary>
+        public global::System.Int32 TotalCount { get; }
+        /// <summary>
+        /// A list of `TrackTournamentResult` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes> Nodes { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `TrackTournamentResult` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection : IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults
+    {
+    }
+
+    /// <summary>
+    /// A connection to a list of `LevelItem` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems
+    {
+        /// <summary>
+        /// A list of `LevelItem` objects.
+        /// </summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes> Nodes { get; }
+    }
+
+    /// <summary>
+    /// A connection to a list of `LevelItem` values.
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection : IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes
+    {
+        public global::System.Int32 Rank { get; }
+        public global::System.Double Time { get; }
+        public global::System.Int32 Points { get; }
+        /// <summary>
+        /// Reads a single `User` that is related to this `TrackTournamentResult`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User? User { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult : IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes
+    {
+        public global::System.String Name { get; }
+        public global::System.String WorkshopId { get; }
+        public global::System.String FileUid { get; }
+        public global::System.String FileAuthor { get; }
+        public global::System.String ImageUrl { get; }
+        public global::System.Double ValidationTimeAuthor { get; }
+        public global::System.Double ValidationTimeGold { get; }
+        public global::System.Double ValidationTimeSilver { get; }
+        public global::System.Double ValidationTimeBronze { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem : IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes
+    {
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User
+    {
+        public global::System.String? SteamName { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User : IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User
     {
     }
 
@@ -9513,6 +10365,937 @@ namespace TNRD.Zeepkist.GTR
     }
 
     /// <summary>
+    /// Represents the operation service of the GetActiveTrackTournaments GraphQL operation
+    /// <code>
+    /// query GetActiveTrackTournaments($now: Datetime!) {
+    ///   trackTournaments(filter: { startAt: { lessThanOrEqualTo: $now }, endAt: { greaterThanOrEqualTo: $now }, finalizedAt: { isNull: true } }, orderBy: [ END_AT_ASC ]) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       id
+    ///       type
+    ///       slug
+    ///       startAt
+    ///       endAt
+    ///       level {
+    ///         __typename
+    ///         id
+    ///         xxHash
+    ///         hash
+    ///         levelItems(first: 1, filter: { deleted: { equalTo: false } }) {
+    ///           __typename
+    ///           nodes {
+    ///             __typename
+    ///             name
+    ///             workshopId
+    ///             fileUid
+    ///             fileAuthor
+    ///             imageUrl
+    ///             validationTimeAuthor
+    ///             validationTimeGold
+    ///             validationTimeSilver
+    ///             validationTimeBronze
+    ///           }
+    ///         }
+    ///       }
+    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///         __typename
+    ///         totalCount
+    ///         nodes {
+    ///           __typename
+    ///           rank
+    ///           time
+    ///           points
+    ///           user {
+    ///             __typename
+    ///             steamName
+    ///           }
+    ///         }
+    ///       }
+    ///     }
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsQueryDocument : global::StrawberryShake.IDocument
+    {
+        private GetActiveTrackTournamentsQueryDocument()
+        {
+        }
+
+        public static GetActiveTrackTournamentsQueryDocument Instance { get; } = new GetActiveTrackTournamentsQueryDocument();
+        public global::StrawberryShake.OperationKind Kind => global::StrawberryShake.OperationKind.Query;
+        public MemoryAlias::System.ReadOnlySpan<global::System.Byte> Body => new global::System.Byte[]
+        {
+            0x71,
+            0x75,
+            0x65,
+            0x72,
+            0x79,
+            0x20,
+            0x47,
+            0x65,
+            0x74,
+            0x41,
+            0x63,
+            0x74,
+            0x69,
+            0x76,
+            0x65,
+            0x54,
+            0x72,
+            0x61,
+            0x63,
+            0x6b,
+            0x54,
+            0x6f,
+            0x75,
+            0x72,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x6e,
+            0x74,
+            0x73,
+            0x28,
+            0x24,
+            0x6e,
+            0x6f,
+            0x77,
+            0x3a,
+            0x20,
+            0x44,
+            0x61,
+            0x74,
+            0x65,
+            0x74,
+            0x69,
+            0x6d,
+            0x65,
+            0x21,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x74,
+            0x72,
+            0x61,
+            0x63,
+            0x6b,
+            0x54,
+            0x6f,
+            0x75,
+            0x72,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x6e,
+            0x74,
+            0x73,
+            0x28,
+            0x66,
+            0x69,
+            0x6c,
+            0x74,
+            0x65,
+            0x72,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x73,
+            0x74,
+            0x61,
+            0x72,
+            0x74,
+            0x41,
+            0x74,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x6c,
+            0x65,
+            0x73,
+            0x73,
+            0x54,
+            0x68,
+            0x61,
+            0x6e,
+            0x4f,
+            0x72,
+            0x45,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x6e,
+            0x6f,
+            0x77,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x65,
+            0x6e,
+            0x64,
+            0x41,
+            0x74,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x67,
+            0x72,
+            0x65,
+            0x61,
+            0x74,
+            0x65,
+            0x72,
+            0x54,
+            0x68,
+            0x61,
+            0x6e,
+            0x4f,
+            0x72,
+            0x45,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x24,
+            0x6e,
+            0x6f,
+            0x77,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x66,
+            0x69,
+            0x6e,
+            0x61,
+            0x6c,
+            0x69,
+            0x7a,
+            0x65,
+            0x64,
+            0x41,
+            0x74,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x69,
+            0x73,
+            0x4e,
+            0x75,
+            0x6c,
+            0x6c,
+            0x3a,
+            0x20,
+            0x74,
+            0x72,
+            0x75,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x2c,
+            0x20,
+            0x6f,
+            0x72,
+            0x64,
+            0x65,
+            0x72,
+            0x42,
+            0x79,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x45,
+            0x4e,
+            0x44,
+            0x5f,
+            0x41,
+            0x54,
+            0x5f,
+            0x41,
+            0x53,
+            0x43,
+            0x20,
+            0x5d,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x6e,
+            0x6f,
+            0x64,
+            0x65,
+            0x73,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x69,
+            0x64,
+            0x20,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x20,
+            0x73,
+            0x6c,
+            0x75,
+            0x67,
+            0x20,
+            0x73,
+            0x74,
+            0x61,
+            0x72,
+            0x74,
+            0x41,
+            0x74,
+            0x20,
+            0x65,
+            0x6e,
+            0x64,
+            0x41,
+            0x74,
+            0x20,
+            0x6c,
+            0x65,
+            0x76,
+            0x65,
+            0x6c,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x69,
+            0x64,
+            0x20,
+            0x78,
+            0x78,
+            0x48,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x68,
+            0x61,
+            0x73,
+            0x68,
+            0x20,
+            0x6c,
+            0x65,
+            0x76,
+            0x65,
+            0x6c,
+            0x49,
+            0x74,
+            0x65,
+            0x6d,
+            0x73,
+            0x28,
+            0x66,
+            0x69,
+            0x72,
+            0x73,
+            0x74,
+            0x3a,
+            0x20,
+            0x31,
+            0x2c,
+            0x20,
+            0x66,
+            0x69,
+            0x6c,
+            0x74,
+            0x65,
+            0x72,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x64,
+            0x65,
+            0x6c,
+            0x65,
+            0x74,
+            0x65,
+            0x64,
+            0x3a,
+            0x20,
+            0x7b,
+            0x20,
+            0x65,
+            0x71,
+            0x75,
+            0x61,
+            0x6c,
+            0x54,
+            0x6f,
+            0x3a,
+            0x20,
+            0x66,
+            0x61,
+            0x6c,
+            0x73,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x6e,
+            0x6f,
+            0x64,
+            0x65,
+            0x73,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x77,
+            0x6f,
+            0x72,
+            0x6b,
+            0x73,
+            0x68,
+            0x6f,
+            0x70,
+            0x49,
+            0x64,
+            0x20,
+            0x66,
+            0x69,
+            0x6c,
+            0x65,
+            0x55,
+            0x69,
+            0x64,
+            0x20,
+            0x66,
+            0x69,
+            0x6c,
+            0x65,
+            0x41,
+            0x75,
+            0x74,
+            0x68,
+            0x6f,
+            0x72,
+            0x20,
+            0x69,
+            0x6d,
+            0x61,
+            0x67,
+            0x65,
+            0x55,
+            0x72,
+            0x6c,
+            0x20,
+            0x76,
+            0x61,
+            0x6c,
+            0x69,
+            0x64,
+            0x61,
+            0x74,
+            0x69,
+            0x6f,
+            0x6e,
+            0x54,
+            0x69,
+            0x6d,
+            0x65,
+            0x41,
+            0x75,
+            0x74,
+            0x68,
+            0x6f,
+            0x72,
+            0x20,
+            0x76,
+            0x61,
+            0x6c,
+            0x69,
+            0x64,
+            0x61,
+            0x74,
+            0x69,
+            0x6f,
+            0x6e,
+            0x54,
+            0x69,
+            0x6d,
+            0x65,
+            0x47,
+            0x6f,
+            0x6c,
+            0x64,
+            0x20,
+            0x76,
+            0x61,
+            0x6c,
+            0x69,
+            0x64,
+            0x61,
+            0x74,
+            0x69,
+            0x6f,
+            0x6e,
+            0x54,
+            0x69,
+            0x6d,
+            0x65,
+            0x53,
+            0x69,
+            0x6c,
+            0x76,
+            0x65,
+            0x72,
+            0x20,
+            0x76,
+            0x61,
+            0x6c,
+            0x69,
+            0x64,
+            0x61,
+            0x74,
+            0x69,
+            0x6f,
+            0x6e,
+            0x54,
+            0x69,
+            0x6d,
+            0x65,
+            0x42,
+            0x72,
+            0x6f,
+            0x6e,
+            0x7a,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x74,
+            0x72,
+            0x61,
+            0x63,
+            0x6b,
+            0x54,
+            0x6f,
+            0x75,
+            0x72,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x6e,
+            0x74,
+            0x52,
+            0x65,
+            0x73,
+            0x75,
+            0x6c,
+            0x74,
+            0x73,
+            0x28,
+            0x66,
+            0x69,
+            0x72,
+            0x73,
+            0x74,
+            0x3a,
+            0x20,
+            0x31,
+            0x30,
+            0x2c,
+            0x20,
+            0x6f,
+            0x72,
+            0x64,
+            0x65,
+            0x72,
+            0x42,
+            0x79,
+            0x3a,
+            0x20,
+            0x5b,
+            0x20,
+            0x52,
+            0x41,
+            0x4e,
+            0x4b,
+            0x5f,
+            0x41,
+            0x53,
+            0x43,
+            0x20,
+            0x5d,
+            0x29,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x74,
+            0x6f,
+            0x74,
+            0x61,
+            0x6c,
+            0x43,
+            0x6f,
+            0x75,
+            0x6e,
+            0x74,
+            0x20,
+            0x6e,
+            0x6f,
+            0x64,
+            0x65,
+            0x73,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x72,
+            0x61,
+            0x6e,
+            0x6b,
+            0x20,
+            0x74,
+            0x69,
+            0x6d,
+            0x65,
+            0x20,
+            0x70,
+            0x6f,
+            0x69,
+            0x6e,
+            0x74,
+            0x73,
+            0x20,
+            0x75,
+            0x73,
+            0x65,
+            0x72,
+            0x20,
+            0x7b,
+            0x20,
+            0x5f,
+            0x5f,
+            0x74,
+            0x79,
+            0x70,
+            0x65,
+            0x6e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x73,
+            0x74,
+            0x65,
+            0x61,
+            0x6d,
+            0x4e,
+            0x61,
+            0x6d,
+            0x65,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d,
+            0x20,
+            0x7d
+        };
+        public global::StrawberryShake.DocumentHash Hash { get; } = new global::StrawberryShake.DocumentHash("md5Hash", "0d921c5d8090cb6ad794eabb98aa0d1e");
+
+        public override global::System.String ToString()
+        {
+#if NETCOREAPP3_1_OR_GREATER
+        return global::System.Text.Encoding.UTF8.GetString(Body);
+#else
+            return global::System.Text.Encoding.UTF8.GetString(Body.ToArray());
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Represents the operation service of the GetActiveTrackTournaments GraphQL operation
+    /// <code>
+    /// query GetActiveTrackTournaments($now: Datetime!) {
+    ///   trackTournaments(filter: { startAt: { lessThanOrEqualTo: $now }, endAt: { greaterThanOrEqualTo: $now }, finalizedAt: { isNull: true } }, orderBy: [ END_AT_ASC ]) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       id
+    ///       type
+    ///       slug
+    ///       startAt
+    ///       endAt
+    ///       level {
+    ///         __typename
+    ///         id
+    ///         xxHash
+    ///         hash
+    ///         levelItems(first: 1, filter: { deleted: { equalTo: false } }) {
+    ///           __typename
+    ///           nodes {
+    ///             __typename
+    ///             name
+    ///             workshopId
+    ///             fileUid
+    ///             fileAuthor
+    ///             imageUrl
+    ///             validationTimeAuthor
+    ///             validationTimeGold
+    ///             validationTimeSilver
+    ///             validationTimeBronze
+    ///           }
+    ///         }
+    ///       }
+    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///         __typename
+    ///         totalCount
+    ///         nodes {
+    ///           __typename
+    ///           rank
+    ///           time
+    ///           points
+    ///           user {
+    ///             __typename
+    ///             steamName
+    ///           }
+    ///         }
+    ///       }
+    ///     }
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsQuery : global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery
+    {
+        private readonly global::StrawberryShake.IOperationExecutor<IGetActiveTrackTournamentsResult> _operationExecutor;
+        private readonly global::StrawberryShake.Serialization.IInputValueFormatter _datetimeFormatter;
+        public GetActiveTrackTournamentsQuery(global::StrawberryShake.IOperationExecutor<IGetActiveTrackTournamentsResult> operationExecutor, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        {
+            _operationExecutor = operationExecutor ?? throw new global::System.ArgumentNullException(nameof(operationExecutor));
+            _datetimeFormatter = serializerResolver.GetInputValueFormatter("Datetime");
+        }
+
+        global::System.Type global::StrawberryShake.IOperationRequestFactory.ResultType => typeof(IGetActiveTrackTournamentsResult);
+
+        public async global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetActiveTrackTournamentsResult>> ExecuteAsync(global::System.String now, global::System.Threading.CancellationToken cancellationToken = default)
+        {
+            var request = CreateRequest(now);
+            return await _operationExecutor.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+
+        public global::System.IObservable<global::StrawberryShake.IOperationResult<IGetActiveTrackTournamentsResult>> Watch(global::System.String now, global::StrawberryShake.ExecutionStrategy? strategy = null)
+        {
+            var request = CreateRequest(now);
+            return _operationExecutor.Watch(request, strategy);
+        }
+
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.String now)
+        {
+            var variables = new global::System.Collections.Generic.Dictionary<global::System.String, global::System.Object?>();
+            variables.Add("now", FormatNow(now));
+            return CreateRequest(variables);
+        }
+
+        private global::StrawberryShake.OperationRequest CreateRequest(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
+        {
+            return new global::StrawberryShake.OperationRequest(id: GetActiveTrackTournamentsQueryDocument.Instance.Hash.Value, name: "GetActiveTrackTournaments", document: GetActiveTrackTournamentsQueryDocument.Instance, strategy: global::StrawberryShake.RequestStrategy.Default, variables: variables);
+        }
+
+        private global::System.Object? FormatNow(global::System.String value)
+        {
+            if (value is null)
+            {
+                throw new global::System.ArgumentNullException(nameof(value));
+            }
+
+            return _datetimeFormatter.Format(value);
+        }
+
+        global::StrawberryShake.OperationRequest global::StrawberryShake.IOperationRequestFactory.Create(global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Object?>? variables)
+        {
+            return CreateRequest(variables!);
+        }
+    }
+
+    /// <summary>
+    /// Represents the operation service of the GetActiveTrackTournaments GraphQL operation
+    /// <code>
+    /// query GetActiveTrackTournaments($now: Datetime!) {
+    ///   trackTournaments(filter: { startAt: { lessThanOrEqualTo: $now }, endAt: { greaterThanOrEqualTo: $now }, finalizedAt: { isNull: true } }, orderBy: [ END_AT_ASC ]) {
+    ///     __typename
+    ///     nodes {
+    ///       __typename
+    ///       id
+    ///       type
+    ///       slug
+    ///       startAt
+    ///       endAt
+    ///       level {
+    ///         __typename
+    ///         id
+    ///         xxHash
+    ///         hash
+    ///         levelItems(first: 1, filter: { deleted: { equalTo: false } }) {
+    ///           __typename
+    ///           nodes {
+    ///             __typename
+    ///             name
+    ///             workshopId
+    ///             fileUid
+    ///             fileAuthor
+    ///             imageUrl
+    ///             validationTimeAuthor
+    ///             validationTimeGold
+    ///             validationTimeSilver
+    ///             validationTimeBronze
+    ///           }
+    ///         }
+    ///       }
+    ///       trackTournamentResults(first: 10, orderBy: [ RANK_ASC ]) {
+    ///         __typename
+    ///         totalCount
+    ///         nodes {
+    ///           __typename
+    ///           rank
+    ///           time
+    ///           points
+    ///           user {
+    ///             __typename
+    ///             steamName
+    ///           }
+    ///         }
+    ///       }
+    ///     }
+    ///   }
+    /// }
+    /// </code>
+    /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial interface IGetActiveTrackTournamentsQuery : global::StrawberryShake.IOperationRequestFactory
+    {
+        global::System.Threading.Tasks.Task<global::StrawberryShake.IOperationResult<IGetActiveTrackTournamentsResult>> ExecuteAsync(global::System.String now, global::System.Threading.CancellationToken cancellationToken = default);
+        global::System.IObservable<global::StrawberryShake.IOperationResult<IGetActiveTrackTournamentsResult>> Watch(global::System.String now, global::StrawberryShake.ExecutionStrategy? strategy = null);
+    }
+
+    /// <summary>
     /// Represents the GtrClient GraphQL client
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
@@ -9529,7 +11312,8 @@ namespace TNRD.Zeepkist.GTR
         private readonly global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery _getTopRecordGhosts;
         private readonly global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery _getTotalUserCount;
         private readonly global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery _getWorldRecordHolder;
-        public GtrClient(global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery getAdditionalGhosts, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery getAllPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery getLevelPoints, global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery getPersonalBest, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery getPersonalBestCount, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery getPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery getPersonalBests, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery getPlayerRankOnLevel, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery getTopRecordGhosts, global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery getTotalUserCount, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery getWorldRecordHolder)
+        private readonly global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery _getActiveTrackTournaments;
+        public GtrClient(global::TNRD.Zeepkist.GTR.IGetAdditionalGhostsQuery getAdditionalGhosts, global::TNRD.Zeepkist.GTR.IGetAllPersonalBestGhostsQuery getAllPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetLevelPointsQuery getLevelPoints, global::TNRD.Zeepkist.GTR.IGetPersonalBestQuery getPersonalBest, global::TNRD.Zeepkist.GTR.IGetPersonalBestCountQuery getPersonalBestCount, global::TNRD.Zeepkist.GTR.IGetPersonalBestGhostsQuery getPersonalBestGhosts, global::TNRD.Zeepkist.GTR.IGetPersonalBestsQuery getPersonalBests, global::TNRD.Zeepkist.GTR.IGetPlayerRankOnLevelQuery getPlayerRankOnLevel, global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery getTopRecordGhosts, global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery getTotalUserCount, global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery getWorldRecordHolder, global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery getActiveTrackTournaments)
         {
             _getAdditionalGhosts = getAdditionalGhosts ?? throw new global::System.ArgumentNullException(nameof(getAdditionalGhosts));
             _getAllPersonalBestGhosts = getAllPersonalBestGhosts ?? throw new global::System.ArgumentNullException(nameof(getAllPersonalBestGhosts));
@@ -9542,6 +11326,7 @@ namespace TNRD.Zeepkist.GTR
             _getTopRecordGhosts = getTopRecordGhosts ?? throw new global::System.ArgumentNullException(nameof(getTopRecordGhosts));
             _getTotalUserCount = getTotalUserCount ?? throw new global::System.ArgumentNullException(nameof(getTotalUserCount));
             _getWorldRecordHolder = getWorldRecordHolder ?? throw new global::System.ArgumentNullException(nameof(getWorldRecordHolder));
+            _getActiveTrackTournaments = getActiveTrackTournaments ?? throw new global::System.ArgumentNullException(nameof(getActiveTrackTournaments));
         }
 
         public static global::System.String ClientName => "GtrClient";
@@ -9556,6 +11341,7 @@ namespace TNRD.Zeepkist.GTR
         public global::TNRD.Zeepkist.GTR.IGetTopRecordGhostsQuery GetTopRecordGhosts => _getTopRecordGhosts;
         public global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery GetTotalUserCount => _getTotalUserCount;
         public global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery GetWorldRecordHolder => _getWorldRecordHolder;
+        public global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery GetActiveTrackTournaments => _getActiveTrackTournaments;
     }
 
     /// <summary>
@@ -9585,6 +11371,8 @@ namespace TNRD.Zeepkist.GTR
         global::TNRD.Zeepkist.GTR.IGetTotalUserCountQuery GetTotalUserCount { get; }
 
         global::TNRD.Zeepkist.GTR.IGetWorldRecordHolderQuery GetWorldRecordHolder { get; }
+
+        global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsQuery GetActiveTrackTournaments { get; }
     }
 }
 
@@ -10962,6 +12750,246 @@ namespace TNRD.Zeepkist.GTR.State
         public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
         {
             return new GetWorldRecordHolderResultInfo(WorldRecordGlobals, _entityIds, version);
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsResultFactory : global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.GetActiveTrackTournamentsResult>
+    {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        public GetActiveTrackTournamentsResultFactory(global::StrawberryShake.IEntityStore entityStore)
+        {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+        }
+
+        global::System.Type global::StrawberryShake.IOperationResultDataFactory.ResultType => typeof(global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult);
+
+        public GetActiveTrackTournamentsResult Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot = null)
+        {
+            if (snapshot is null)
+            {
+                snapshot = _entityStore.CurrentSnapshot;
+            }
+
+            if (dataInfo is GetActiveTrackTournamentsResultInfo info)
+            {
+                return new GetActiveTrackTournamentsResult(MapIGetActiveTrackTournaments_TrackTournaments(info.TrackTournaments, snapshot));
+            }
+
+            throw new global::System.ArgumentException("GetActiveTrackTournamentsResultInfo expected.");
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments? MapIGetActiveTrackTournaments_TrackTournaments(global::TNRD.Zeepkist.GTR.State.TrackTournamentsConnectionData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetActiveTrackTournaments_TrackTournaments returnValue = default !;
+            if (data?.__typename.Equals("TrackTournamentsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_TrackTournamentsConnection(MapNonNullableIGetActiveTrackTournaments_TrackTournaments_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes> MapNonNullableIGetActiveTrackTournaments_TrackTournaments_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (list is null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var trackTournaments = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes>();
+            foreach (global::TNRD.Zeepkist.GTR.State.TrackTournamentData child in list)
+            {
+                trackTournaments.Add(MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes(child, snapshot));
+            }
+
+            return trackTournaments;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes(global::TNRD.Zeepkist.GTR.State.TrackTournamentData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetActiveTrackTournaments_TrackTournaments_Nodes returnValue = default !;
+            if (data.__typename.Equals("TrackTournament", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournament(data.Id ?? throw new global::System.ArgumentNullException(), data.Type ?? throw new global::System.ArgumentNullException(), data.Slug ?? throw new global::System.ArgumentNullException(), data.StartAt ?? throw new global::System.ArgumentNullException(), data.EndAt ?? throw new global::System.ArgumentNullException(), MapIGetActiveTrackTournaments_TrackTournaments_Nodes_Level(data.Level, snapshot), MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults(data.TrackTournamentResults ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level? MapIGetActiveTrackTournaments_TrackTournaments_Nodes_Level(global::TNRD.Zeepkist.GTR.State.LevelData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_Level returnValue = default !;
+            if (data?.__typename.Equals("Level", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_Level_Level(data.Id ?? throw new global::System.ArgumentNullException(), data.XxHash ?? throw new global::System.ArgumentNullException(), data.Hash ?? throw new global::System.ArgumentNullException(), MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems(data.LevelItems ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems(global::TNRD.Zeepkist.GTR.State.LevelItemsConnectionData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems returnValue = default !;
+            if (data.__typename.Equals("LevelItemsConnection", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_LevelItemsConnection(MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes> MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelItemData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (list is null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var levelItems = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes>();
+            foreach (global::TNRD.Zeepkist.GTR.State.LevelItemData child in list)
+            {
+                levelItems.Add(MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes(child, snapshot));
+            }
+
+            return levelItems;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes(global::TNRD.Zeepkist.GTR.State.LevelItemData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes returnValue = default !;
+            if (data.__typename.Equals("LevelItem", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes_LevelItem(data.Name ?? throw new global::System.ArgumentNullException(), data.WorkshopId ?? throw new global::System.ArgumentNullException(), data.FileUid ?? throw new global::System.ArgumentNullException(), data.FileAuthor ?? throw new global::System.ArgumentNullException(), data.ImageUrl ?? throw new global::System.ArgumentNullException(), data.ValidationTimeAuthor ?? throw new global::System.ArgumentNullException(), data.ValidationTimeGold ?? throw new global::System.ArgumentNullException(), data.ValidationTimeSilver ?? throw new global::System.ArgumentNullException(), data.ValidationTimeBronze ?? throw new global::System.ArgumentNullException());
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults(global::TNRD.Zeepkist.GTR.State.TrackTournamentResultsConnectionData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults returnValue = default !;
+            if (data.__typename.Equals("TrackTournamentResultsConnection", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_TrackTournamentResultsConnection(data.TotalCount ?? throw new global::System.ArgumentNullException(), MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_NodesNonNullableArray(data.Nodes ?? throw new global::System.ArgumentNullException(), snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes> MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_NodesNonNullableArray(global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData>? list, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (list is null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var trackTournamentResults = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes>();
+            foreach (global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData child in list)
+            {
+                trackTournamentResults.Add(MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes(child, snapshot));
+            }
+
+            return trackTournamentResults;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes MapNonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes(global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes returnValue = default !;
+            if (data.__typename.Equals("TrackTournamentResult", global::System.StringComparison.Ordinal))
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_TrackTournamentResult(data.Rank ?? throw new global::System.ArgumentNullException(), data.Time ?? throw new global::System.ArgumentNullException(), data.Points ?? throw new global::System.ArgumentNullException(), MapIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User(data.User, snapshot));
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        private global::TNRD.Zeepkist.GTR.IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User? MapIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User(global::TNRD.Zeepkist.GTR.State.UserData? data, global::StrawberryShake.IEntityStoreSnapshot snapshot)
+        {
+            if (data is null)
+            {
+                return null;
+            }
+
+            IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User returnValue = default !;
+            if (data?.__typename.Equals("User", global::System.StringComparison.Ordinal) ?? false)
+            {
+                returnValue = new GetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User_User(data.SteamName);
+            }
+            else
+            {
+                throw new global::System.NotSupportedException();
+            }
+
+            return returnValue;
+        }
+
+        global::System.Object global::StrawberryShake.IOperationResultDataFactory.Create(global::StrawberryShake.IOperationResultDataInfo dataInfo, global::StrawberryShake.IEntityStoreSnapshot? snapshot)
+        {
+            return Create(dataInfo, snapshot);
+        }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsResultInfo : global::StrawberryShake.IOperationResultDataInfo
+    {
+        private readonly global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> _entityIds;
+        private readonly global::System.UInt64 _version;
+        public GetActiveTrackTournamentsResultInfo(global::TNRD.Zeepkist.GTR.State.TrackTournamentsConnectionData? trackTournaments, global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> entityIds, global::System.UInt64 version)
+        {
+            TrackTournaments = trackTournaments;
+            _entityIds = entityIds ?? throw new global::System.ArgumentNullException(nameof(entityIds));
+            _version = version;
+        }
+
+        /// <summary>
+        /// Reads and enables pagination through a set of `TrackTournament`.
+        /// </summary>
+        public global::TNRD.Zeepkist.GTR.State.TrackTournamentsConnectionData? TrackTournaments { get; }
+        public global::System.Collections.Generic.IReadOnlyCollection<global::StrawberryShake.EntityId> EntityIds => _entityIds;
+        public global::System.UInt64 Version => _version;
+
+        public global::StrawberryShake.IOperationResultDataInfo WithVersion(global::System.UInt64 version)
+        {
+            return new GetActiveTrackTournamentsResultInfo(TrackTournaments, _entityIds, version);
         }
     }
 
@@ -12421,6 +14449,333 @@ namespace TNRD.Zeepkist.GTR.State
         }
     }
 
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class GetActiveTrackTournamentsBuilder : global::StrawberryShake.OperationResultBuilder<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult>
+    {
+        private readonly global::StrawberryShake.IEntityStore _entityStore;
+        private readonly global::StrawberryShake.IEntityIdSerializer _idSerializer;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _datetimeParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Int32, global::System.Int32> _intParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _stringParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.Double, global::System.Double> _floatParser;
+        private readonly global::StrawberryShake.Serialization.ILeafValueParser<global::System.String, global::System.String> _bigIntParser;
+        public GetActiveTrackTournamentsBuilder(global::StrawberryShake.IEntityStore entityStore, global::StrawberryShake.IEntityIdSerializer idSerializer, global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult> resultDataFactory, global::StrawberryShake.Serialization.ISerializerResolver serializerResolver)
+        {
+            _entityStore = entityStore ?? throw new global::System.ArgumentNullException(nameof(entityStore));
+            _idSerializer = idSerializer ?? throw new global::System.ArgumentNullException(nameof(idSerializer));
+            ResultDataFactory = resultDataFactory ?? throw new global::System.ArgumentNullException(nameof(resultDataFactory));
+            _datetimeParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("Datetime") ?? throw new global::System.ArgumentException("No serializer for type `Datetime` found.");
+            _intParser = serializerResolver.GetLeafValueParser<global::System.Int32, global::System.Int32>("Int") ?? throw new global::System.ArgumentException("No serializer for type `Int` found.");
+            _stringParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("String") ?? throw new global::System.ArgumentException("No serializer for type `String` found.");
+            _floatParser = serializerResolver.GetLeafValueParser<global::System.Double, global::System.Double>("Float") ?? throw new global::System.ArgumentException("No serializer for type `Float` found.");
+            _bigIntParser = serializerResolver.GetLeafValueParser<global::System.String, global::System.String>("BigInt") ?? throw new global::System.ArgumentException("No serializer for type `BigInt` found.");
+        }
+
+        protected override global::StrawberryShake.IOperationResultDataFactory<global::TNRD.Zeepkist.GTR.IGetActiveTrackTournamentsResult> ResultDataFactory { get; }
+
+        protected override global::StrawberryShake.IOperationResultDataInfo BuildData(global::System.Text.Json.JsonElement obj)
+        {
+            var entityIds = new global::System.Collections.Generic.HashSet<global::StrawberryShake.EntityId>();
+            global::StrawberryShake.IEntityStoreSnapshot snapshot = default !;
+            _entityStore.Update(session =>
+            {
+                snapshot = session.CurrentSnapshot;
+            });
+            return new GetActiveTrackTournamentsResultInfo(Deserialize_IGetActiveTrackTournaments_TrackTournaments(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "trackTournaments")), entityIds, snapshot.Version);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.TrackTournamentsConnectionData? Deserialize_IGetActiveTrackTournaments_TrackTournaments(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("TrackTournamentsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.TrackTournamentsConnectionData(typename, nodes: Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_NodesNonNullableArray(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "nodes")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentData> Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_NodesNonNullableArray(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var trackTournaments = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.State.TrackTournamentData>();
+            foreach (global::System.Text.Json.JsonElement child in obj.Value.EnumerateArray())
+            {
+                trackTournaments.Add(Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes(child));
+            }
+
+            return trackTournaments;
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.TrackTournamentData Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("TrackTournament", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.TrackTournamentData(typename, id: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "id")), type: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "type")), slug: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "slug")), startAt: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "startAt")), endAt: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "endAt")), level: Deserialize_IGetActiveTrackTournaments_TrackTournaments_Nodes_Level(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "level")), trackTournamentResults: Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "trackTournamentResults")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Int32 Deserialize_NonNullableInt32(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            return _intParser.Parse(obj.Value.GetInt32()!);
+        }
+
+        private global::System.String Deserialize_NonNullableString(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            return _stringParser.Parse(obj.Value.GetString()!);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.LevelData? Deserialize_IGetActiveTrackTournaments_TrackTournaments_Nodes_Level(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("Level", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.LevelData(typename, id: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "id")), xxHash: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "xxHash")), hash: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "hash")), levelItems: Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "levelItems")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.LevelItemsConnectionData Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("LevelItemsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.LevelItemsConnectionData(typename, nodes: Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_NodesNonNullableArray(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "nodes")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelItemData> Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_NodesNonNullableArray(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var levelItems = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.State.LevelItemData>();
+            foreach (global::System.Text.Json.JsonElement child in obj.Value.EnumerateArray())
+            {
+                levelItems.Add(Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes(child));
+            }
+
+            return levelItems;
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.LevelItemData Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_Level_LevelItems_Nodes(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("LevelItem", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.LevelItemData(typename, name: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "name")), workshopId: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "workshopId")), fileUid: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "fileUid")), fileAuthor: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "fileAuthor")), imageUrl: Deserialize_NonNullableString(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "imageUrl")), validationTimeAuthor: Deserialize_NonNullableDouble(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "validationTimeAuthor")), validationTimeGold: Deserialize_NonNullableDouble(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "validationTimeGold")), validationTimeSilver: Deserialize_NonNullableDouble(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "validationTimeSilver")), validationTimeBronze: Deserialize_NonNullableDouble(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "validationTimeBronze")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Double Deserialize_NonNullableDouble(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            return _floatParser.Parse(obj.Value.GetDouble()!);
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.TrackTournamentResultsConnectionData Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("TrackTournamentResultsConnection", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.TrackTournamentResultsConnectionData(typename, totalCount: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "totalCount")), nodes: Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_NodesNonNullableArray(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "nodes")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData> Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_NodesNonNullableArray(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var trackTournamentResults = new global::System.Collections.Generic.List<global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData>();
+            foreach (global::System.Text.Json.JsonElement child in obj.Value.EnumerateArray())
+            {
+                trackTournamentResults.Add(Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes(child));
+            }
+
+            return trackTournamentResults;
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData Deserialize_NonNullableIGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                throw new global::System.ArgumentNullException();
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("TrackTournamentResult", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData(typename, rank: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "rank")), time: Deserialize_NonNullableDouble(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "time")), points: Deserialize_NonNullableInt32(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "points")), user: Deserialize_IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "user")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::TNRD.Zeepkist.GTR.State.UserData? Deserialize_IGetActiveTrackTournaments_TrackTournaments_Nodes_TrackTournamentResults_Nodes_User(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            var typename = obj.Value.GetProperty("__typename").GetString();
+            if (typename?.Equals("User", global::System.StringComparison.Ordinal) ?? false)
+            {
+                return new global::TNRD.Zeepkist.GTR.State.UserData(typename, steamName: Deserialize_String(global::StrawberryShake.Json.JsonElementExtensions.GetPropertyOrNull(obj, "steamName")));
+            }
+
+            throw new global::System.NotSupportedException();
+        }
+
+        private global::System.String? Deserialize_String(global::System.Text.Json.JsonElement? obj)
+        {
+            if (!obj.HasValue)
+            {
+                return null;
+            }
+
+            if (obj.Value.ValueKind == global::System.Text.Json.JsonValueKind.Null)
+            {
+                return null;
+            }
+
+            return _stringParser.Parse(obj.Value.GetString()!);
+        }
+    }
+
     ///<summary>A connection to a list of `PersonalBestGlobal` values.</summary>
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
     public partial class PersonalBestGlobalsConnectionData
@@ -12596,6 +14951,150 @@ namespace TNRD.Zeepkist.GTR.State
         public global::System.String __typename { get; }
         ///<summary>Reads a single `Record` that is related to this `WorldRecordGlobal`.</summary>
         public global::TNRD.Zeepkist.GTR.State.RecordData? Record { get; }
+    }
+
+    ///<summary>A connection to a list of `TrackTournament` values.</summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class TrackTournamentsConnectionData
+    {
+        public TrackTournamentsConnectionData(global::System.String __typename, global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentData>? nodes = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Nodes = nodes;
+        }
+
+        public global::System.String __typename { get; }
+        ///<summary>A list of `TrackTournament` objects.</summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentData>? Nodes { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class TrackTournamentData : INodeData
+    {
+        public TrackTournamentData(global::System.String __typename, global::System.Int32? id = default !, global::System.Int32? type = default !, global::System.String? slug = default !, global::System.String? startAt = default !, global::System.String? endAt = default !, global::TNRD.Zeepkist.GTR.State.LevelData? level = default !, global::TNRD.Zeepkist.GTR.State.TrackTournamentResultsConnectionData? trackTournamentResults = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Id = id;
+            Type = type;
+            Slug = slug;
+            StartAt = startAt;
+            EndAt = endAt;
+            Level = level;
+            TrackTournamentResults = trackTournamentResults;
+        }
+
+        public global::System.String __typename { get; }
+        public global::System.Int32? Id { get; }
+        public global::System.Int32? Type { get; }
+        public global::System.String? Slug { get; }
+        public global::System.String? StartAt { get; }
+        public global::System.String? EndAt { get; }
+        ///<summary>Reads a single `Level` that is related to this `TrackTournament`.</summary>
+        public global::TNRD.Zeepkist.GTR.State.LevelData? Level { get; }
+        ///<summary>Reads and enables pagination through a set of `TrackTournamentResult`.</summary>
+        public global::TNRD.Zeepkist.GTR.State.TrackTournamentResultsConnectionData? TrackTournamentResults { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class LevelData : INodeData
+    {
+        public LevelData(global::System.String __typename, global::System.Int32? id = default !, global::System.String? xxHash = default !, global::System.String? hash = default !, global::TNRD.Zeepkist.GTR.State.LevelItemsConnectionData? levelItems = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Id = id;
+            XxHash = xxHash;
+            Hash = hash;
+            LevelItems = levelItems;
+        }
+
+        public global::System.String __typename { get; }
+        public global::System.Int32? Id { get; }
+        public global::System.String? XxHash { get; }
+        public global::System.String? Hash { get; }
+        ///<summary>Reads and enables pagination through a set of `LevelItem`.</summary>
+        public global::TNRD.Zeepkist.GTR.State.LevelItemsConnectionData? LevelItems { get; }
+    }
+
+    ///<summary>A connection to a list of `TrackTournamentResult` values.</summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class TrackTournamentResultsConnectionData
+    {
+        public TrackTournamentResultsConnectionData(global::System.String __typename, global::System.Int32? totalCount = default !, global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData>? nodes = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            TotalCount = totalCount;
+            Nodes = nodes;
+        }
+
+        public global::System.String __typename { get; }
+        ///<summary>The count of *all* `TrackTournamentResult` you could get from the connection.</summary>
+        public global::System.Int32? TotalCount { get; }
+        ///<summary>A list of `TrackTournamentResult` objects.</summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.TrackTournamentResultData>? Nodes { get; }
+    }
+
+    ///<summary>A connection to a list of `LevelItem` values.</summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class LevelItemsConnectionData
+    {
+        public LevelItemsConnectionData(global::System.String __typename, global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelItemData>? nodes = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Nodes = nodes;
+        }
+
+        public global::System.String __typename { get; }
+        ///<summary>A list of `LevelItem` objects.</summary>
+        public global::System.Collections.Generic.IReadOnlyList<global::TNRD.Zeepkist.GTR.State.LevelItemData>? Nodes { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class TrackTournamentResultData : INodeData
+    {
+        public TrackTournamentResultData(global::System.String __typename, global::System.Int32? rank = default !, global::System.Double? time = default !, global::System.Int32? points = default !, global::TNRD.Zeepkist.GTR.State.UserData? user = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Rank = rank;
+            Time = time;
+            Points = points;
+            User = user;
+        }
+
+        public global::System.String __typename { get; }
+        public global::System.Int32? Rank { get; }
+        public global::System.Double? Time { get; }
+        public global::System.Int32? Points { get; }
+        ///<summary>Reads a single `User` that is related to this `TrackTournamentResult`.</summary>
+        public global::TNRD.Zeepkist.GTR.State.UserData? User { get; }
+    }
+
+    [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
+    public partial class LevelItemData : INodeData
+    {
+        public LevelItemData(global::System.String __typename, global::System.String? name = default !, global::System.String? workshopId = default !, global::System.String? fileUid = default !, global::System.String? fileAuthor = default !, global::System.String? imageUrl = default !, global::System.Double? validationTimeAuthor = default !, global::System.Double? validationTimeGold = default !, global::System.Double? validationTimeSilver = default !, global::System.Double? validationTimeBronze = default !)
+        {
+            this.__typename = __typename ?? throw new global::System.ArgumentNullException(nameof(__typename));
+            Name = name;
+            WorkshopId = workshopId;
+            FileUid = fileUid;
+            FileAuthor = fileAuthor;
+            ImageUrl = imageUrl;
+            ValidationTimeAuthor = validationTimeAuthor;
+            ValidationTimeGold = validationTimeGold;
+            ValidationTimeSilver = validationTimeSilver;
+            ValidationTimeBronze = validationTimeBronze;
+        }
+
+        public global::System.String __typename { get; }
+        public global::System.String? Name { get; }
+        public global::System.String? WorkshopId { get; }
+        public global::System.String? FileUid { get; }
+        public global::System.String? FileAuthor { get; }
+        public global::System.String? ImageUrl { get; }
+        public global::System.Double? ValidationTimeAuthor { get; }
+        public global::System.Double? ValidationTimeGold { get; }
+        public global::System.Double? ValidationTimeSilver { get; }
+        public global::System.Double? ValidationTimeBronze { get; }
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("StrawberryShake", "14.3.0.0")]
