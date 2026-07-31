@@ -1,6 +1,7 @@
 using System;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Style;
 using TNRD.Zeepkist.GTR.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,7 +17,6 @@ public class TournamentsDrawer : IZeepGUIDrawer
     private const float ListWidth = 280f;
     private const ImWindowFlag WindowFlags = ImWindowFlag.None;
 
-    private static readonly Color32 MutedText = new(180, 180, 180, 255);
     private static readonly Color32 AuthorMedal = new(120, 200, 255, 255);
     private static readonly Color32 GoldMedal = new(255, 210, 70, 255);
     private static readonly Color32 SilverMedal = new(200, 200, 210, 255);
@@ -131,9 +131,10 @@ public class TournamentsDrawer : IZeepGUIDrawer
 
     private void DrawTournamentList(ImGui gui, float height)
     {
+        Color32 secondary = SecondaryTextColor(gui);
         using (gui.Vertical(ListWidth, height))
         {
-            gui.Text("Active".AsSpan(), MutedText);
+            gui.Text("Active".AsSpan(), secondary);
             gui.AddSpacing(4f);
 
             using (gui.List((ListWidth, Mathf.Max(80f, height - gui.GetRowsHeightWithSpacing(1)))))
@@ -153,77 +154,102 @@ public class TournamentsDrawer : IZeepGUIDrawer
     private void DrawDetailPanel(ImGui gui, float width, float height)
     {
         TournamentViewModel tournament = _state.SelectedTournament;
+        Color32 secondary = SecondaryTextColor(gui);
         using (gui.Vertical(width, height))
         {
             if (tournament == null)
             {
-                gui.Text("Select a tournament".AsSpan(), MutedText);
+                gui.Text("Select a tournament".AsSpan(), secondary);
                 return;
             }
 
             gui.Text(tournament.LevelName.AsSpan());
-            gui.Text($"by {tournament.LevelAuthor}".AsSpan(), MutedText);
+            gui.Text($"by {tournament.LevelAuthor}".AsSpan(), secondary);
             gui.AddSpacing(4f);
-            gui.Text($"{tournament.TypeLabel}  ·  {tournament.Slug}".AsSpan(), MutedText);
+            gui.Text($"{tournament.TypeLabel}  ·  {tournament.Slug}".AsSpan(), secondary);
             gui.Text(
                 $"Ends {FormatUtc(tournament.EndAt)}  ({FormatRemaining(tournament.EndAt)})".AsSpan(),
-                MutedText);
+                secondary);
 
             gui.Separator();
-            gui.Text("Medal times".AsSpan(), MutedText);
-            using (gui.Horizontal())
-            {
-                DrawMedal(gui, "Author", tournament.ValidationTimeAuthor, AuthorMedal);
-                gui.AddSpacing(16f);
-                DrawMedal(gui, "Gold", tournament.ValidationTimeGold, GoldMedal);
-                gui.AddSpacing(16f);
-                DrawMedal(gui, "Silver", tournament.ValidationTimeSilver, SilverMedal);
-                gui.AddSpacing(16f);
-                DrawMedal(gui, "Bronze", tournament.ValidationTimeBronze, BronzeMedal);
-            }
+            gui.Text("Medal times".AsSpan(), secondary);
+            DrawMedalTimes(gui, tournament);
 
             gui.Separator();
             string standingsHeader = tournament.StandingCount > 0
-                ? $"Standings (top {tournament.Standings.Count} of {tournament.StandingCount})"
+                ? $"Standings ({tournament.StandingCount})"
                 : "Standings";
-            gui.Text(standingsHeader.AsSpan(), MutedText);
+            gui.Text(standingsHeader.AsSpan(), secondary);
             gui.AddSpacing(4f);
 
             if (tournament.Standings.Count == 0)
             {
-                gui.Text("No results yet — be the first!".AsSpan(), MutedText);
+                gui.Text("No results yet — be the first!".AsSpan(), secondary);
                 return;
             }
 
-            using (gui.Horizontal())
-            {
-                gui.Text(" #".AsSpan(), MutedText);
-                gui.AddSpacing(8f);
-                gui.Text("Player".AsSpan(), MutedText);
-            }
-
-            float standingsHeight = Mathf.Max(80f, gui.GetLayoutHeight() - gui.GetRowsHeightWithSpacing(1));
-            using (gui.List((width, standingsHeight)))
-            {
-                for (int i = 0; i < tournament.Standings.Count; i++)
-                {
-                    TournamentStandingEntry entry = tournament.Standings[i];
-                    string row =
-                        $"{entry.Rank,2}   {entry.PlayerName}   {FormatTime(entry.Time)}   {entry.Points} pts";
-                    gui.ListItem(false, row);
-                }
-            }
+            float tableHeight = Mathf.Max(80f, gui.GetLayoutHeight());
+            DrawStandingsTable(gui, tournament, tableHeight);
         }
     }
 
-    private static void DrawMedal(ImGui gui, string label, float time, Color32 color)
+    private static void DrawMedalTimes(ImGui gui, TournamentViewModel tournament)
     {
-        using (gui.Vertical())
+        float columnHeight = gui.GetRowsHeightWithSpacing(2);
+        using (gui.Horizontal(gui.GetLayoutWidth(), columnHeight))
+        {
+            DrawMedalColumn(gui, "Author", tournament.ValidationTimeAuthor, AuthorMedal, columnHeight);
+            gui.AddSpacing(16f);
+            DrawMedalColumn(gui, "Gold", tournament.ValidationTimeGold, GoldMedal, columnHeight);
+            gui.AddSpacing(16f);
+            DrawMedalColumn(gui, "Silver", tournament.ValidationTimeSilver, SilverMedal, columnHeight);
+            gui.AddSpacing(16f);
+            DrawMedalColumn(gui, "Bronze", tournament.ValidationTimeBronze, BronzeMedal, columnHeight);
+        }
+    }
+
+    private static void DrawMedalColumn(ImGui gui, string label, float time, Color32 color, float height)
+    {
+        using (gui.Vertical(0f, height))
         {
             gui.Text(label.AsSpan(), color);
             gui.Text(FormatTime(time).AsSpan());
         }
     }
+
+    private static void DrawStandingsTable(ImGui gui, TournamentViewModel tournament, float tableHeight)
+    {
+        gui.BeginTable(4, (gui.GetLayoutWidth(), tableHeight));
+
+        gui.TableNextRow();
+        gui.TableNextColumn();
+        gui.Text("Position".AsSpan());
+        gui.TableNextColumn();
+        gui.Text("Player".AsSpan());
+        gui.TableNextColumn();
+        gui.Text("Time".AsSpan());
+        gui.TableNextColumn();
+        gui.Text("Points".AsSpan());
+
+        for (int i = 0; i < tournament.Standings.Count; i++)
+        {
+            TournamentStandingEntry entry = tournament.Standings[i];
+            gui.TableNextRow();
+            gui.TableNextColumn();
+            gui.Text(entry.Rank.ToString().AsSpan());
+            gui.TableNextColumn();
+            gui.Text(entry.PlayerName.AsSpan());
+            gui.TableNextColumn();
+            gui.Text(FormatTime(entry.Time).AsSpan());
+            gui.TableNextColumn();
+            gui.Text(entry.Points.ToString().AsSpan());
+        }
+
+        gui.EndTable();
+    }
+
+    private static Color32 SecondaryTextColor(ImGui gui) =>
+        gui.Style.Text.Color.WithAlpha(0.75f);
 
     private static string FormatTime(float seconds)
     {
