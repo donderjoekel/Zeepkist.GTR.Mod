@@ -77,7 +77,9 @@ public class TournamentsDrawer : IZeepGUIDrawer
             if (gui.Button("Refresh", ImSizeMode.Fit))
                 _state.Refresh();
 
-            gui.AddSpacing(8f);
+            float playWidth = MeasureFitButtonWidth(gui, "Play".AsSpan());
+            float gap = Mathf.Max(0f, gui.GetLayoutWidth() - playWidth - gui.Style.Layout.Spacing);
+            gui.AddSpacing(gap);
 
             TournamentViewModel selectedForPlay = _state.SelectedTournament;
             gui.BeginReadOnly(selectedForPlay == null || _joinOrchestrator.IsBusy);
@@ -91,11 +93,6 @@ public class TournamentsDrawer : IZeepGUIDrawer
             }
 
             gui.EndReadOnly();
-
-            gui.AddSpacing(8f);
-
-            if (gui.Button("Close", ImSizeMode.Fit))
-                _state.Close();
         }
 
         gui.Separator();
@@ -246,6 +243,13 @@ public class TournamentsDrawer : IZeepGUIDrawer
         }
 
         gui.EndTable();
+    }
+
+    private static float MeasureFitButtonWidth(ImGui gui, ReadOnlySpan<char> label)
+    {
+        ImTextSettings textSettings = ImButton.CreateTextSettings(gui, in gui.Style.Button);
+        Vector2 textSize = gui.MeasureTextSize(label, in textSettings);
+        return textSize.x + gui.Style.Layout.InnerSpacing * 2f;
     }
 
     private static Color32 SecondaryTextColor(ImGui gui) =>
