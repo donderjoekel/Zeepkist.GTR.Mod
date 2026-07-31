@@ -12,8 +12,8 @@ namespace TNRD.Zeepkist.GTR.UI.Tournaments;
 public class TournamentsDrawer : IZeepGUIDrawer
 {
     private const string WindowTitle = "Tournaments";
-    private const float WindowWidth = 920f;
-    private const float WindowHeight = 540f;
+    private const float WindowWidth = 1100f;
+    private const float WindowHeight = 680f;
     private const float ListWidth = 280f;
     private const ImWindowFlag WindowFlags = ImWindowFlag.None;
 
@@ -49,7 +49,7 @@ public class TournamentsDrawer : IZeepGUIDrawer
             WindowTitle.AsSpan(),
             WindowWidth,
             WindowHeight,
-            ImWindowAnchor.BottomCenter);
+            ImWindowAnchor.Center);
 
         if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, windowRect, WindowFlags))
             return;
