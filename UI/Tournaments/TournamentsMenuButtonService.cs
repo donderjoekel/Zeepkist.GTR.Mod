@@ -7,23 +7,27 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-namespace TNRD.Zeepkist.GTR.UI.Totw;
+namespace TNRD.Zeepkist.GTR.UI.Tournaments;
 
-public class TotwMenuButtonService : IEagerService
+public class TournamentsMenuButtonService : IEagerService
 {
-    private const string TotwSlotName = "TOTW";
-    private const string TotwButtonName = "Track of the Week";
+    private const string TournamentsSlotName = "Tournaments";
+    private const string TournamentsButtonName = "Tournaments";
     private const string OnlineButtonName = "Zeepkist Online";
     private const string SplitscreenButtonName = "Splitscreen";
     private const string FreePlayButtonName = "FreePlay";
     private const string GoBackButtonName = "Go Back";
     private const string PlayersIconName = "Players Icon";
 
-    private readonly ILogger<TotwMenuButtonService> _logger;
+    private readonly ILogger<TournamentsMenuButtonService> _logger;
+    private readonly TournamentsWindowState _windowState;
 
-    public TotwMenuButtonService(ILogger<TotwMenuButtonService> logger)
+    public TournamentsMenuButtonService(
+        ILogger<TournamentsMenuButtonService> logger,
+        TournamentsWindowState windowState)
     {
         _logger = logger;
+        _windowState = windowState;
         MainMenuUi_Awake.Postfixed += OnMainMenuAwake;
     }
 
@@ -32,17 +36,17 @@ public class TotwMenuButtonService : IEagerService
         StartGameUI startGameUi = Object.FindObjectOfType<StartGameUI>(true);
         if (startGameUi == null)
         {
-            _logger.LogWarning("StartGameUI not found; skipping TOTW button injection");
+            _logger.LogWarning("StartGameUI not found; skipping Tournaments button injection");
             return;
         }
 
-        if (FindChildByName(startGameUi.transform, TotwButtonName) != null)
+        if (FindChildByName(startGameUi.transform, TournamentsButtonName) != null)
             return;
 
         Transform onlineButtonTransform = FindChildByName(startGameUi.transform, OnlineButtonName);
         if (onlineButtonTransform == null)
         {
-            _logger.LogWarning("{Button} not found; skipping TOTW button injection", OnlineButtonName);
+            _logger.LogWarning("{Button} not found; skipping Tournaments button injection", OnlineButtonName);
             return;
         }
 
@@ -62,24 +66,26 @@ public class TotwMenuButtonService : IEagerService
 
         ShrinkOnlineSlot(onlineSlot);
 
-        GameObject totwSlotObject = Object.Instantiate(onlineSlot.gameObject, panel);
-        totwSlotObject.name = TotwSlotName;
-        RectTransform totwSlot = totwSlotObject.GetComponent<RectTransform>();
-        SetHalfWidthAnchors(totwSlot, rightHalf: true);
+        GameObject tournamentsSlotObject = Object.Instantiate(onlineSlot.gameObject, panel);
+        tournamentsSlotObject.name = TournamentsSlotName;
+        RectTransform tournamentsSlot = tournamentsSlotObject.GetComponent<RectTransform>();
+        SetHalfWidthAnchors(tournamentsSlot, rightHalf: true);
 
-        Transform totwButtonTransform = FindChildByName(totwSlot, OnlineButtonName);
-        if (totwButtonTransform == null)
-            totwButtonTransform = totwSlot.GetComponentInChildren<GenericButton>(true)?.transform;
+        Transform tournamentsButtonTransform = FindChildByName(tournamentsSlot, OnlineButtonName);
+        if (tournamentsButtonTransform == null)
+            tournamentsButtonTransform = tournamentsSlot.GetComponentInChildren<GenericButton>(true)?.transform;
 
-        if (totwButtonTransform == null)
+        if (tournamentsButtonTransform == null)
         {
-            _logger.LogError("Failed to find cloned TOTW button");
-            Object.Destroy(totwSlotObject);
+            _logger.LogError("Failed to find cloned Tournaments button");
+            Object.Destroy(tournamentsSlotObject);
             return;
         }
 
-        totwButtonTransform.name = TotwButtonName;
-        ConfigureTotwButton(totwButtonTransform.gameObject, onlineButtonTransform.GetComponent<GenericButton>(),
+        tournamentsButtonTransform.name = TournamentsButtonName;
+        ConfigureTournamentsButton(
+            tournamentsButtonTransform.gameObject,
+            onlineButtonTransform.GetComponent<GenericButton>(),
             startGameUi);
     }
 
@@ -107,41 +113,47 @@ public class TotwMenuButtonService : IEagerService
         slot.sizeDelta = Vector2.zero;
     }
 
-    private void ConfigureTotwButton(GameObject totwButtonObject, GenericButton onlineButton, StartGameUI startGameUi)
+    private void ConfigureTournamentsButton(
+        GameObject tournamentsButtonObject,
+        GenericButton onlineButton,
+        StartGameUI startGameUi)
     {
         DisableButtonIfSteamNotConnected steamGate =
-            totwButtonObject.GetComponent<DisableButtonIfSteamNotConnected>();
+            tournamentsButtonObject.GetComponent<DisableButtonIfSteamNotConnected>();
         if (steamGate != null)
             Object.Destroy(steamGate);
 
-        foreach (TMP_Text text in totwButtonObject.GetComponentsInChildren<TMP_Text>(true))
-            text.text = TotwButtonName;
+        foreach (TMP_Text text in tournamentsButtonObject.GetComponentsInChildren<TMP_Text>(true))
+            text.text = TournamentsButtonName;
 
-        ApplyStarIcon(totwButtonObject);
+        ApplyStarIcon(tournamentsButtonObject);
 
-        GenericButton totwButton = totwButtonObject.GetComponent<GenericButton>();
-        if (totwButton == null)
+        GenericButton tournamentsButton = tournamentsButtonObject.GetComponent<GenericButton>();
+        if (tournamentsButton == null)
         {
-            _logger.LogError("Cloned TOTW object has no GenericButton");
+            _logger.LogError("Cloned Tournaments object has no GenericButton");
             return;
         }
 
-        totwButton.onClick = new UnityEvent();
-        totwButton.onClick.AddListener(OnTotwClicked);
-        totwButton.disabled = false;
+        tournamentsButton.onClick = new UnityEvent();
+        tournamentsButton.onClick.AddListener(OnTournamentsClicked);
+        tournamentsButton.disabled = false;
 
-        WireNavigation(totwButton, onlineButton, startGameUi);
+        WireNavigation(tournamentsButton, onlineButton, startGameUi);
 
         if (startGameUi.buttonsToDisableWhenGoingIntoAthing != null &&
-            !startGameUi.buttonsToDisableWhenGoingIntoAthing.Contains(totwButton))
+            !startGameUi.buttonsToDisableWhenGoingIntoAthing.Contains(tournamentsButton))
         {
-            startGameUi.buttonsToDisableWhenGoingIntoAthing.Add(totwButton);
+            startGameUi.buttonsToDisableWhenGoingIntoAthing.Add(tournamentsButton);
         }
 
-        _logger.LogInformation("Injected Track of the Week button into StartGameUI");
+        _logger.LogInformation("Injected Tournaments button into StartGameUI");
     }
 
-    private void WireNavigation(GenericButton totwButton, GenericButton onlineButton, StartGameUI startGameUi)
+    private void WireNavigation(
+        GenericButton tournamentsButton,
+        GenericButton onlineButton,
+        StartGameUI startGameUi)
     {
         GenericButton splitscreen = FindButton(startGameUi.transform, SplitscreenButtonName);
         GenericButton freePlay = FindButton(startGameUi.transform, FreePlayButtonName);
@@ -151,30 +163,30 @@ public class TotwMenuButtonService : IEagerService
         GenericButton previousOnlineRight = onlineButton.right;
         GenericButton previousOnlineUp = onlineButton.up;
 
-        onlineButton.right = totwButton;
+        onlineButton.right = tournamentsButton;
         onlineButton.down = splitscreen != null ? splitscreen : previousOnlineDown;
 
-        totwButton.left = onlineButton;
-        totwButton.right = goBack != null ? goBack : previousOnlineRight;
-        totwButton.up = previousOnlineUp;
-        totwButton.down = freePlay != null ? freePlay : previousOnlineDown;
+        tournamentsButton.left = onlineButton;
+        tournamentsButton.right = goBack != null ? goBack : previousOnlineRight;
+        tournamentsButton.up = previousOnlineUp;
+        tournamentsButton.down = freePlay != null ? freePlay : previousOnlineDown;
 
         if (splitscreen != null)
             splitscreen.up = onlineButton;
 
         if (freePlay != null)
-            freePlay.up = totwButton;
+            freePlay.up = tournamentsButton;
 
         if (goBack != null && goBack.up == onlineButton)
-            goBack.up = totwButton;
+            goBack.up = tournamentsButton;
     }
 
-    private void OnTotwClicked()
+    private void OnTournamentsClicked()
     {
-        _logger.LogInformation("Track of the Week clicked (stub)");
+        _windowState.Open();
     }
 
-    private void ApplyStarIcon(GameObject totwButtonObject)
+    private void ApplyStarIcon(GameObject tournamentsButtonObject)
     {
         Sprite starSprite = PlayerManager.Instance != null ? PlayerManager.Instance.youTriedMedal : null;
         if (starSprite == null)
@@ -183,11 +195,11 @@ public class TotwMenuButtonService : IEagerService
             return;
         }
 
-        Transform iconTransform = FindChildByName(totwButtonObject.transform, PlayersIconName);
+        Transform iconTransform = FindChildByName(tournamentsButtonObject.transform, PlayersIconName);
         Image iconImage = iconTransform != null ? iconTransform.GetComponent<Image>() : null;
         if (iconImage == null)
         {
-            _logger.LogWarning("{Icon} Image not found on TOTW button", PlayersIconName);
+            _logger.LogWarning("{Icon} Image not found on Tournaments button", PlayersIconName);
             return;
         }
 
