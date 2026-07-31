@@ -3887,7 +3887,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4401,7 +4401,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4520,7 +4520,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -4553,7 +4553,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -5096,7 +5096,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -5201,7 +5201,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -6514,7 +6514,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -7040,7 +7040,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -7148,7 +7148,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -8243,7 +8243,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -8748,7 +8748,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -8853,7 +8853,7 @@ namespace TNRD.Zeepkist.GTR
     ///     }
     ///   }
     /// }
-    ///
+    /// 
     /// fragment GhostRecordFrag on Record {
     ///   id
     ///   user {
@@ -12629,4 +12629,3 @@ namespace TNRD.Zeepkist.GTR.State
         }
     }
 }
-
