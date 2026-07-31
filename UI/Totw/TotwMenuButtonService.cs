@@ -4,6 +4,7 @@ using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Patching.Patches;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.UI.Totw;
@@ -16,6 +17,7 @@ public class TotwMenuButtonService : IEagerService
     private const string SplitscreenButtonName = "Splitscreen";
     private const string FreePlayButtonName = "FreePlay";
     private const string GoBackButtonName = "Go Back";
+    private const string PlayersIconName = "Players Icon";
 
     private readonly ILogger<TotwMenuButtonService> _logger;
 
@@ -115,6 +117,8 @@ public class TotwMenuButtonService : IEagerService
         foreach (TMP_Text text in totwButtonObject.GetComponentsInChildren<TMP_Text>(true))
             text.text = TotwButtonName;
 
+        ApplyStarIcon(totwButtonObject);
+
         GenericButton totwButton = totwButtonObject.GetComponent<GenericButton>();
         if (totwButton == null)
         {
@@ -168,6 +172,27 @@ public class TotwMenuButtonService : IEagerService
     private void OnTotwClicked()
     {
         _logger.LogInformation("Track of the Week clicked (stub)");
+    }
+
+    private void ApplyStarIcon(GameObject totwButtonObject)
+    {
+        Sprite starSprite = PlayerManager.Instance != null ? PlayerManager.Instance.youTriedMedal : null;
+        if (starSprite == null)
+        {
+            _logger.LogWarning("youTriedMedal sprite not available; leaving cloned Online icon");
+            return;
+        }
+
+        Transform iconTransform = FindChildByName(totwButtonObject.transform, PlayersIconName);
+        Image iconImage = iconTransform != null ? iconTransform.GetComponent<Image>() : null;
+        if (iconImage == null)
+        {
+            _logger.LogWarning("{Icon} Image not found on TOTW button", PlayersIconName);
+            return;
+        }
+
+        iconImage.sprite = starSprite;
+        iconImage.preserveAspect = true;
     }
 
     private static GenericButton FindButton(Transform root, string name)
