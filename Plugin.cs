@@ -23,6 +23,7 @@ using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.UI.Timeline;
+using TNRD.Zeepkist.GTR.UI.Totw;
 using TNRD.Zeepkist.GTR.Users;
 using TNRD.Zeepkist.GTR.Utilities;
 using TNRD.Zeepkist.GTR.Voting;
@@ -111,6 +112,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<GhostPlaybackInputService>();
         services.AddEagerService<LeaderboardService>();
         services.AddEagerService<RecordHolderService>();
+        services.AddEagerService<TotwMenuButtonService>();
         services.AddEagerService<DiscordService>();
         services.AddEagerService<UnhandledExceptionLoggerService>();
         services.AddEagerService<VotingService>();
