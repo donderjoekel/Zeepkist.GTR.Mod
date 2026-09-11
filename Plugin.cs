@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Net.WebSockets;
+using System.Threading;
 using BepInEx;
+using BepInEx.Bootstrap;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -11,6 +14,7 @@ using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Authentication;
 using TNRD.Zeepkist.GTR.Commands;
 using TNRD.Zeepkist.GTR.Configuration;
+using TNRD.Zeepkist.GTR.Connectivity;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Dialogs;
 using TNRD.Zeepkist.GTR.Discord;
@@ -80,14 +84,19 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton(Config);
         services.AddSingleton(Logger);
         services.AddSingleton(Info);
+        services.AddSingleton(new NetworkUserAgent(
+            MyPluginInfo.PLUGIN_VERSION,
+            Chainloader.PluginInfos["ZeepSDK"].Metadata.Version.ToString()));
         services.AddSingleton<IHostLifetime, NoopHostLifetime>();
         services.AddMemoryCache();
+        services.AddEagerService<SpainRoutingService>();
         services.AddEagerService<AuthenticationService>();
         services.AddEagerService<CommandsService>();
         services.AddEagerService<ConfigService>();
         services.AddEagerService<LevelRequestService>();
         services.AddEagerService<OfflineGhostsService>();
         services.AddEagerService<OnlineGhostsService>();
+        services.AddEagerService<RecordFeedbackService>();
         services.AddEagerService<RecordingService>();
         services.AddEagerService<PlayerLoopService>();
         services.AddSingleton<BulkGhostModeState>();
@@ -112,6 +121,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<GhostTimelineOverlayVisibilityService>();
         services.AddEagerService<GhostPlaybackInputService>();
         services.AddEagerService<LeaderboardService>();
+        services.AddEagerService<CurrentLevelRecordService>();
         services.AddEagerService<RecordHolderService>();
         services.AddEagerService<DiscordService>();
         services.AddEagerService<LaLigaCensorshipDialogService>();
@@ -122,6 +132,7 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton<GhostReaderFactory>();
         services.AddSingleton<GhostRecorderFactory>();
         services.AddSingleton<LeaderboardGraphqlService>();
+        services.AddSingleton<TrackTournamentGraphqlService>();
         services.AddSingleton<OnlineLeaderboardTab>();
         services.AddSingleton<OfflineLeaderboardTab>();
         services.AddSingleton<MessengerService>();
@@ -129,7 +140,6 @@ public class Plugin : BaseUnityPlugin
         services.AddSingleton<OnlineGhostGraphqlService>();
         services.AddSingleton<OfflineGhostGraphqlService>();
         services.AddSingleton(_ => StorageApi.CreateModStorage(this));
-        services.AddSingleton<RecordHolderGraphqlService>();
         services.AddSingleton<LevelBrowser.LevelBrowseService>();
         services.AddSingleton<LevelBrowser.LevelBrowserSession>();
         services.AddSingleton<LevelBrowser.UI.LevelThumbnailCache>();
@@ -148,13 +158,22 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V7Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
-        services.AddHttpClient(LaLigaCensorshipDialogService.CountryDetectionClientKey, client =>
+        services.AddHttpClient(SpainRoutingService.TraceClientKey, (provider, client) =>
         {
-            client.BaseAddress = new Uri("https://ipinfo.io/");
-            client.Timeout = TimeSpan.FromSeconds(10);
+            provider.GetRequiredService<NetworkUserAgent>().Apply(client);
+            client.BaseAddress = CloudflareTraceRequest.BaseAddress;
+            client.Timeout = CloudflareTraceRequest.Timeout;
         });
-        services.AddHttpClient(GhostRepository.ClientKey, client =>
+        services.AddHttpClient(
+            AlternativeDomainFallbackHandler.TransportClientKey,
+            (provider, client) =>
+            {
+                provider.GetRequiredService<NetworkUserAgent>().Apply(client);
+                client.Timeout = AlternativeDomainFallbackHandler.RequestTimeout;
+            });
+        services.AddHttpClient(GhostRepository.ClientKey, (provider, client) =>
         {
+            provider.GetRequiredService<NetworkUserAgent>().Apply(client);
             client.Timeout = TimeSpan.FromSeconds(60);
         });
         services.AddSingleton(provider =>
@@ -168,27 +187,65 @@ public class Plugin : BaseUnityPlugin
                 configService.MaximumGhostCacheMegabytes.Value * 1024L * 1024L);
         });
         services.AddHttpClient(ApiHttpClient.ClientKey, (provider, client) =>
-        {
-            var configService = provider.GetRequiredService<ConfigService>();
-            client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedBackendUrl, "Backend API URL");
-            client.Timeout = TimeSpan.FromSeconds(30);
-            AddDefaultHeaders(client);
-        });
-        services.AddGtrClient(StrawberryShake.ExecutionStrategy.CacheAndNetwork)
-            .ConfigureHttpClient((provider,client) =>
             {
-                var configService = provider.GetRequiredService<ConfigService>();
-                client.BaseAddress = ServiceUriValidator.ParseBaseAddress(configService.SelectedGraphQLUrl, "GraphQL URL");
-                client.Timeout = TimeSpan.FromSeconds(30);
+                var routingService = provider.GetRequiredService<SpainRoutingService>();
+                client.BaseAddress = ServiceUriValidator.ParseBaseAddress(
+                    routingService.SelectedBackendUrl,
+                    "Backend API URL");
+                client.Timeout = Timeout.InfiniteTimeSpan;
+                provider.GetRequiredService<NetworkUserAgent>().Apply(client);
                 AddDefaultHeaders(client);
+            })
+            .AddHttpMessageHandler(provider => new AlternativeDomainFallbackHandler(
+                provider.GetRequiredService<SpainRoutingService>(),
+                ServiceEndpoint.Backend,
+                () => provider.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(AlternativeDomainFallbackHandler.TransportClientKey)));
+        services.AddGtrClient(StrawberryShake.ExecutionStrategy.CacheAndNetwork)
+            .ConfigureHttpClient(
+                (provider, client) =>
+                {
+                    var routingService = provider.GetRequiredService<SpainRoutingService>();
+                    client.BaseAddress = ServiceUriValidator.ParseBaseAddress(
+                        routingService.SelectedGraphQLUrl,
+                        "GraphQL URL");
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                    provider.GetRequiredService<NetworkUserAgent>().Apply(client);
+                    AddDefaultHeaders(client);
+                },
+                clientBuilder => clientBuilder.AddHttpMessageHandler(provider =>
+                    new AlternativeDomainFallbackHandler(
+                        provider.GetRequiredService<SpainRoutingService>(),
+                        ServiceEndpoint.GraphQL,
+                        () => provider.GetRequiredService<IHttpClientFactory>()
+                            .CreateClient(AlternativeDomainFallbackHandler.TransportClientKey))))
+            .ConfigureWebSocketClient((provider, client) =>
+            {
+                var routingService = provider.GetRequiredService<SpainRoutingService>();
+                Uri graphQlUri = ServiceUriValidator.ParseBaseAddress(
+                    routingService.SelectedGraphQLUrl,
+                    "GraphQL URL");
+                client.Uri = GraphqlWebSocketUri.FromHttp(graphQlUri);
+                if (client.Socket is ClientWebSocket socket)
+                {
+                    provider.GetRequiredService<NetworkUserAgent>()
+                        .Apply((name, value) => socket.Options.SetRequestHeader(name, value));
+                    AddDefaultHeaders((name, value) => socket.Options.SetRequestHeader(name, value));
+                }
             });
     }
 
     private static void AddDefaultHeaders(HttpClient client)
     {
-        client.DefaultRequestHeaders.Add("X-Zeepkist-Version", $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}");
-        client.DefaultRequestHeaders.Add("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
-        client.DefaultRequestHeaders.Add("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
-        client.DefaultRequestHeaders.Add("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
+        AddDefaultHeaders((name, value) => client.DefaultRequestHeaders.Add(name, value));
+    }
+
+    private static void AddDefaultHeaders(Action<string, string> addHeader)
+    {
+        addHeader("X-Zeepkist-Version",
+            $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}");
+        addHeader("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
+        addHeader("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
+        addHeader("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
     }
 }

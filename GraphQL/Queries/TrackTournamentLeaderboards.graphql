@@ -1,0 +1,54 @@
+query GetLevelTrackTournaments($xxHash: String!, $hash: String!, $now: Datetime!) {
+    trackTournaments(
+        first: 2
+        filter: {
+            startAt: { lessThanOrEqualTo: $now }
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
+        }
+        orderBy: [TYPE_ASC, START_AT_DESC, ID_DESC]
+    ) {
+        nodes {
+            id
+            type
+            slug
+            startAt
+            endAt
+        }
+    }
+}
+
+subscription WatchTrackTournamentPage($id: Int!, $first: Int!, $offset: Int!) {
+    trackTournament(id: $id) {
+        id
+        type
+        slug
+        startAt
+        endAt
+        trackTournamentResults(
+            first: $first
+            offset: $offset
+            orderBy: [RANK_ASC, TIME_ASC, RECORD_ID_ASC]
+        ) {
+            totalCount
+            nodes {
+                rank
+                time
+                points
+                user {
+                    steamId
+                    steamName
+                }
+            }
+        }
+    }
+}

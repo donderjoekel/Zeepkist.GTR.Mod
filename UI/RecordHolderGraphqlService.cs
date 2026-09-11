@@ -62,21 +62,4 @@ public class RecordHolderGraphqlService
 
         return nodes.Count > 0 ? Result.Ok(nodes.First()) : Result.Ok();
     }
-
-    public async UniTask<Result<int>> GetRank(LevelGraphqlIdentity level, double time, CancellationToken ct)
-    {
-        IOperationResult<IGetPlayerRankOnLevelResult> result =
-            await _gtrClient.GetPlayerRankOnLevel.ExecuteAsync(level.XxHash, level.Hash, time, ct);
-
-        try
-        {
-            result.EnsureNoErrors();
-        }
-        catch (Exception e)
-        {
-            return Result.Fail(new ExceptionalError(e));
-        }
-
-        return Result.Ok(result.Data!.Records!.TotalCount + 1);
-    }
 }

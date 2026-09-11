@@ -6,15 +6,24 @@ namespace TNRD.Zeepkist.GTR.Tests;
 public class ServiceUrlSelectorTests
 {
     [Theory]
-    [InlineData(false, false, "production")]
-    [InlineData(false, true, "alternative")]
-    [InlineData(true, false, "local")]
-    [InlineData(true, true, "local")]
-    public void SelectUsesExpectedPrecedence(bool useLocal, bool useAlternative, string expected)
+    [InlineData(false, false, false, "production")]
+    [InlineData(false, false, true, "alternative")]
+    [InlineData(false, true, false, "alternative")]
+    [InlineData(false, true, true, "alternative")]
+    [InlineData(true, false, false, "local")]
+    [InlineData(true, false, true, "local")]
+    [InlineData(true, true, false, "local")]
+    [InlineData(true, true, true, "local")]
+    public void SelectUsesExpectedPrecedence(
+        bool useLocal,
+        bool useConfiguredAlternative,
+        bool useSessionAlternative,
+        string expected)
     {
         string result = ServiceUrlSelector.Select(
             useLocal,
-            useAlternative,
+            useConfiguredAlternative,
+            useSessionAlternative,
             "production",
             "alternative",
             "local");

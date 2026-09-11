@@ -1,200 +1,116 @@
-﻿using System.Threading;
+using System;
 using BepInEx.Configuration;
-using Microsoft.Extensions.Logging;
-using Steamworks;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
-using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
-using ZeepSDK.External.Cysharp.Threading.Tasks;
-using ZeepSDK.External.FluentResults;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.UI;
 
-public class RecordHolderService : IEagerService
+public class RecordHolderService : IEagerService, IDisposable
 {
-    private readonly RecordHolderGraphqlService _recordHolderGraphqlService;
+    private readonly CurrentLevelRecordService _currentLevelRecordService;
     private readonly ConfigService _configService;
-    private readonly ILogger<RecordHolderService> _logger;
     private readonly MessengerService _messengerService;
-
-    private CancellationTokenSource _cts;
-    private IGetWorldRecordHolder_WorldRecordGlobals_Nodes _worldRecordHolder;
-    private IGetPersonalBest_PersonalBestGlobals_Nodes _personalBestHolder;
+    private readonly PlayerLoopService _playerLoopService;
+    private readonly PlayerLoopSubscription _updateSubscription;
 
     private float _timer;
 
     public RecordHolderService(
-        RecordHolderGraphqlService recordHolderGraphqlService,
+        CurrentLevelRecordService currentLevelRecordService,
         ConfigService configService,
         PlayerLoopService playerLoopService,
-        ILogger<RecordHolderService> logger,
         MessengerService messengerService)
     {
-        _recordHolderGraphqlService = recordHolderGraphqlService;
+        _currentLevelRecordService = currentLevelRecordService;
         _configService = configService;
-        _logger = logger;
         _messengerService = messengerService;
+        _playerLoopService = playerLoopService;
 
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
         RacingApi.Quit += OnQuit;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.LevelLoaded += OnLevelLoaded;
-
-        playerLoopService.SubscribeUpdate(OnUpdate);
+        _currentLevelRecordService.SnapshotChanged += OnSnapshotChanged;
+        _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
     }
 
     private void OnLevelLoaded()
     {
         RecordHolderUi.EnsureExists();
-        RecordHolderUi.Create(null, null, 0);
+        RecordHolderUi.Create(null, null);
     }
 
     private void OnPlayerSpawned()
     {
         RecordHolderUi.EnsureExists();
-        GetRecordHolders();
+        OnSnapshotChanged(_currentLevelRecordService.Snapshot);
     }
 
-    private void GetRecordHolders()
+    private void OnSnapshotChanged(CurrentLevelRecordSnapshot snapshot)
     {
-        _cts?.Cancel();
-        _cts = new CancellationTokenSource();
-        GetRecordHoldersAsync(_cts.Token).Forget();
-    }
-
-    private async UniTaskVoid GetRecordHoldersAsync(CancellationToken ct = default)
-    {
-        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
-        if (!level.IsAvailable)
-        {
-            _logger.LogError("Unable to get level hash");
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
+        if (snapshot == null)
             return;
-        }
-
-        UniTask<Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes>> worldRecordTask =
-            _recordHolderGraphqlService.GetWorldRecordHolder(level, ct);
-        UniTask<Result<IGetPersonalBest_PersonalBestGlobals_Nodes>> personalBestTask =
-            _recordHolderGraphqlService.GetPersonalBestHolder(level, SteamClient.SteamId.Value, ct);
-
-        (Result<IGetWorldRecordHolder_WorldRecordGlobals_Nodes> worldRecordResult,
-                Result<IGetPersonalBest_PersonalBestGlobals_Nodes> personalBestResult) =
-            await UniTask.WhenAll(worldRecordTask, personalBestTask);
-
-        if (ct.IsCancellationRequested)
-        {
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
-            return;
-        }
-
-        if (worldRecordResult.IsFailed)
-        {
-            _logger.LogError("Failed to get world record holder: {Result}", worldRecordResult);
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
-            return;
-        }
-
-        if (personalBestResult.IsFailed)
-        {
-            _logger.LogError("Failed to get personal best holder: {Result}", personalBestResult);
-            _worldRecordHolder = null;
-            _personalBestHolder = null;
-            return;
-        }
-
-        _worldRecordHolder = worldRecordResult.Value;
-        _personalBestHolder = personalBestResult.Value;
-
-        int personalBestRank = 0;
-        if (_personalBestHolder != null && _personalBestHolder.Record != null)
-        {
-            Result<int> rankResult =
-                await _recordHolderGraphqlService.GetRank(level,
-                    _personalBestHolder.Record.Time,
-                    ct);
-
-            if (ct.IsCancellationRequested)
-            {
-                _worldRecordHolder = null;
-                _personalBestHolder = null;
-                return;
-            }
-
-            if (rankResult.IsFailed)
-            {
-                _logger.LogError("Failed to get rank: {Result}", rankResult);
-                _worldRecordHolder = null;
-                _personalBestHolder = null;
-                return;
-            }
-
-            personalBestRank = rankResult.Value;
-        }
 
         _timer = _configService.RecordHolderSwitchTime.Value;
-        RecordHolderUi.Create(_worldRecordHolder, _personalBestHolder, personalBestRank);
+        RecordHolderUi.Create(snapshot.WorldRecord, snapshot.PersonalBest);
     }
 
-    private void CheckKeyDown(ConfigEntry<KeyCode> keyConfig, ConfigEntry<bool> showConfig, string positive,
+    private void CheckKeyDown(
+        ConfigEntry<KeyCode> keyConfig,
+        ConfigEntry<bool> showConfig,
+        string positive,
         string negative)
     {
-        if (Input.GetKeyDown(keyConfig.Value))
-        {
-            showConfig.Value = !showConfig.Value;
-            _messengerService.Log(showConfig.Value ? positive : negative);
-        }
+        if (!Input.GetKeyDown(keyConfig.Value))
+            return;
+
+        showConfig.Value = !showConfig.Value;
+        _messengerService.Log(showConfig.Value ? positive : negative);
     }
 
     private void OnUpdate()
     {
         CheckKeyDown(_configService.ToggleShowRecordHolder, _configService.ShowRecordHolder,
-            "Showing Combined Record Holder",
-            "Hiding Combined Record Holder");
-
+            "Showing Combined Record Holder", "Hiding Combined Record Holder");
         CheckKeyDown(_configService.ToggleShowWorldRecordHolder, _configService.ShowWorldRecordHolder,
-            "Showing World Record Holder",
-            "Hiding World Record Holder");
-
+            "Showing World Record Holder", "Hiding World Record Holder");
         CheckKeyDown(_configService.ToggleShowPersonalBestHolder, _configService.ShowPersonalBestHolder,
-            "Showing Personal Best Holder",
-            "Hiding Personal Best Holder");
-
+            "Showing Personal Best Holder", "Hiding Personal Best Holder");
         CheckKeyDown(_configService.ToggleShowWorldRecordOnHolder, _configService.ShowWorldRecordOnHolder,
-            "Showing World Record On Combined",
-            "Hiding World Record On Combined");
-
+            "Showing World Record On Combined", "Hiding World Record On Combined");
         CheckKeyDown(_configService.ToggleShowPersonalBestOnHolder, _configService.ShowPersonalBestOnHolder,
-            "Showing Personal Best On Combined",
-            "Hiding Personal Best On Combined");
+            "Showing Personal Best On Combined", "Hiding Personal Best On Combined");
 
         _timer -= Time.deltaTime;
+        if (_timer > 0)
+            return;
 
-        if (_timer <= 0)
-        {
-            RecordHolderUi.SwitchToNext();
-            _timer = _configService.RecordHolderSwitchTime.Value;
-        }
+        RecordHolderUi.SwitchToNext();
+        _timer = _configService.RecordHolderSwitchTime.Value;
     }
 
-    private void OnQuit()
+    private static void OnQuit()
     {
-        _worldRecordHolder = null;
-        _personalBestHolder = null;
         RecordHolderUi.Disable();
     }
 
-    private void OnDisconnectedFromGame()
+    private static void OnDisconnectedFromGame()
     {
-        _worldRecordHolder = null;
-        _personalBestHolder = null;
         RecordHolderUi.Disable();
+    }
+
+    public void Dispose()
+    {
+        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
+        RacingApi.Quit -= OnQuit;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+        _currentLevelRecordService.SnapshotChanged -= OnSnapshotChanged;
+        _playerLoopService.UnsubscribeUpdate(_updateSubscription);
     }
 }

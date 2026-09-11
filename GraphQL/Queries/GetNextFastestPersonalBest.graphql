@@ -1,5 +1,6 @@
-query GetPlayerRankOnLevel($xxHash: String!, $hash: String!, $time: Float!) {
+query GetNextFastestPersonalBest($xxHash: String!, $hash: String!, $time: Float!) {
     records(
+        first: 1
         filter: {
             personalBestGlobalsExist: true
             time: { lessThan: $time }
@@ -15,8 +16,10 @@ query GetPlayerRankOnLevel($xxHash: String!, $hash: String!, $time: Float!) {
                 ]
             }
         }
-        orderBy: TIME_ASC
+        orderBy: [TIME_DESC, DATE_CREATED_ASC]
     ) {
-        totalCount
+        nodes {
+            time
+        }
     }
 }

@@ -1,0 +1,45 @@
+fragment PersonalBestHolderFields on RecordHistoryEntry {
+    levelPosition
+    time
+    levelDecayedPoints
+    playerDecayedPoints
+}
+
+fragment WorldRecordHolderFields on RecordHistoryEntry {
+    levelPosition
+    time
+    levelDecayedPoints
+    userSteamId
+    userName
+    playerDecayedPoints
+}
+
+subscription WatchCurrentLevelRecords($levelId: Int!, $userId: Int!) {
+    query {
+        personalBest: recordHistoryEntries(
+            condition: {
+                historyView: "personal-bests"
+                levelId: $levelId
+                userId: $userId
+            }
+            first: 1
+            orderBy: [ID_DESC]
+        ) {
+            nodes {
+                ...PersonalBestHolderFields
+            }
+        }
+        worldRecord: recordHistoryEntries(
+            condition: {
+                historyView: "world-records"
+                levelId: $levelId
+            }
+            first: 1
+            orderBy: [ID_DESC]
+        ) {
+            nodes {
+                ...WorldRecordHolderFields
+            }
+        }
+    }
+}

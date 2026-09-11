@@ -1,0 +1,24 @@
+query ResolveCurrentLevelRecordIds($xxHash: String!, $hash: String!, $steamId: BigInt!) {
+    levels(
+        first: 1
+        filter: {
+            or: [
+                { xxHash: { equalTo: $xxHash } }
+                {
+                    and: [
+                        { hash: { equalTo: $hash } }
+                        { adventure: { equalTo: true } }
+                    ]
+                }
+            ]
+        }
+        orderBy: [ID_DESC]
+    ) {
+        nodes {
+            id
+        }
+    }
+    userBySteamId(steamId: $steamId) {
+        id
+    }
+}

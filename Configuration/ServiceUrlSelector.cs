@@ -4,7 +4,8 @@ internal static class ServiceUrlSelector
 {
     public static string Select(
         bool useLocalDevelopment,
-        bool useAlternativeDomains,
+        bool useConfiguredAlternativeDomains,
+        bool useSessionAlternativeDomains,
         string productionUrl,
         string alternativeUrl,
         string localDevelopmentUrl)
@@ -12,6 +13,8 @@ internal static class ServiceUrlSelector
         if (useLocalDevelopment)
             return localDevelopmentUrl;
 
-        return useAlternativeDomains ? alternativeUrl : productionUrl;
+        return useConfiguredAlternativeDomains || useSessionAlternativeDomains
+            ? alternativeUrl
+            : productionUrl;
     }
 }

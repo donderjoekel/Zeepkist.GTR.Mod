@@ -1,0 +1,50 @@
+fragment LeaderboardPageFields on Query {
+    records(
+        filter: {
+            level: {
+                or: [
+                    { xxHash: { equalTo: $xxHash } }
+                    {
+                        and: [
+                            { hash: { equalTo: $hash } }
+                            { adventure: { equalTo: true } }
+                        ]
+                    }
+                ]
+            }
+            personalBestGlobalsExist: true
+        }
+        first: $first
+        offset: $offset
+        orderBy: [TIME_ASC, DATE_CREATED_ASC]
+    ) {
+        totalCount
+        nodes {
+            user {
+                steamName
+                steamId
+            }
+            level {
+                levelItems(first: 1) {
+                    nodes {
+                        name
+                    }
+                }
+            }
+            time
+            dateCreated
+            userPointContributions(first: 1) {
+                nodes {
+                    levelDecayedPoints
+                    levelPosition
+                }
+            }
+        }
+    }
+}
+
+subscription WatchLeaderboardPage($xxHash: String!, $hash: String!, $first: Int!, $offset: Int!) {
+    query {
+        ...LeaderboardPageFields
+    }
+}

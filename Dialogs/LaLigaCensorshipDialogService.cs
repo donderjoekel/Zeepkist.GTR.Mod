@@ -1,7 +1,7 @@
 using System;
-using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Configuration;
+using TNRD.Zeepkist.GTR.Connectivity;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Patching.Patches;
 using UnityEngine;
@@ -13,11 +13,9 @@ namespace TNRD.Zeepkist.GTR.Dialogs;
 
 internal sealed class LaLigaCensorshipDialogService : IEagerService, IDisposable
 {
-    public const string CountryDetectionClientKey = "IP Country Detection";
-
     private const string NoticeSeenKey = "TNRD.Zeepkist.GTR.HasSeenLaLigaCensorshipNotice1";
 
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly SpainRoutingService _spainRoutingService;
     private readonly ConfigService _configService;
     private readonly ILogger<LaLigaCensorshipDialogService> _logger;
     private LaLigaCensorshipDialog _dialog;
@@ -25,11 +23,11 @@ internal sealed class LaLigaCensorshipDialogService : IEagerService, IDisposable
     private bool _disposed;
 
     public LaLigaCensorshipDialogService(
-        IHttpClientFactory httpClientFactory,
+        SpainRoutingService spainRoutingService,
         ConfigService configService,
         ILogger<LaLigaCensorshipDialogService> logger)
     {
-        _httpClientFactory = httpClientFactory;
+        _spainRoutingService = spainRoutingService;
         _configService = configService;
         _logger = logger;
         MainMenuUi_Awake.Postfixed += OnMainMenuAwake;
@@ -59,7 +57,8 @@ internal sealed class LaLigaCensorshipDialogService : IEagerService, IDisposable
     {
         try
         {
-            if (_disposed || HasSeenNotice() || !await IsUserInSpainAsync())
+            SpainTraceResult traceResult = await _spainRoutingService.GetTraceResultAsync();
+            if (_disposed || HasSeenNotice() || !traceResult.IsConfirmedSpain)
                 return;
 
             await UniTask.SwitchToMainThread();
@@ -72,6 +71,8 @@ internal sealed class LaLigaCensorshipDialogService : IEagerService, IDisposable
                 _configService.UseAlternativeDomainsInSpain.Value,
                 ApplyDecision);
             UIApi.AddZeepGUIDrawer(_dialog);
+            PlayerPrefs.SetInt(NoticeSeenKey, 1);
+            PlayerPrefs.Save();
         }
         finally
         {
@@ -79,34 +80,8 @@ internal sealed class LaLigaCensorshipDialogService : IEagerService, IDisposable
         }
     }
 
-    private async UniTask<bool> IsUserInSpainAsync()
-    {
-        try
-        {
-            HttpClient client = _httpClientFactory.CreateClient(CountryDetectionClientKey);
-            using HttpResponseMessage response = await client.GetAsync("json");
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning(
-                    "IP country detection failed with status {StatusCode}",
-                    response.StatusCode);
-                return false;
-            }
-
-            string content = await response.Content.ReadAsStringAsync();
-            return SpainCountryDetection.IsSpanishResponse(content);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "IP country detection failed");
-            return false;
-        }
-    }
-
     private void ApplyDecision(bool useAlternativeDomains)
     {
-        PlayerPrefs.SetInt(NoticeSeenKey, 1);
-        PlayerPrefs.Save();
         _configService.UseAlternativeDomainsInSpain.Value = useAlternativeDomains;
         RemoveDialog();
     }

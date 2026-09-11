@@ -25,7 +25,15 @@
     <Compile Include="..\Api\RecordWorkshopId.cs" Link="Source\RecordWorkshopId.cs" />
     <Compile Include="..\Configuration\ServiceUriValidator.cs" Link="Source\ServiceUriValidator.cs" />
     <Compile Include="..\Configuration\ServiceUrlSelector.cs" Link="Source\ServiceUrlSelector.cs" />
-    <Compile Include="..\Dialogs\SpainCountryDetection.cs" Link="Source\SpainCountryDetection.cs" />
+    <Compile Include="..\Configuration\GraphqlWebSocketUri.cs" Link="Source\GraphqlWebSocketUri.cs" />
+    <Compile Include="..\Connectivity\AlternativeDomainFallbackException.cs" Link="Source\AlternativeDomainFallbackException.cs" />
+    <Compile Include="..\Connectivity\AlternativeDomainFallbackHandler.cs" Link="Source\AlternativeDomainFallbackHandler.cs" />
+    <Compile Include="..\Connectivity\CloudflareTraceParser.cs" Link="Source\CloudflareTraceParser.cs" />
+    <Compile Include="..\Connectivity\CloudflareTraceRequest.cs" Link="Source\CloudflareTraceRequest.cs" />
+    <Compile Include="..\Connectivity\ISpainRoutingState.cs" Link="Source\ISpainRoutingState.cs" />
+    <Compile Include="..\Connectivity\NetworkUserAgent.cs" Link="Source\NetworkUserAgent.cs" />
+    <Compile Include="..\Connectivity\ServiceEndpoint.cs" Link="Source\ServiceEndpoint.cs" />
+    <Compile Include="..\Connectivity\SpainTraceResult.cs" Link="Source\SpainTraceResult.cs" />
     <Compile Include="..\Ghosting\GhostLimits.cs" Link="Source\GhostLimits.cs" />
     <Compile Include="..\Ghosting\Playback\OfflineGhostLimit.cs" Link="Source\OfflineGhostLimit.cs" />
     <Compile Include="..\Ghosting\Playback\GhostVisualProfile.cs" Link="Source\GhostVisualProfile.cs" />
@@ -46,6 +54,7 @@
     <Compile Include="..\UI\Timeline\TimelineScrollStep.cs" Link="Source\TimelineScrollStep.cs" />
     <Compile Include="..\Ghosting\Recording\SurfaceKeyNormalizer.cs" Link="Source\SurfaceKeyNormalizer.cs" />
     <Compile Include="..\Ghosting\Recording\RecordSubmissionEligibility.cs" Link="Source\RecordSubmissionEligibility.cs" />
+    <Compile Include="..\Ghosting\Recording\RecordFeedbackFormatter.cs" Link="Source\RecordFeedbackFormatter.cs" />
     <Compile Include="..\Ghosting\Recording\MaterialPhysicsState.cs" Link="Source\MaterialPhysicsState.cs" />
     <Compile Include="..\Ghosting\Recording\MaterialPhysicsStateResolver.cs" Link="Source\MaterialPhysicsStateResolver.cs" />
     <Compile Include="..\Ghosting\Readers\GhostReaderValidation.cs" Link="Source\GhostReaderValidation.cs" />
@@ -55,6 +64,12 @@
     <Compile Include="..\Voting\VoteReminderFormatter.cs" Link="Source\VoteReminderFormatter.cs" />
     <Compile Include="..\Voting\VoteSummary.cs" Link="Source\VoteSummary.cs" />
     <Compile Include="..\GraphQL\LevelGraphqlIdentity.cs" Link="Source\LevelGraphqlIdentity.cs" />
+    <Compile Include="..\GraphQL\CurrentLevelRecordIdCache.cs" Link="Source\CurrentLevelRecordIdCache.cs" />
+    <Compile Include="..\Leaderboard\LeaderboardTextFormatter.cs" Link="Source\LeaderboardTextFormatter.cs" />
+    <Compile Include="..\Leaderboard\LeaderboardPagination.cs" Link="Source\LeaderboardPagination.cs" />
+    <Compile Include="..\Leaderboard\TrackTournamentDescriptor.cs" Link="Source\TrackTournamentDescriptor.cs" />
+    <Compile Include="..\Leaderboard\TrackTournamentTextFormatter.cs" Link="Source\TrackTournamentTextFormatter.cs" />
+    <Compile Include="..\Utilities\TextColour.cs" Link="Source\TextColour.cs" />
     <Compile Include="..\LevelBrowser\LevelBrowserSelection.cs" Link="Source\LevelBrowserSelection.cs" />
     <Compile Include="..\LevelBrowser\SelectionOutcome.cs" Link="Source\SelectionOutcome.cs" />
     <Compile Include="..\LevelBrowser\LevelBrowserSession.cs" Link="Source\LevelBrowserSession.cs" />

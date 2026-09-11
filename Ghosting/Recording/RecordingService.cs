@@ -22,6 +22,7 @@ public class RecordingService : IEagerService
     private readonly GhostRecorderFactory _ghostRecorderFactory;
     private readonly ApiHttpClient _apiHttpClient;
     private readonly ConfigService _configService;
+    private readonly RecordFeedbackService _recordFeedbackService;
 
     private GhostRecorder _activeGhostRecorder;
 
@@ -33,13 +34,15 @@ public class RecordingService : IEagerService
         ILogger<RecordingService> logger,
         GhostRecorderFactory ghostRecorderFactory,
         ApiHttpClient apiHttpClient,
-        ConfigService configService)
+        ConfigService configService,
+        RecordFeedbackService recordFeedbackService)
     {
         _messengerService = messengerService;
         _logger = logger;
         _ghostRecorderFactory = ghostRecorderFactory;
         _apiHttpClient = apiHttpClient;
         _configService = configService;
+        _recordFeedbackService = recordFeedbackService;
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundStarted += OnRoundStarted;
@@ -200,6 +203,7 @@ public class RecordingService : IEagerService
 
         try
         {
+            RecordFeedbackBaseline feedbackBaseline = _recordFeedbackService.CaptureBaseline();
             using HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
 
             try
@@ -217,6 +221,8 @@ public class RecordingService : IEagerService
             {
                 _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
             }
+
+            _recordFeedbackService.HandleSuccessfulSubmission(time, feedbackBaseline);
         }
         catch (Exception e)
         {

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Steamworks;
 using Steamworks.Data;
+using TNRD.Zeepkist.GTR.Connectivity;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Api;
@@ -21,6 +22,7 @@ public class ApiHttpClient
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ApiHttpClient> _logger;
+    private readonly SpainRoutingService _spainRoutingService;
     private readonly SemaphoreSlim _authenticationLock = new(1, 1);
     private readonly Random _jitter = new();
     private readonly object _jitterLock = new();
@@ -33,10 +35,14 @@ public class ApiHttpClient
     private bool NeedsLogin => string.IsNullOrEmpty(_accessToken) || DateTimeOffset.UtcNow > _refreshTokenExpiry;
     private bool NeedsRefresh => DateTimeOffset.UtcNow.AddSeconds(30) >= _accessTokenExpiry;
 
-    public ApiHttpClient(IHttpClientFactory httpClientFactory, ILogger<ApiHttpClient> logger)
+    public ApiHttpClient(
+        IHttpClientFactory httpClientFactory,
+        ILogger<ApiHttpClient> logger,
+        SpainRoutingService spainRoutingService)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _spainRoutingService = spainRoutingService;
     }
 
     private static string FormatAuthenticationTicket(AuthTicket authSessionTicket)
@@ -107,6 +113,8 @@ public class ApiHttpClient
 
     private async UniTask<bool> LoginCore()
     {
+        await _spainRoutingService.GetTraceResultAsync();
+
         using AuthTicket authenticationTicket = SteamUser.GetAuthSessionTicket(new NetIdentity());
         LoginPostResource data = new()
         {
@@ -154,7 +162,10 @@ public class ApiHttpClient
                 HttpClient httpClient = _httpClientFactory.CreateClient(ClientKey);
                 HttpResponseMessage response = await httpClient.SendAsync(request);
 
-                if (!allowTransientRetries || !IsTransient(response.StatusCode) || retryCount >= MaxRetryCount)
+                if (!allowTransientRetries ||
+                    AlternativeDomainFallbackHandler.WasFallbackAttempted(response) ||
+                    !IsTransient(response.StatusCode) ||
+                    retryCount >= MaxRetryCount)
                     return response;
 
                 TimeSpan delay = GetRetryDelay(response, retryCount++);
@@ -180,7 +191,7 @@ public class ApiHttpClient
 
     private static bool IsTransient(Exception exception)
     {
-        return exception is HttpRequestException || exception is TaskCanceledException;
+        return exception is HttpRequestException && exception is not AlternativeDomainFallbackException;
     }
 
     private TimeSpan GetRetryDelay(HttpResponseMessage response, int retryCount)
