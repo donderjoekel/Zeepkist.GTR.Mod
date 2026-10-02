@@ -255,6 +255,7 @@ public partial class GhostPlayer : IEagerService
             {
                 hadExistingGhost = true;
                 _ghosts[recordId].Stop(_timingService.CurrentTime);
+                ghostData.ClearIdentity();
             }
             else
             {
