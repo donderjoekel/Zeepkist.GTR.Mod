@@ -1,4 +1,5 @@
-﻿using TNRD.Zeepkist.GTR.Configuration;
+﻿using System;
+using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -6,13 +7,14 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class GhostNamePositioningService : IEagerService
+public class GhostNamePositioningService : IEagerService, IDisposable
 {
     private readonly PlayerLoopService _playerLoopService;
     private readonly GhostPlayer _ghostPlayer;
     private readonly ConfigService _configService;
     private readonly MessengerService _messengerService;
     private readonly BulkGhostModeState _bulkModeState;
+    private readonly PlayerLoopSubscription _update;
 
     public GhostNamePositioningService(
         PlayerLoopService playerLoopService,
@@ -27,7 +29,7 @@ public class GhostNamePositioningService : IEagerService
         _messengerService = messengerService;
         _bulkModeState = bulkModeState;
 
-        _playerLoopService.SubscribeUpdate(OnUpdate);
+        _update = _playerLoopService.SubscribeUpdate(OnUpdate);
         _ghostPlayer.GhostAdded += OnGhostAdded;
         _bulkModeState.Changed += OnBulkModeChanged;
     }
@@ -54,14 +56,23 @@ public class GhostNamePositioningService : IEagerService
 
     private void OnUpdate()
     {
-        Vector3 cameraPosition = GetCameraPosition();
+        Vector3 cameraPosition = default;
+        bool hasCameraPosition = false;
         foreach (GhostData ghostData in _ghostPlayer.ActiveGhosts)
         {
             if (ghostData.VisualProfile == GhostVisualProfile.Bulk)
                 continue;
 
             UpdateVisibility(ghostData);
-            UpdateName(ghostData, cameraPosition);
+            if (ghostData.Visuals.NameDisplay.gameObject.activeSelf)
+            {
+                if (!hasCameraPosition)
+                {
+                    cameraPosition = GetCameraPosition();
+                    hasCameraPosition = true;
+                }
+                UpdateName(ghostData, cameraPosition);
+            }
         }
 
         HandleToggleNameDisplay();
@@ -138,5 +149,15 @@ public class GhostNamePositioningService : IEagerService
             {
                 a = alpha
             };
+    }
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _playerLoopService.UnsubscribeUpdate(_update);
+        _ghostPlayer.GhostAdded -= OnGhostAdded;
+        _bulkModeState.Changed -= OnBulkModeChanged;
     }
 }
