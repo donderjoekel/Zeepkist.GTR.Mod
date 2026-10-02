@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="EasyCompressor.LZMA" Version="2.1.0" />
     <PackageReference Include="protobuf-net" Version="3.2.56" />
@@ -62,6 +64,8 @@
     <Compile Include="..\Utilities\BoundedAsync.cs" Link="Source\BoundedAsync.cs" />
     <Compile Include="..\Utilities\BoundedMainThreadQueue.cs" Link="Source\BoundedMainThreadQueue.cs" />
     <Compile Include="..\Utilities\SerialPipeline.cs" Link="Source\SerialPipeline.cs" />
+    <Compile Include="..\GraphQL\OperationObserver.cs" Link="Source\OperationObserver.cs" />
+    <Compile Include="..\GraphQL\RecoveringSubscription.cs" Link="Source\RecoveringSubscription.cs" />
     <Compile Include="..\Api\FavouriteResource.cs" Link="Source\FavouriteResource.cs" />
     <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />

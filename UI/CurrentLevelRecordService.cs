@@ -18,7 +18,7 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
     private readonly ILogger<CurrentLevelRecordService> _logger;
     private readonly CurrentLevelRecordIdCache _idCache = new();
 
-    private IDisposable _subscription;
+    private RecoveringSubscription<IOperationResult<IWatchCurrentLevelRecordsResult>> _subscription;
     private CancellationTokenSource _resolutionCancellationTokenSource;
     private int _generation;
     private LevelGraphqlIdentity _level;
@@ -136,26 +136,31 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
         if (generation != _generation)
             return;
 
-        _subscription = _gtrClient.WatchCurrentLevelRecords
-            .Watch(ids.LevelId, ids.UserId)
-            .Subscribe(new OperationObserver<IOperationResult<IWatchCurrentLevelRecordsResult>>(
-                result => OnSubscriptionResult(result, levelKey, generation).Forget(),
-                error => _logger.LogWarning(error, "Current-level record subscription failed")));
+        var subscription = new RecoveringSubscription<IOperationResult<IWatchCurrentLevelRecordsResult>>(
+            observer => _gtrClient.WatchCurrentLevelRecords.Watch(ids.LevelId, ids.UserId).Subscribe(observer),
+            (result, attempt) => OnSubscriptionResult(result, levelKey, generation, attempt).Forget(),
+            error => _logger.LogWarning(error, "Current-level record subscription failed; reconnecting"));
+        _subscription = subscription;
+        subscription.Start();
     }
 
     private async UniTaskVoid OnSubscriptionResult(
         IOperationResult<IWatchCurrentLevelRecordsResult> result,
         string levelKey,
-        int generation)
+        int generation,
+        int attempt)
     {
         try
         {
             result.EnsureNoErrors();
+            if (result.Data?.Query == null)
+                return;
             CurrentLevelRecordSnapshot snapshot = Map(result.Data?.Query, levelKey);
             await UniTask.SwitchToMainThread();
-            if (generation != _generation)
+            if (generation != _generation || _subscription?.IsCurrentAttempt(attempt) != true)
                 return;
 
+            _subscription.MarkHealthy(attempt);
             Snapshot = snapshot;
             SnapshotChanged?.Invoke(snapshot);
         }
