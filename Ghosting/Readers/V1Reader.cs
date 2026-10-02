@@ -14,13 +14,14 @@ public class V1Reader : GhostReaderBase<V1Ghost>
 
     public override IGhost Read(byte[] data)
     {
-        List<V1Ghost.Frame> frames = new();
+        V1Ghost.Frame[] frames;
 
         using MemoryStream ms = new(data);
         using (BinaryReader reader = new(ms))
         {
             reader.ReadInt32();
             int frameCount = GhostReaderValidation.ReadFrameCount(reader);
+            frames = new V1Ghost.Frame[frameCount];
             for (int i = 0; i < frameCount; i++)
             {
                 float time = reader.ReadSingle();
@@ -34,10 +35,10 @@ public class V1Reader : GhostReaderBase<V1Ghost>
                     time, positionX, positionY, positionZ, rotationX, rotationY, rotationZ);
                 Vector3 position = new(positionX, positionY, positionZ);
                 Quaternion rotation = Quaternion.Euler(rotationX, rotationY, rotationZ);
-                frames.Add(new V1Ghost.Frame(time, position, rotation));
+                frames[i] = new V1Ghost.Frame(time, position, rotation);
             }
         }
 
-        return CreateGhost(frames);
+        return CreateGhost((object)frames);
     }
 }

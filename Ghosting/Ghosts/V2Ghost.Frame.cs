@@ -4,7 +4,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
 public partial class V2Ghost
 {
-    public class Frame : IFrame
+    public readonly struct Frame : IFrame
     {
         public Frame(float time, Vector3 position, Quaternion rotation)
         {
@@ -13,8 +13,8 @@ public partial class V2Ghost
             Rotation = rotation;
         }
 
-        public float Time { get; private set; }
-        public Vector3 Position { get; private set; }
-        public Quaternion Rotation { get; private set; }
+        public float Time { get; }
+        public Vector3 Position { get; }
+        public Quaternion Rotation { get; }
     }
 }

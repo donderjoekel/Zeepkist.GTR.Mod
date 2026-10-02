@@ -14,7 +14,7 @@ public class V3Reader : GhostReaderBase<V3Ghost>
 
     public override IGhost Read(byte[] data)
     {
-        List<V3Ghost.Frame> frames = new();
+        V3Ghost.Frame[] frames;
         ulong steamId;
         int soapboxId;
         int hatId;
@@ -29,6 +29,7 @@ public class V3Reader : GhostReaderBase<V3Ghost>
             hatId = reader.ReadInt32();
             colorId = reader.ReadInt32();
             int frameCount = GhostReaderValidation.ReadFrameCount(reader);
+            frames = new V3Ghost.Frame[frameCount];
             for (int i = 0; i < frameCount; i++)
             {
                 float time = reader.ReadSingle();
@@ -45,7 +46,7 @@ public class V3Reader : GhostReaderBase<V3Ghost>
                 Quaternion rotation = Quaternion.Euler(rotationX, rotationY, rotationZ);
                 bool armsUp = reader.ReadBoolean();
                 bool isBraking = reader.ReadBoolean();
-                frames.Add(new V3Ghost.Frame(time, position, rotation, steering, armsUp, isBraking));
+                frames[i] = new V3Ghost.Frame(time, position, rotation, steering, armsUp, isBraking);
             }
         }
 

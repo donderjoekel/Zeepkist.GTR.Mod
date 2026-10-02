@@ -63,7 +63,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             zeepkist = deserializedGhost.Cosmetics.Zeepkist
         };
 
-        List<V5Ghost.Frame> frames = new(deserializedGhost.DeltaFrames.Count + 1);
+        var frames = new V5Ghost.Frame[deserializedGhost.DeltaFrames.Count + 1];
 
         V5Ghost.Frame previousFrame = new(
             0,
@@ -74,7 +74,8 @@ public class V5Reader : GhostReaderBase<V5Ghost>
             (InputFlags)(byte)deserializedGhost.InitialFrame.InputFlags,
             (SoapboxFlags)(byte)deserializedGhost.InitialFrame.SoapboxFlags);
 
-        frames.Add(previousFrame);
+        frames[0] = previousFrame;
+        int frameIndex = 1;
 
         foreach (DeltaFrame deltaFrame in deserializedGhost.DeltaFrames)
         {
@@ -97,7 +98,7 @@ public class V5Reader : GhostReaderBase<V5Ghost>
                 GhostSteeringCodec.FromByte(deltaFrame.Steering),
                 (InputFlags)(byte)deltaFrame.InputFlags,
                 (SoapboxFlags)(byte)deltaFrame.SoapboxFlags);
-            frames.Add(frame);
+            frames[frameIndex++] = frame;
             previousFrame = frame;
         }
 

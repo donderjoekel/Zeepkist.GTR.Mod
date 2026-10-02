@@ -71,7 +71,7 @@ public class V4Reader : GhostReaderBase<V4Ghost>
             zip?.Dispose();
         }
 
-        return CreateGhost(steamId, soapboxId, hatId, colorId, frames);
+        return CreateGhost(steamId, soapboxId, hatId, colorId, frames.ToArray());
     }
 
     private static (V4Ghost.Frame, ResetFrame) ReadResetFrame(BinaryReader reader, List<DeltaFrame> deltaFrames)

@@ -20,6 +20,35 @@
 
   <ItemGroup>
     <Compile Include="..\Connectivity\TransportHeaderSnapshot.cs" Link="Source\TransportHeaderSnapshot.cs" />
+    <Compile Include="..\Ghosting\Recording\GroundedWheelState.cs" Link="Source\Ghosting\Recording\GroundedWheelState.cs" />
+    <Compile Include="..\Ghosting\Recording\SlippingWheelState.cs" Link="Source\Ghosting\Recording\SlippingWheelState.cs" />
+    <Compile Include="..\Ghosting\Recording\WheelState.cs" Link="Source\Ghosting\Recording\WheelState.cs" />
+    <Compile Include="..\Ghosting\Recording\InputFlags.cs" Link="Source\Ghosting\Recording\InputFlags.cs" />
+    <Compile Include="..\Ghosting\Recording\SoapboxFlags.cs" Link="Source\Ghosting\Recording\SoapboxFlags.cs" />
+    <Compile Include="..\Ghosting\Ghosts\IFrame.cs" Link="Source\Ghosting\Ghosts\IFrame.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\Cosmetics.cs" Link="Source\Ghosting\Recording\Data\Cosmetics.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\DeltaFrame.cs" Link="Source\Ghosting\Recording\Data\DeltaFrame.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\Ghost.cs" Link="Source\Ghosting\Recording\Data\Ghost.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\InitialFrame.cs" Link="Source\Ghosting\Recording\Data\InitialFrame.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\InputFlags.cs" Link="Source\Ghosting\Recording\Data\InputFlags.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\SoapboxFlags.cs" Link="Source\Ghosting\Recording\Data\SoapboxFlags.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\Vector2Int.cs" Link="Source\Ghosting\Recording\Data\Vector2Int.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\Vector3.cs" Link="Source\Ghosting\Recording\Data\Vector3.cs" />
+    <Compile Include="..\Ghosting\Recording\Data\Vector3Int.cs" Link="Source\Ghosting\Recording\Data\Vector3Int.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V1Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V1Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V2Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V2Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V3Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V3Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V4Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V4Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V5Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V5Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Ghosts\V6Ghost.Frame.cs" Link="Source\Ghosting\Ghosts\V6Ghost.Frame.cs" />
+    <Compile Include="..\Ghosting\Readers\V1Reader.cs" Link="Source\V1Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V2Reader.cs" Link="Source\V2Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V3Reader.cs" Link="Source\V3Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V4Reader.cs" Link="Source\V4Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V5Reader.cs" Link="Source\V5Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V6Reader.cs" Link="Source\V6Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V7Reader.cs" Link="Source\V7Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\GhostSteeringCodec.cs" Link="Source\GhostSteeringCodec.cs" />
     <Compile Include="..\Api\FavouriteResource.cs" Link="Source\FavouriteResource.cs" />
     <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />
@@ -87,4 +116,11 @@
     <Compile Include="..\PlaylistBrowserHost\PlaylistLevelMetadata.cs" Link="Source\PlaylistLevelMetadata.cs" />
     <Compile Include="..\PlaylistBrowserHost\PlaylistLevelMapper.cs" Link="Source\PlaylistLevelMapper.cs" />
   </ItemGroup>
+  <Target Name="AliasSystemRuntime" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <ReferencePathWithRefAssemblies Update="@(ReferencePathWithRefAssemblies)" Condition="'%(ReferencePathWithRefAssemblies.Filename)' == 'System.Runtime' Or '%(ReferencePathWithRefAssemblies.Filename)' == 'System.Buffers'">
+        <Aliases>global,MemoryAlias,BuffersAlias</Aliases>
+      </ReferencePathWithRefAssemblies>
+    </ItemGroup>
+  </Target>
 </Project>

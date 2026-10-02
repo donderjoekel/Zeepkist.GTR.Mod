@@ -5,20 +5,20 @@ using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V4Ghost : GhostBase, IGhostInputProvider
+public partial class V4Ghost : GhostBase<V4Ghost.Frame>, IGhostInputProvider
 {
     private readonly ulong _steamId;
     private readonly int _soapboxId;
     private readonly int _hatId;
     private readonly int _colorId;
-    private readonly List<Frame> _frames;
+    private readonly Frame[] _frames;
 
     public V4Ghost(
         ulong steamId,
         int soapboxId,
         int hatId,
         int colorId,
-        List<Frame> frames)
+        Frame[] frames)
     {
         _steamId = steamId;
         _soapboxId = soapboxId;
@@ -27,7 +27,9 @@ public partial class V4Ghost : GhostBase, IGhostInputProvider
         _frames = frames;
     }
 
-    protected override int FrameCount => _frames.Count;
+    internal override GhostBase CreatePlayback() => new V4Ghost(_steamId, _soapboxId, _hatId, _colorId, _frames);
+
+    protected override int FrameCount => _frames.Length;
     public override Color Color => CosmeticsApi.GetColor(_colorId, false).skinColor.color;
 
     public override void ApplyCosmetics(string steamName)
@@ -37,7 +39,9 @@ public partial class V4Ghost : GhostBase, IGhostInputProvider
         SetupCosmetics(cosmetics, steamName, _steamId);
     }
 
-    protected override IFrame GetFrame(int index)
+    protected override float GetFrameTime(int index) => _frames[index].Time;
+
+    protected override Frame GetFrame(int index)
     {
         return _frames[index];
     }

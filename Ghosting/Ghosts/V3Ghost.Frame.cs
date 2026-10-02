@@ -4,7 +4,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
 public partial class V3Ghost
 {
-    public class Frame : IFrame
+    public readonly struct Frame : IFrame
     {
         public Frame(float time, Vector3 position, Quaternion rotation, float steering, bool armsUp, bool isBraking)
         {
@@ -16,11 +16,11 @@ public partial class V3Ghost
             IsBraking = isBraking;
         }
 
-        public float Time { get; private set; }
-        public Vector3 Position { get; private set; }
-        public Quaternion Rotation { get; private set; }
-        public float Steering { get; private set; }
-        public bool ArmsUp { get; private set; }
-        public bool IsBraking { get; private set; }
+        public float Time { get; }
+        public Vector3 Position { get; }
+        public Quaternion Rotation { get; }
+        public float Steering { get; }
+        public bool ArmsUp { get; }
+        public bool IsBraking { get; }
     }
 }

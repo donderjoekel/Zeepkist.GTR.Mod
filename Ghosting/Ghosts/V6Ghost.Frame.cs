@@ -5,7 +5,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
 public partial class V6Ghost
 {
-    public class Frame : IFrame
+    public readonly struct Frame : IFrame
     {
         public Frame(
             float time,
@@ -31,15 +31,15 @@ public partial class V6Ghost
             RagdollRotation = ragdollRotation;
         }
 
-        public float Time { get; private set; }
-        public Vector3 Position { get; private set; }
-        public Quaternion Rotation { get; private set; }
-        public float Speed { get; private set; }
-        public float Steering { get; private set; }
-        public InputFlags InputFlags { get; private set; }
-        public SoapboxFlags SoapboxFlags { get; private set; }
-        public bool RagdollState { get; private set; }
-        public Vector3? RagdollPosition { get; private set; }
-        public Quaternion? RagdollRotation { get; private set; }
+        public float Time { get; }
+        public Vector3 Position { get; }
+        public Quaternion Rotation { get; }
+        public float Speed { get; }
+        public float Steering { get; }
+        public InputFlags InputFlags { get; }
+        public SoapboxFlags SoapboxFlags { get; }
+        public bool RagdollState { get; }
+        public Vector3? RagdollPosition { get; }
+        public Quaternion? RagdollRotation { get; }
     }
 }

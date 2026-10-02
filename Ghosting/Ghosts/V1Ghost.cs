@@ -6,16 +6,18 @@ using ZeepSDK.Cosmetics;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V1Ghost : GhostBase
+public partial class V1Ghost : GhostBase<V1Ghost.Frame>
 {
-    private readonly List<Frame> _frames;
+    private readonly Frame[] _frames;
 
-    public V1Ghost(List<Frame> frames)
+    public V1Ghost(Frame[] frames)
     {
         _frames = frames;
     }
 
-    protected override int FrameCount => _frames.Count;
+    internal override GhostBase CreatePlayback() => new V1Ghost(_frames);
+
+    protected override int FrameCount => _frames.Length;
     public override Color Color => Color.white;
 
     public override void ApplyCosmetics(string steamName)
@@ -28,7 +30,9 @@ public partial class V1Ghost : GhostBase
         SetupCosmetics(cosmetics, steamName, 0);
     }
 
-    protected override IFrame GetFrame(int index)
+    protected override float GetFrameTime(int index) => _frames[index].Time;
+
+    protected override Frame GetFrame(int index)
     {
         return _frames[index];
     }
