@@ -49,6 +49,10 @@
     <Compile Include="..\Ghosting\Readers\V6Reader.cs" Link="Source\V6Reader.cs" />
     <Compile Include="..\Ghosting\Readers\V7Reader.cs" Link="Source\V7Reader.cs" />
     <Compile Include="..\Ghosting\Readers\GhostSteeringCodec.cs" Link="Source\GhostSteeringCodec.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostRepository.cs" Link="Source\GhostRepository.cs" />
+    <Compile Include="..\Utilities\SharedAsyncLoad.cs" Link="Source\SharedAsyncLoad.cs" />
+    <Compile Include="..\Utilities\BoundedAsync.cs" Link="Source\BoundedAsync.cs" />
+    <Compile Include="..\Utilities\BoundedMainThreadQueue.cs" Link="Source\BoundedMainThreadQueue.cs" />
     <Compile Include="..\Api\FavouriteResource.cs" Link="Source\FavouriteResource.cs" />
     <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />

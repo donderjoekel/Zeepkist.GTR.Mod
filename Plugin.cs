@@ -163,6 +163,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<PlaylistBrowserHost.PlaylistBrowserHostService>();
         services.AddSingleton<ServiceHelper>();
         services.AddSingleton<UserService>();
+        services.AddEagerService<GhostLoadDispatcher>();
         services.AddTransient<GhostRecorder>();
         services.AddTransient<V1Reader>();
         services.AddTransient<V2Reader>();
