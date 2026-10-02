@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="EasyCompressor.LZMA" Version="2.1.0" />
     <PackageReference Include="protobuf-net" Version="3.2.56" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
@@ -20,6 +21,8 @@
 
   <ItemGroup>
     <Compile Include="..\Connectivity\TransportHeaderSnapshot.cs" Link="Source\TransportHeaderSnapshot.cs" />
+    <Compile Include="..\Ghosting\Recording\GhostRecorder.Frame.cs" Link="Source\Ghosting\Recording\GhostRecorder.Frame.cs" />
+    <Compile Include="..\Ghosting\Recording\GhostRecorder.Snapshot.cs" Link="Source\Ghosting\Recording\GhostRecorder.Snapshot.cs" />
     <Compile Include="..\Ghosting\Recording\GroundedWheelState.cs" Link="Source\Ghosting\Recording\GroundedWheelState.cs" />
     <Compile Include="..\Ghosting\Recording\SlippingWheelState.cs" Link="Source\Ghosting\Recording\SlippingWheelState.cs" />
     <Compile Include="..\Ghosting\Recording\WheelState.cs" Link="Source\Ghosting\Recording\WheelState.cs" />
@@ -50,9 +53,15 @@
     <Compile Include="..\Ghosting\Readers\V7Reader.cs" Link="Source\V7Reader.cs" />
     <Compile Include="..\Ghosting\Readers\GhostSteeringCodec.cs" Link="Source\GhostSteeringCodec.cs" />
     <Compile Include="..\Ghosting\Playback\GhostRepository.cs" Link="Source\GhostRepository.cs" />
+    <Compile Include="..\Api\ApiHttpClient.cs" Link="Source\ApiHttpClient.cs" />
+    <Compile Include="..\Api\AuthenticationResource.cs" Link="Source\AuthenticationResource.cs" />
+    <Compile Include="..\Api\LoginPostResource.cs" Link="Source\LoginPostResource.cs" />
+    <Compile Include="..\Api\RefreshPostResource.cs" Link="Source\RefreshPostResource.cs" />
+    <Compile Include="..\Utilities\StructFrameBuffer.cs" Link="Source\StructFrameBuffer.cs" />
     <Compile Include="..\Utilities\SharedAsyncLoad.cs" Link="Source\SharedAsyncLoad.cs" />
     <Compile Include="..\Utilities\BoundedAsync.cs" Link="Source\BoundedAsync.cs" />
     <Compile Include="..\Utilities\BoundedMainThreadQueue.cs" Link="Source\BoundedMainThreadQueue.cs" />
+    <Compile Include="..\Utilities\SerialPipeline.cs" Link="Source\SerialPipeline.cs" />
     <Compile Include="..\Api\FavouriteResource.cs" Link="Source\FavouriteResource.cs" />
     <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />

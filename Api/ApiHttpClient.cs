@@ -55,12 +55,20 @@ public class ApiHttpClient
 
     public async UniTask<HttpResponseMessage> PostAsync(string url, object data)
     {
-        if (!await LoginOrRefresh())
+        string json = await Task.Run(() => JsonConvert.SerializeObject(data));
+        return await PostJsonAsync(url, json);
+    }
+
+    internal async UniTask<HttpResponseMessage> PostJsonAsync(
+        string url, string json, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!await LoginOrRefresh(cancellationToken))
             return CreateAuthenticationFailure("Failed to authenticate");
 
         bool allowTransientRetries = !string.Equals(url, "record/submit", StringComparison.OrdinalIgnoreCase);
         string accessToken = _accessToken;
-        HttpResponseMessage response = await SendPostAsync(url, data, true, allowTransientRetries);
+        HttpResponseMessage response = await Task.Run(() => SendJsonAsync(url, json, true, allowTransientRetries, cancellationToken), cancellationToken);
         if (response.StatusCode != HttpStatusCode.Unauthorized)
             return response;
 
@@ -68,24 +76,24 @@ public class ApiHttpClient
         if (string.Equals(accessToken, _accessToken, StringComparison.Ordinal))
             _accessTokenExpiry = DateTimeOffset.MinValue;
 
-        if (!await LoginOrRefresh())
+        if (!await LoginOrRefresh(cancellationToken))
             return CreateAuthenticationFailure("Failed to re-authenticate");
 
-        return await SendPostAsync(url, data, true, allowTransientRetries);
+        return await Task.Run(() => SendJsonAsync(url, json, true, allowTransientRetries, cancellationToken), cancellationToken);
     }
 
-    public async UniTask<bool> LoginOrRefresh()
+    public async UniTask<bool> LoginOrRefresh(CancellationToken cancellationToken = default)
     {
-        await _authenticationLock.WaitAsync();
+        await _authenticationLock.WaitAsync(cancellationToken);
         try
         {
             if (!NeedsLogin && !NeedsRefresh)
                 return true;
 
-            if (!NeedsLogin && await RefreshCore())
+            if (!NeedsLogin && await RefreshCore(cancellationToken))
                 return true;
 
-            return await LoginCore();
+            return await LoginCore(cancellationToken);
         }
         finally
         {
@@ -111,10 +119,11 @@ public class ApiHttpClient
         }
     }
 
-    private async UniTask<bool> LoginCore()
+    private async UniTask<bool> LoginCore(CancellationToken cancellationToken = default)
     {
         await _spainRoutingService.GetTraceResultAsync();
 
+        await UniTask.SwitchToMainThread(cancellationToken: cancellationToken);
         using AuthTicket authenticationTicket = SteamUser.GetAuthSessionTicket(new NetIdentity());
         LoginPostResource data = new()
         {
@@ -123,12 +132,13 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId.ToString()
         };
 
-        using HttpResponseMessage response = await SendPostAsync("auth/login", data, false, true);
+        using HttpResponseMessage response = await SendPostAsync("auth/login", data, false, true, cancellationToken);
         return await ProcessAuthenticationResponse(response);
     }
 
-    private async UniTask<bool> RefreshCore()
+    private async UniTask<bool> RefreshCore(CancellationToken cancellationToken = default)
     {
+        await UniTask.SwitchToMainThread(cancellationToken: cancellationToken);
         RefreshPostResource data = new()
         {
             ModVersion = MyPluginInfo.PLUGIN_VERSION,
@@ -137,7 +147,7 @@ public class ApiHttpClient
             SteamId = SteamClient.SteamId.ToString()
         };
 
-        using HttpResponseMessage response = await SendPostAsync("auth/refresh", data, false, true);
+        using HttpResponseMessage response = await SendPostAsync("auth/refresh", data, false, true, cancellationToken);
         return await ProcessAuthenticationResponse(response);
     }
 
@@ -145,9 +155,17 @@ public class ApiHttpClient
         string url,
         object data,
         bool authenticated,
-        bool allowTransientRetries)
+        bool allowTransientRetries,
+        CancellationToken cancellationToken = default)
     {
-        string json = JsonConvert.SerializeObject(data);
+        string json = await Task.Run(() => JsonConvert.SerializeObject(data), cancellationToken);
+        return await SendJsonAsync(url, json, authenticated, allowTransientRetries, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendJsonAsync(
+        string url, string json, bool authenticated, bool allowTransientRetries,
+        CancellationToken cancellationToken)
+    {
         int retryCount = 0;
 
         while (true)
@@ -160,7 +178,7 @@ public class ApiHttpClient
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 HttpClient httpClient = _httpClientFactory.CreateClient(ClientKey);
-                HttpResponseMessage response = await httpClient.SendAsync(request);
+                HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
                 if (!allowTransientRetries ||
                     AlternativeDomainFallbackHandler.WasFallbackAttempted(response) ||
@@ -171,13 +189,13 @@ public class ApiHttpClient
                 TimeSpan delay = GetRetryDelay(response, retryCount++);
                 response.Dispose();
                 _logger.LogWarning("Transient response, retrying in {Delay} ({RetryCount})", delay, retryCount);
-                await Task.Delay(delay);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e) when (IsTransient(e) && allowTransientRetries && retryCount < MaxRetryCount)
             {
                 TimeSpan delay = GetRetryDelay(null, retryCount++);
                 _logger.LogWarning(e, "Transient request failure, retrying in {Delay} ({RetryCount})", delay, retryCount);
-                await Task.Delay(delay);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
         }
     }

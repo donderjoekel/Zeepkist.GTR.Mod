@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using EasyCompressor;
 using Microsoft.Extensions.Logging;
-using ProtoBuf;
 using Steamworks;
 using TNRD.Zeepkist.GTR.Ghosting.Recording.Data;
 using TNRD.Zeepkist.GTR.PlayerLoop;
@@ -13,9 +11,6 @@ using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
 using ZeepkistNetworking;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
-using Vector2Int = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector2Int;
-using Vector3 = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3;
-using Vector3Int = TNRD.Zeepkist.GTR.Ghosting.Recording.Data.Vector3Int;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
@@ -33,16 +28,14 @@ public partial class GhostRecorder
         public Quaternion Rotation { get; }
     }
 
-    private const int PositionMultiplier = 100_000;
-    private const int RotationMultiplier = 100;
-    private const int InitialFrameCapacity = 4_096;
+    private const int FrameBlockSize = 512;
 
     private readonly PlayerLoopService _playerLoopService;
-    private readonly List<Frame> _frames = new(InitialFrameCapacity);
-    private readonly HashSet<string> _encounteredMaterialPhysicsNames =
-        new(StringComparer.Ordinal);
-    private readonly HashSet<string> _unknownMaterialPhysicsNames =
-        new(StringComparer.Ordinal);
+    private StructFrameBuffer<Frame> _frames = new(FrameBlockSize);
+    private bool _sealed;
+    private HashSet<string> _encounteredMaterialPhysicsNames;
+    private HashSet<string> _unknownMaterialPhysicsNames;
+    private bool _loggedSoapSurfaceOverride;
     private readonly ILogger<GhostRecorder> _logger;
 
     private PlayerLoopSubscription _updateToken;
@@ -54,7 +47,6 @@ public partial class GhostRecorder
     private bool _isHorn;
     private bool _isArmsUp;
     private bool _isRagdoll;
-    private bool _loggedSoapSurfaceOverride;
     private Transform _ragdollRoot;
     private Rigidbody[] _ragdollRigidbodies;
     private Renderer[] _ragdollRenderers;
@@ -67,6 +59,8 @@ public partial class GhostRecorder
 
     public void Start()
     {
+        if (_sealed || _updateToken != null)
+            return;
         _updateToken = _playerLoopService.SubscribeUpdate(Update);
         _fixedUpdateToken = _playerLoopService.SubscribeFixedUpdate(FixedUpdate);
 
@@ -126,6 +120,8 @@ public partial class GhostRecorder
 
     private void CaptureFrame(float time)
     {
+        if (_sealed)
+            return;
         if (_frames.Count >= GhostLimits.MaxFrames)
         {
             _logger.LogWarning("Ghost frame limit reached; stopping recording");
@@ -139,10 +135,8 @@ public partial class GhostRecorder
         UnityEngine.Vector3 localAngularVelocity = cc.GetLocalAngularVelocity();
         UnityEngine.Vector2 localGForce = cc.GetGForce();
         float speed = localVelocity.magnitude * 3.6f;
-        WheelState wheelState = GetWheelState(cc);
-        GroundedWheelState groundedWheelState = GetGroundedWheelState(cc);
-        SlippingWheelState slippingWheelState = GetSlippingWheelState(cc);
-        MaterialPhysicsState materialPhysicsState = GetMaterialPhysicsState(cc);
+        SampleWheels(cc, out WheelState wheelState, out GroundedWheelState groundedWheelState,
+            out SlippingWheelState slippingWheelState, out MaterialPhysicsState materialPhysicsState);
         bool parkingBlockState = cc.IsAnyWheelOnParkingBlock();
         bool monorailState = cc.IsCarOnMonorail();
         _isRagdoll |= GetRagdollState(cc);
@@ -295,30 +289,51 @@ public partial class GhostRecorder
         return cc.damageDuge != null && cc.damageDuge.IsDead();
     }
 
-    private MaterialPhysicsState GetMaterialPhysicsState(New_ControlCar cc)
+    private void SampleWheels(New_ControlCar cc, out WheelState wheels,
+        out GroundedWheelState groundedWheels, out SlippingWheelState slippingWheels,
+        out MaterialPhysicsState materialPhysics)
     {
-        MaterialPhysicsState state = MaterialPhysicsState.None;
+        wheels = WheelState.HasNone;
+        groundedWheels = GroundedWheelState.HasNone;
+        slippingWheels = SlippingWheelState.HasNone;
+        materialPhysics = MaterialPhysicsState.None;
         bool soapOverride = cc.currentZeepkistState == 1;
-
         foreach (New_CustomWheel wheel in cc.wheels)
         {
             bool enabled = wheel.enabled;
-            bool grounded = enabled && wheel.IsGrounded();
-
-            if (!MaterialPhysicsStateResolver.ShouldIncludeWheel(enabled, grounded))
-                continue;
-
-            MaterialHolder surfaceMaterial = soapOverride
-                ? null
-                : wheel.GetCurrentSurface();
-            MaterialPhysicsState mappedState = MaterialPhysicsStateResolver.GetEffectiveState(
-                soapOverride,
-                surfaceMaterial?.physics?.name);
-            // LogEncounteredMaterialPhysics(surfaceMaterial, mappedState, soapOverride);
-            state = MaterialPhysicsStateResolver.Combine(state, mappedState);
+            bool grounded = wheel.IsGrounded();
+            bool slipping = wheel.IsSlipping();
+            switch (wheel.transform.name)
+            {
+                case "LF":
+                    if (enabled) wheels |= WheelState.HasFrontLeft;
+                    if (grounded) groundedWheels |= GroundedWheelState.HasFrontLeft;
+                    if (slipping) slippingWheels |= SlippingWheelState.HasFrontLeft;
+                    break;
+                case "RF":
+                    if (enabled) wheels |= WheelState.HasFrontRight;
+                    if (grounded) groundedWheels |= GroundedWheelState.HasFrontRight;
+                    if (slipping) slippingWheels |= SlippingWheelState.HasFrontRight;
+                    break;
+                case "LR":
+                    if (enabled) wheels |= WheelState.HasRearLeft;
+                    if (grounded) groundedWheels |= GroundedWheelState.HasRearLeft;
+                    if (slipping) slippingWheels |= SlippingWheelState.HasRearLeft;
+                    break;
+                case "RR":
+                    if (enabled) wheels |= WheelState.HasRearRight;
+                    if (grounded) groundedWheels |= GroundedWheelState.HasRearRight;
+                    if (slipping) slippingWheels |= SlippingWheelState.HasRearRight;
+                    break;
+            }
+            if (MaterialPhysicsStateResolver.ShouldIncludeWheel(enabled, grounded))
+            {
+                MaterialHolder surface = soapOverride ? null : wheel.GetCurrentSurface();
+                MaterialPhysicsState state = MaterialPhysicsStateResolver.GetEffectiveState(soapOverride, surface?.physics?.name);
+                materialPhysics |= state;
+                LogEncounteredMaterialPhysics(surface, state, soapOverride);
+            }
         }
-
-        return state;
     }
 
     private void LogEncounteredMaterialPhysics(
@@ -343,7 +358,7 @@ public partial class GhostRecorder
         string physicsKey = string.IsNullOrEmpty(physicsName) ? "<null>" : physicsName;
         if (materialPhysicsState == MaterialPhysicsState.None)
         {
-            if (!_unknownMaterialPhysicsNames.Add(physicsKey))
+            if (!(_unknownMaterialPhysicsNames ??= new HashSet<string>(StringComparer.Ordinal)).Add(physicsKey))
                 return;
 
             _logger.LogWarning(
@@ -361,7 +376,7 @@ public partial class GhostRecorder
             return;
         }
 
-        if (!_encounteredMaterialPhysicsNames.Add(physicsName))
+        if (!(_encounteredMaterialPhysicsNames ??= new HashSet<string>(StringComparer.Ordinal)).Add(physicsName))
             return;
 
         _logger.LogInformation(
@@ -475,39 +490,23 @@ public partial class GhostRecorder
 
     public async UniTask<bool> Write(Stream stream)
     {
-        Ghost ghost;
-
         try
         {
-            ghost = await CreateGhost();
+            using Snapshot snapshot = Freeze();
+            await Task.Run(() => snapshot.Write(stream));
+            return true;
         }
-        catch (Exception e)
+        catch (Exception error)
         {
-            _logger.LogError(e, "Error while creating ghost");
+            _logger.LogError(error, "Error while serializing/encoding ghost");
             return false;
         }
-
-        try
-        {
-            await Task.Run(() =>
-            {
-                using MemoryStream memoryStream = new();
-                Serializer.Serialize(memoryStream, ghost);
-                memoryStream.Position = 0;
-                Encode(memoryStream, stream);
-            });
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error while serializing/encoding ghost");
-            return false;
-        }
-
-        return true;
     }
 
-    private async UniTask<Ghost> CreateGhost()
+    internal Snapshot Freeze()
     {
+        if (_sealed)
+            throw new InvalidOperationException("Recording was already detached.");
         GameSettingsScriptableObject gameSettings = PlayerManager.Instance.instellingen.GlobalSettings;
 
         Ghost ghost = new()
@@ -541,141 +540,16 @@ public partial class GhostRecorder
             Zeepkist = ids.zeepkist,
         };
 
-        List<DeltaFrame> deltaFrames = await Task.Run(() =>
-        {
-            int capacity = Math.Max(0, _frames.Count - 1);
-            List<DeltaFrame> deltaFrames = new(capacity);
-
-            Frame previousFrame = null;
-            foreach (Frame frame in _frames)
-            {
-                if (ghost.InitialFrame == null)
-                {
-                    ghost.InitialFrame = new InitialFrame(
-                        new Vector3(frame.Position.x, frame.Position.y, frame.Position.z),
-                        new Vector3(frame.Rotation.x, frame.Rotation.y, frame.Rotation.z),
-                        ClampToByte(frame.Speed),
-                        RemapToByte(frame.Steering, -1, 1),
-                        (Data.InputFlags)(byte)CreateInputFlags(frame),
-                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame),
-                        frame.GroundedWheelState,
-                        frame.SlippingWheelState,
-                        frame.MaterialPhysicsState,
-                        ToScaledVector3Int(frame.LocalVelocity, PositionMultiplier),
-                        ToScaledVector3Int(frame.LocalAngularVelocity, RotationMultiplier),
-                        ToScaledVector2Int(frame.LocalGForce, PositionMultiplier),
-                        frame.ParkingBlockState,
-                        frame.MonorailState,
-                        frame.RagdollState,
-                        frame.RagdollState ? ToScaledVector3Int(frame.RagdollPosition, PositionMultiplier) : new Vector3Int(),
-                        frame.RagdollState ? ToScaledVector3Int(frame.RagdollRotation, RotationMultiplier) : new Vector3Int());
-                }
-                else
-                {
-                    UnityEngine.Vector3 deltaPosition = frame.Position - previousFrame.Position;
-                    Frame previousRagdollFrame = previousFrame.RagdollState ? previousFrame : null;
-                    UnityEngine.Vector3 encodedRagdollPosition = previousRagdollFrame == null
-                        ? frame.RagdollPosition
-                        : frame.RagdollPosition - previousRagdollFrame.RagdollPosition;
-                    UnityEngine.Vector3 encodedRagdollRotation = previousRagdollFrame == null
-                        ? frame.RagdollRotation
-                        : frame.RagdollRotation - previousRagdollFrame.RagdollRotation;
-                    DeltaFrame deltaFrame = new(
-                        frame.Time,
-                        ToScaledVector3Int(deltaPosition, PositionMultiplier),
-                        ToScaledVector3Int(frame.Rotation, RotationMultiplier),
-                        ClampToByte(frame.Speed),
-                        RemapToByte(frame.Steering, -1, 1),
-                        (Data.InputFlags)(byte)CreateInputFlags(frame),
-                        (Data.SoapboxFlags)(byte)CreateSoapboxFlags(frame),
-                        frame.GroundedWheelState,
-                        frame.SlippingWheelState,
-                        frame.MaterialPhysicsState,
-                        ToScaledVector3Int(frame.LocalVelocity, PositionMultiplier),
-                        ToScaledVector3Int(frame.LocalAngularVelocity, RotationMultiplier),
-                        ToScaledVector2Int(frame.LocalGForce, PositionMultiplier),
-                        frame.ParkingBlockState,
-                        frame.MonorailState,
-                        frame.RagdollState,
-                        frame.RagdollState ? ToScaledVector3Int(encodedRagdollPosition, PositionMultiplier) : new Vector3Int(),
-                        frame.RagdollState ? ToScaledVector3Int(encodedRagdollRotation, RotationMultiplier) : new Vector3Int());
-                    deltaFrames.Add(deltaFrame);
-                }
-
-                previousFrame = frame;
-            }
-
-            return deltaFrames;
-        });
-
-        ghost.DeltaFrames = deltaFrames;
-        return ghost;
+        Stop();
+        _sealed = true;
+        var snapshot = new Snapshot(ghost, _frames);
+        _frames = new StructFrameBuffer<Frame>(FrameBlockSize);
+        _setupCar = null;
+        _readyToReset = null;
+        _ragdollRoot = null;
+        _ragdollRigidbodies = null;
+        _ragdollRenderers = null;
+        return snapshot;
     }
 
-    private static byte RemapToByte(float input, float min, float max)
-    {
-        return ClampToByte(Mathf.InverseLerp(min, max, input) * 255);
-    }
-
-    private static byte ClampToByte(float value)
-    {
-        return (byte)Mathf.Clamp(value, 0, 255);
-    }
-
-    private static Vector3Int ToScaledVector3Int(UnityEngine.Vector3 value, int multiplier)
-    {
-        return new Vector3Int(
-            Mathf.RoundToInt(value.x * multiplier),
-            Mathf.RoundToInt(value.y * multiplier),
-            Mathf.RoundToInt(value.z * multiplier));
-    }
-
-    private static Vector2Int ToScaledVector2Int(UnityEngine.Vector2 value, int multiplier)
-    {
-        return new Vector2Int(
-            Mathf.RoundToInt(value.x * multiplier),
-            Mathf.RoundToInt(value.y * multiplier));
-    }
-
-    private static void Encode(Stream inputStream, Stream outStream)
-    {
-        LZMACompressor.Shared.CompressionLevel = LZMACompressionLevel.Ultra;
-        LZMACompressor.Shared.Compress(inputStream, outStream);
-    }
-
-    private static InputFlags CreateInputFlags(Frame frame)
-    {
-        InputFlags inputFlags = InputFlags.None;
-
-        if (frame.ArmsUp)
-            inputFlags |= InputFlags.ArmsUp;
-        if (frame.Braking)
-            inputFlags |= InputFlags.Braking;
-        if (frame.Horn)
-            inputFlags |= InputFlags.Horn;
-
-        return inputFlags;
-    }
-
-    private static SoapboxFlags CreateSoapboxFlags(Frame frame)
-    {
-        SoapboxFlags soapboxFlags = SoapboxFlags.None;
-
-        if (frame.SoapboxState == 1)
-            soapboxFlags |= SoapboxFlags.Soap;
-        if (frame.SoapboxState == 2)
-            soapboxFlags |= SoapboxFlags.Offroad;
-        if (frame.SoapboxState == 3)
-            soapboxFlags |= SoapboxFlags.Paraglider;
-        if (frame.WheelState.HasFlag(WheelState.HasFrontLeft))
-            soapboxFlags |= SoapboxFlags.FrontLeft;
-        if (frame.WheelState.HasFlag(WheelState.HasFrontRight))
-            soapboxFlags |= SoapboxFlags.FrontRight;
-        if (frame.WheelState.HasFlag(WheelState.HasRearLeft))
-            soapboxFlags |= SoapboxFlags.RearLeft;
-        if (frame.WheelState.HasFlag(WheelState.HasRearRight))
-            soapboxFlags |= SoapboxFlags.RearRight;
-
-        return soapboxFlags;
-    }
 }
