@@ -3,19 +3,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Configuration;
 using TNRD.Zeepkist.GTR.Core;
 using TNRD.Zeepkist.GTR.Messaging;
+using TNRD.Zeepkist.GTR.GraphQL;
+using TNRD.Zeepkist.GTR.Ghosting.Readers;
+using TNRD.Zeepkist.GTR.Utilities;
 using ZeepkistClient;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.Level;
+using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
-public class RecordingService : IEagerService
+public class RecordingService : IEagerService, IDisposable
 {
     private readonly MessengerService _messengerService;
     private readonly ILogger<RecordingService> _logger;
@@ -25,6 +32,22 @@ public class RecordingService : IEagerService
     private readonly RecordFeedbackService _recordFeedbackService;
 
     private GhostRecorder _activeGhostRecorder;
+    private readonly SerialPipeline<PendingRecording, PreparedRecording> _publishing;
+
+    private sealed class PendingRecording : IDisposable
+    {
+        public GhostRecorder.Snapshot Snapshot;
+        public RecordPostResource Resource;
+        public RecordFeedbackBaseline Baseline;
+        public void Dispose() { Snapshot.Dispose(); Resource.GhostData = null; }
+    }
+
+    private sealed class PreparedRecording
+    {
+        public string Json;
+        public float Time;
+        public RecordFeedbackBaseline Baseline;
+    }
 
     private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
     private bool CanRecord => IsPlayingOnline && _configService.SubmitRecords.Value;
@@ -43,17 +66,22 @@ public class RecordingService : IEagerService
         _apiHttpClient = apiHttpClient;
         _configService = configService;
         _recordFeedbackService = recordFeedbackService;
+        _publishing = new SerialPipeline<PendingRecording, PreparedRecording>(
+            EncodeRecording, UploadRecording, error => ReportPublishingFailure(error).Forget());
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.CrossedFinishLine += OnCrossedFinishLine;
         RacingApi.RoundEnded += OnRoundEnded;
+        RacingApi.Quit += OnRoundEnded;
+        MultiplayerApi.DisconnectedFromGame += OnRoundEnded;
     }
 
     private void OnPlayerSpawned()
     {
         _logger.LogInformation("Stopping existing recorder if any");
         _activeGhostRecorder?.Stop();
+        _activeGhostRecorder = null;
 
         if (!CanRecord)
             return;
@@ -68,7 +96,7 @@ public class RecordingService : IEagerService
             return;
 
         _logger.LogInformation("Starting recorder");
-        _activeGhostRecorder.Start();
+        _activeGhostRecorder?.Start();
     }
 
     private void OnCrossedFinishLine(float time)
@@ -82,7 +110,9 @@ public class RecordingService : IEagerService
         _logger.LogInformation("Stopping recorder");
         GhostRecorder recorder = _activeGhostRecorder;
         _activeGhostRecorder = null;
-        StartSubmit(recorder).Forget();
+        try { StartSubmit(recorder); }
+        catch (Exception error) { ReportPublishingFailure(error).Forget(); }
+        finally { recorder.Stop(); }
     }
 
     private void OnRoundEnded()
@@ -92,7 +122,7 @@ public class RecordingService : IEagerService
         _activeGhostRecorder = null;
     }
 
-    private async UniTaskVoid StartSubmit(GhostRecorder ghostRecorder)
+    private void StartSubmit(GhostRecorder ghostRecorder)
     {
         _logger.LogInformation("Collecting extra information");
         LevelHashV2 currentHash = LevelApi.CurrentHashV2;
@@ -136,98 +166,70 @@ public class RecordingService : IEagerService
             return;
         }
 
-        _logger.LogInformation("Processing ghost data");
-        string ghostData = await ProcessGhostRecorder(ghostRecorder);
-        if (string.IsNullOrEmpty(ghostData))
+        var pending = new PendingRecording
         {
-            _logger.LogWarning("Ghost serialization returned no data; record will not be submitted");
-            return;
-        }
-
-        await Submit(hash, canonicalHash, workshopId, time, splits, speeds, ghostData);
-    }
-
-    private async UniTask<string> ProcessGhostRecorder(GhostRecorder ghostRecorder)
-    {
-        try
-        {
-            _logger.LogInformation("Creating stream");
-            using MemoryStream stream = new();
-            _logger.LogInformation("Writing to stream");
-            if (!await ghostRecorder.Write(stream))
+            Snapshot = ghostRecorder.Freeze(),
+            Resource = new RecordPostResource
             {
-                _logger.LogError("Failed to write to stream, returning empty string");
-                return string.Empty;
-            }
-
-            if (stream.Length > GhostLimits.MaxCompressedBytes)
-            {
-                _logger.LogError(
-                    "Compressed ghost exceeds {MaxCompressedBytes} byte limit",
-                    GhostLimits.MaxCompressedBytes);
-                return string.Empty;
-            }
-
-            _logger.LogInformation("Converting to base64");
-            return Convert.ToBase64String(stream.GetBuffer(), 0, checked((int)stream.Length));
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to process ghost data");
-            return string.Empty;
-        }
-    }
-
-    private async UniTask Submit(
-        string hash,
-        string canonicalHash,
-        string workshopId,
-        float time,
-        List<float> splits,
-        List<float> speeds,
-        string ghostData)
-    {
-        _logger.LogInformation("Creating resource");
-        RecordPostResource resource = new()
-        {
-            Level = hash,
-            Hash = canonicalHash,
-            WorkshopId = workshopId,
-            Time = time,
-            Splits = splits,
-            Speeds = speeds,
-            GhostData = ghostData,
-            ModVersion = MyPluginInfo.PLUGIN_VERSION,
-            GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
+                Level = hash,
+                Hash = canonicalHash,
+                WorkshopId = workshopId,
+                Time = time,
+                Splits = splits,
+                Speeds = speeds,
+                ModVersion = MyPluginInfo.PLUGIN_VERSION,
+                GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
+            },
+            Baseline = _recordFeedbackService.CaptureBaseline()
         };
+        try { _publishing.Enqueue(pending); }
+        catch { pending.Dispose(); throw; }
+    }
 
-        try
+    private static Task<PreparedRecording> EncodeRecording(PendingRecording pending, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        using LimitedMemoryStream stream = new(GhostLimits.MaxCompressedBytes);
+        pending.Snapshot.Write(stream);
+        token.ThrowIfCancellationRequested();
+        pending.Resource.GhostData = Convert.ToBase64String(stream.GetBuffer(), 0, checked((int)stream.Length));
+        return Task.FromResult(new PreparedRecording
         {
-            RecordFeedbackBaseline feedbackBaseline = _recordFeedbackService.CaptureBaseline();
-            using HttpResponseMessage response = await _apiHttpClient.PostAsync("record/submit", resource);
+            Json = JsonConvert.SerializeObject(pending.Resource),
+            Time = pending.Resource.Time,
+            Baseline = pending.Baseline
+        });
+    }
 
-            try
-            {
-                response.EnsureSuccessStatusCode();
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Failed to submit record");
-                _messengerService.LogError("Failed to submit record");
-                return;
-            }
+    private async Task UploadRecording(PreparedRecording recording, CancellationToken token)
+    {
+        using HttpResponseMessage response = await _apiHttpClient.PostJsonAsync("record/submit", recording.Json, token);
+        response.EnsureSuccessStatusCode();
+        await UniTask.SwitchToMainThread(cancellationToken: token);
+        if (_configService.ShowRecordSubmitMessage.Value)
+            _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
 
-            if (_configService.ShowRecordSubmitMessage.Value)
-            {
-                _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
-            }
+        if (recording.Baseline?.LevelKey == CurrentLevelGraphqlIdentity.Create().CacheKey)
+            _recordFeedbackService.HandleSuccessfulSubmission(recording.Time, recording.Baseline);
+    }
 
-            _recordFeedbackService.HandleSuccessfulSubmission(time, feedbackBaseline);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to submit record");
-            _messengerService.LogError("Failed to submit record");
-        }
+    private async UniTaskVoid ReportPublishingFailure(Exception error)
+    {
+        _logger.LogError(error, "Failed to submit record");
+        await UniTask.SwitchToMainThread();
+        _messengerService.LogError("Failed to submit record");
+    }
+
+    public void Dispose()
+    {
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
+        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.Quit -= OnRoundEnded;
+        MultiplayerApi.DisconnectedFromGame -= OnRoundEnded;
+        _activeGhostRecorder?.Stop();
+        _activeGhostRecorder = null;
+        _publishing.Dispose();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 using TNRD.Zeepkist.GTR.Messaging;
 using TNRD.Zeepkist.GTR.PlayerLoop;
+using TNRD.Zeepkist.GTR.Utilities;
 using UnityEngine;
 using ZeepSDK.External.Cysharp.Threading.Tasks;
 using ZeepSDK.External.FluentResults;
@@ -16,7 +18,7 @@ using ZeepSDK.Racing;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public class OnlineGhostsService : IEagerService
+public class OnlineGhostsService : IEagerService, IDisposable
 {
     private readonly ILogger<OnlineGhostsService> _logger;
     private readonly OnlineGhostGraphqlService _graphqlService;
@@ -26,6 +28,10 @@ public class OnlineGhostsService : IEagerService
     private readonly MessengerService _messengerService;
 
     private CancellationTokenSource _cts;
+    private string _levelKey;
+    private readonly GhostLoadDispatcher _dispatcher;
+    private readonly PlayerLoopService _playerLoop;
+    private readonly PlayerLoopSubscription _update;
 
     public OnlineGhostsService(
         ILogger<OnlineGhostsService> logger,
@@ -34,7 +40,8 @@ public class OnlineGhostsService : IEagerService
         ConfigService configService,
         PlayerLoopService playerLoopService,
         MessengerService messengerService,
-        OnlineGhostGraphqlService graphqlService)
+        OnlineGhostGraphqlService graphqlService,
+        GhostLoadDispatcher dispatcher)
     {
         _logger = logger;
         _ghostRepository = ghostRepository;
@@ -42,10 +49,13 @@ public class OnlineGhostsService : IEagerService
         _configService = configService;
         _messengerService = messengerService;
         _graphqlService = graphqlService;
-        playerLoopService.SubscribeUpdate(OnUpdate);
+        _dispatcher = dispatcher;
+        _playerLoop = playerLoopService;
+        _update = playerLoopService.SubscribeUpdate(OnUpdate);
 
         RacingApi.PlayerSpawned += OnPlayerSpawned;
-        RacingApi.RoundEnded += OnRoundEnded;
+        RacingApi.LevelLoaded += OnLevelLoaded;
+        RacingApi.Quit += OnDisconnectedFromGame;
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
     }
 
@@ -69,17 +79,20 @@ public class OnlineGhostsService : IEagerService
 
     private void OnDisconnectedFromGame()
     {
-        if (!MultiplayerApi.IsPlayingOnline)
-            return;
-
         CancelLoad();
+        _levelKey = null;
         _ghostPlayer.ClearGhosts();
     }
 
     protected virtual void OnPlayerSpawned()
     {
         if (!MultiplayerApi.IsPlayingOnline)
+        {
+            CancelLoad();
+            _levelKey = null;
             return;
+        }
+        OnLevelLoaded();
 
         if (_configService.EnableGhosts.Value)
         {
@@ -87,13 +100,16 @@ public class OnlineGhostsService : IEagerService
         }
     }
 
-    private void OnRoundEnded()
+    private void OnLevelLoaded()
     {
         if (!MultiplayerApi.IsPlayingOnline)
             return;
-
+        LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
+        if (_levelKey == level.CacheKey)
+            return;
         CancelLoad();
         _ghostPlayer.ClearGhosts();
+        _levelKey = level.CacheKey;
     }
 
     private void LoadPersonalBests()
@@ -110,6 +126,11 @@ public class OnlineGhostsService : IEagerService
         LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();
         if (!level.IsAvailable)
             return;
+        if (_levelKey != level.CacheKey)
+        {
+            _ghostPlayer.ClearGhosts();
+            _levelKey = level.CacheKey;
+        }
 
         Result<IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes>> result =
             await _graphqlService.GetPersonalBests(level, ct);
@@ -123,6 +144,9 @@ public class OnlineGhostsService : IEagerService
             return;
         }
 
+        await UniTask.SwitchToMainThread();
+        if (ct.IsCancellationRequested)
+            return;
         IReadOnlyList<IGetPersonalBestGhosts_PersonalBestGlobals_Nodes> personalBests = result.Value;
 
         IReadOnlyList<int> loadedGhostIds = _ghostPlayer.GetLoadedGhostIds();
@@ -131,36 +155,46 @@ public class OnlineGhostsService : IEagerService
         {
             if (personalBests.All(x => x.Record.Id != loadedGhostId))
             {
-                _ghostPlayer.RemoveGhost(loadedGhostId);
+                try { await _dispatcher.EnqueueAsync(() => _ghostPlayer.RemoveGhost(loadedGhostId), ct); }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
             }
         }
 
-        IEnumerable<UniTask> loads = personalBests.Select(personalBest => LoadGhost(personalBest, ct));
-        await UniTask.WhenAll(loads);
+        await UniTask.SwitchToMainThread();
+        if (ct.IsCancellationRequested)
+            return;
+        var missing = personalBests.Where(record => !_ghostPlayer.HasGhost(record.Record.Id)).ToArray();
+        try
+        {
+            await BoundedAsync.ForEachAsync(missing, 15,
+                (record, token) => LoadGhost(record, token).AsTask(), ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
     }
 
     private async UniTask LoadGhost(
         IGetPersonalBestGhosts_PersonalBestGlobals_Nodes personalBest,
         CancellationToken cancellationToken)
     {
-        Result<IGhost> ghost = await _ghostRepository.GetGhost(
-            personalBest.Record.Id,
-            personalBest.Record.RecordMedia.GhostUrl,
-            cancellationToken);
-
-        if (cancellationToken.IsCancellationRequested)
-            return;
-        if (ghost.IsFailed)
+        try
         {
-            _logger.LogError("Unable to get ghost from repository: {Result}", ghost.ToString());
-            return;
+            using var source = await _ghostRepository.PreloadGhostAsync(
+                personalBest.Record.Id, personalBest.Record.RecordMedia.GhostUrl, cancellationToken);
+            await _dispatcher.PrepareAsync(async token =>
+            {
+                Result<IGhost> ghost = await source.Value.GetGhost(token);
+                token.ThrowIfCancellationRequested();
+                if (ghost.IsFailed)
+                {
+                    _logger.LogWarning("Unable to load ghost {RecordId}: {Result}", personalBest.Record.Id, ghost);
+                    return () => { };
+                }
+                return () => _ghostPlayer.AddGhost(
+                    GhostType.Global, personalBest.Record.Id, personalBest.Record.User.SteamName, ghost.Value);
+            }, cancellationToken);
         }
-
-        _ghostPlayer.AddGhost(
-            GhostType.Global,
-            personalBest.Record.Id,
-            personalBest.Record.User.SteamName,
-            ghost.Value);
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+        catch (Exception error) { _logger.LogWarning(error, "Unable to load ghost {RecordId}", personalBest.Record.Id); }
     }
 
     private void CancelLoad()
@@ -170,6 +204,20 @@ public class OnlineGhostsService : IEagerService
         if (cts == null)
             return;
         cts.Cancel();
+        _dispatcher.DiscardCancelled();
         cts.Dispose();
+    }
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+        RacingApi.Quit -= OnDisconnectedFromGame;
+        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
+        _playerLoop.UnsubscribeUpdate(_update);
+        CancelLoad();
     }
 }

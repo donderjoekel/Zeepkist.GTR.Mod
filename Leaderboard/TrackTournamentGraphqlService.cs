@@ -45,22 +45,30 @@ public sealed class TrackTournamentGraphqlService
         Action<TrackTournamentPageSnapshot> onNext,
         Action<Exception> onError)
     {
-        return _gtrClient.WatchTrackTournamentPage
-            .Watch(tournament.Id, pageSize, page * pageSize)
-            .Subscribe(new OperationObserver<IOperationResult<IWatchTrackTournamentPageResult>>(
-                result =>
-                {
-                    try
-                    {
-                        result.EnsureNoErrors();
-                        onNext(Map(result.Data?.TrackTournament, tournament));
-                    }
-                    catch (Exception e)
-                    {
-                        onError(e);
-                    }
-                },
-                onError));
+        RecoveringSubscription<IOperationResult<IWatchTrackTournamentPageResult>> subscription = null;
+        subscription = new RecoveringSubscription<IOperationResult<IWatchTrackTournamentPageResult>>(
+            observer => _gtrClient.WatchTrackTournamentPage.Watch(tournament.Id, pageSize, page * pageSize).Subscribe(observer),
+            (result, attempt) => Deliver(result, attempt).Forget(), onError);
+        subscription.Start();
+        return subscription;
+
+        async UniTaskVoid Deliver(IOperationResult<IWatchTrackTournamentPageResult> result, int attempt)
+        {
+            try
+            {
+                result.EnsureNoErrors();
+                if (result.Data?.TrackTournament == null) return;
+                var snapshot = Map(result.Data?.TrackTournament, tournament);
+                await UniTask.SwitchToMainThread();
+                if (!subscription.IsCurrentAttempt(attempt)) return;
+                subscription.MarkHealthy(attempt);
+                onNext(snapshot);
+            }
+            catch (Exception error)
+            {
+                if (subscription.IsCurrentAttempt(attempt)) onError(error);
+            }
+        }
     }
 
     private static TrackTournamentDescriptor Map(IGetLevelTrackTournaments_TrackTournaments_Nodes node)

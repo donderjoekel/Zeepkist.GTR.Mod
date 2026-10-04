@@ -6,20 +6,20 @@ using ZeepkistNetworking;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V5Ghost : GhostBase, IGhostInputProvider
+public partial class V5Ghost : GhostBase<V5Ghost.Frame>, IGhostInputProvider
 {
     private readonly string _taggedUsername;
     private readonly Color _color;
     private readonly ulong _steamId;
     private readonly CosmeticIDs _cosmeticIds;
-    private readonly List<Frame> _frames;
+    private readonly Frame[] _frames;
 
     public V5Ghost(
         string taggedUsername,
         Color color,
         ulong steamId,
         CosmeticIDs cosmeticIds,
-        List<Frame> frames)
+        Frame[] frames)
     {
         _taggedUsername = taggedUsername;
         _color = color;
@@ -28,7 +28,9 @@ public partial class V5Ghost : GhostBase, IGhostInputProvider
         _frames = frames;
     }
 
-    protected override int FrameCount => _frames.Count;
+    internal override GhostBase CreatePlayback() => new V5Ghost(_taggedUsername, _color, _steamId, _cosmeticIds, _frames);
+
+    protected override int FrameCount => _frames.Length;
     public override Color Color => _color;
 
     public override void ApplyCosmetics(string steamName)
@@ -42,7 +44,9 @@ public partial class V5Ghost : GhostBase, IGhostInputProvider
         AlignCharacterRootToSeated();
     }
 
-    protected override IFrame GetFrame(int index)
+    protected override float GetFrameTime(int index) => _frames[index].Time;
+
+    protected override Frame GetFrame(int index)
     {
         return _frames[index];
     }
@@ -70,7 +74,7 @@ public partial class V5Ghost : GhostBase, IGhostInputProvider
         return 0;
     }
 
-    protected override void OnSample(IFrame currentFrame, IFrame nextFrame, float interpolation)
+    protected override void OnSample(Frame currentFrame, Frame nextFrame, float interpolation)
     {
         AlignCharacterRootToSeated();
     }
@@ -81,8 +85,8 @@ public partial class V5Ghost : GhostBase, IGhostInputProvider
         FrameSampleKind sampleKind)
     {
         Frame frame = _frames[currentFrameIndex];
-        Frame previousFrame = previousFrameIndex >= 0 ? _frames[previousFrameIndex] : null;
-        bool forceState = sampleKind != FrameSampleKind.Advance || previousFrame == null;
+        Frame previousFrame = previousFrameIndex >= 0 ? _frames[previousFrameIndex] : default;
+        bool forceState = sampleKind != FrameSampleKind.Advance || previousFrameIndex < 0;
         bool armsUp = frame.InputFlags.HasFlagFast(InputFlags.ArmsUp);
         if (forceState || previousFrame.InputFlags.HasFlagFast(InputFlags.ArmsUp) != armsUp)
             ApplySeatedCharacterState(armsUp);

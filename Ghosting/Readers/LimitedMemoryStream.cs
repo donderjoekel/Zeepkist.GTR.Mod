@@ -18,6 +18,8 @@ internal sealed class LimitedMemoryStream : Stream
         return _inner.ToArray();
     }
 
+    public byte[] GetBuffer() => _inner.GetBuffer();
+
     public override void Write(byte[] buffer, int offset, int count)
     {
         EnsureCapacity(count);

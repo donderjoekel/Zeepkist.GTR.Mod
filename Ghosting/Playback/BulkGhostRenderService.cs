@@ -9,11 +9,13 @@ using TNRD.Zeepkist.GTR.PlayerLoop;
 using UnityEngine;
 using UnityEngine.Rendering;
 using ZeepSDK.Utilities;
+using ZeepSDK.Racing;
+using ZeepSDK.Multiplayer;
 using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public sealed class BulkGhostRenderService : IEagerService
+public sealed class BulkGhostRenderService : IEagerService, IDisposable
 {
     private readonly ILogger<BulkGhostRenderService> _logger;
     private readonly ConfigService _configService;
@@ -52,6 +54,8 @@ public sealed class BulkGhostRenderService : IEagerService
     private readonly List<ComputeBuffer> _matrixBuffers = new();
     private int _matrixBufferIndex;
     private Camera _depthCamera;
+    private readonly PlayerLoopService _playerLoop;
+    private readonly PlayerLoopSubscription _lateUpdate;
 
     private readonly List<RenderPart> _renderParts = new();
     private readonly Dictionary<GhostCharacterPlaybackPose, List<RenderPart>> _characterRenderParts = new()
@@ -78,7 +82,10 @@ public sealed class BulkGhostRenderService : IEagerService
         _logger = logger;
         _configService = configService;
         _assetService = assetService;
-        playerLoopService.SubscribeLateUpdate(Draw);
+        _playerLoop = playerLoopService;
+        _lateUpdate = playerLoopService.SubscribeLateUpdate(Draw);
+        RacingApi.Quit += ResetSession;
+        MultiplayerApi.DisconnectedFromGame += ResetSession;
     }
 
     public bool CanUseInstancing()
@@ -217,13 +224,26 @@ public sealed class BulkGhostRenderService : IEagerService
         int count,
         int? tintBucket = null)
     {
+        ComputeBuffer buffer = GetMatrixBuffer();
+        buffer.SetData(_matrices, 0, 0, count);
+        Vector3 min = _matrices[0].GetColumn(3);
+        Vector3 max = min;
+        for (int i = 1; i < count; i++)
+        {
+            Vector3 position = _matrices[i].GetColumn(3);
+            min = Vector3.Min(min, position);
+            max = Vector3.Max(max, position);
+        }
         foreach (RenderPart part in renderParts)
-            DrawPart(part, count, tintBucket);
+            DrawPart(part, count, buffer, min, max, tintBucket);
     }
 
     private void DrawPart(
         RenderPart part,
         int count,
+        ComputeBuffer matrixBuffer,
+        Vector3 min,
+        Vector3 max,
         int? tintBucket = null)
     {
         Material material = GetMaterial(part, tintBucket);
@@ -242,8 +262,6 @@ public sealed class BulkGhostRenderService : IEagerService
         }
 
         _propertyBlock.Clear();
-        ComputeBuffer matrixBuffer = GetMatrixBuffer();
-        matrixBuffer.SetData(_matrices, 0, 0, count);
         _propertyBlock.SetBuffer(MatricesId, matrixBuffer);
         _propertyBlock.SetColor(
             ColorId,
@@ -255,7 +273,7 @@ public sealed class BulkGhostRenderService : IEagerService
             part.Mesh,
             0,
             material,
-            CalculateProceduralBounds(part.Mesh.bounds, count),
+            CalculateProceduralBounds(part.Mesh.bounds, min, max),
             count,
             _propertyBlock,
             ShadowCastingMode.Off,
@@ -288,17 +306,8 @@ public sealed class BulkGhostRenderService : IEagerService
         return _matrixBuffers[_matrixBufferIndex++];
     }
 
-    private Bounds CalculateProceduralBounds(Bounds meshBounds, int count)
+    private static Bounds CalculateProceduralBounds(Bounds meshBounds, Vector3 min, Vector3 max)
     {
-        Vector3 min = _matrices[0].GetColumn(3);
-        Vector3 max = min;
-        for (int i = 1; i < count; i++)
-        {
-            Vector3 position = _matrices[i].GetColumn(3);
-            min = Vector3.Min(min, position);
-            max = Vector3.Max(max, position);
-        }
-
         float meshRadius = meshBounds.extents.magnitude;
         return new Bounds(
             (min + max) * 0.5f,
@@ -1064,6 +1073,29 @@ public sealed class BulkGhostRenderService : IEagerService
 
     private static float MaximumComponent(Vector3 vector) =>
         Math.Max(vector.x, Math.Max(vector.y, vector.z));
+
+    private void ResetSession()
+    {
+        _instances.Clear();
+        foreach (var poses in _characterInstances.Values)
+            foreach (var bucket in poses.Values)
+                bucket.Clear();
+        DisposeResources();
+        _initializationAttempted = false;
+    }
+
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        RacingApi.Quit -= ResetSession;
+        MultiplayerApi.DisconnectedFromGame -= ResetSession;
+        _playerLoop.UnsubscribeLateUpdate(_lateUpdate);
+        ResetSession();
+        _depthCommandBuffer.Dispose();
+    }
 
     private void DisposeResources()
     {

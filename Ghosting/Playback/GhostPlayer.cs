@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Playback;
 
-public partial class GhostPlayer : IEagerService
+public partial class GhostPlayer : IEagerService, IDisposable
 {
     private readonly ObjectPool<GhostData> _fullPool;
     private readonly ObjectPool<GhostData> _bulkPool;
@@ -27,6 +27,8 @@ public partial class GhostPlayer : IEagerService
     private readonly BulkGhostModeState _bulkModeState;
     private readonly GhostTimingService _timingService;
 
+    private readonly PlayerLoopService _playerLoop;
+    private readonly PlayerLoopSubscription _update;
     private bool _roundStarted;
     private bool _manualPlaybackActive;
     private bool _paused;
@@ -58,7 +60,8 @@ public partial class GhostPlayer : IEagerService
             ReleaseGhost,
             DestroyGhost);
 
-        playerLoopService.SubscribeUpdate(Update);
+        _playerLoop = playerLoopService;
+        _update = playerLoopService.SubscribeUpdate(Update);
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
@@ -255,6 +258,7 @@ public partial class GhostPlayer : IEagerService
             {
                 hadExistingGhost = true;
                 _ghosts[recordId].Stop(_timingService.CurrentTime);
+                ghostData.ClearIdentity();
             }
             else
             {
@@ -498,4 +502,21 @@ public partial class GhostPlayer : IEagerService
         _bulkPool.Clear();
         GhostRenderer.DisposeSharedResources();
     }
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.QuickReset -= OnQuickReset;
+        RacingApi.Quit -= OnQuit;
+        MultiplayerApi.DisconnectedFromGame -= OnDisconnectedFromGame;
+        _playerLoop.UnsubscribeUpdate(_update);
+        ClearGhosts();
+        ClearPools();
+    }
+
 }

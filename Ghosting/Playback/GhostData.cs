@@ -51,6 +51,9 @@ public class GhostData
 
     public void ClearIdentity()
     {
+        if (Ghost is GhostBase ghost)
+            ghost.Detach();
+        Ghost = null;
         RecordId = 0;
         DisplayName = null;
     }

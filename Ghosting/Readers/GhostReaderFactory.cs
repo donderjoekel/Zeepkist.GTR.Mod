@@ -73,7 +73,7 @@ public class GhostReaderFactory
     {
         using MemoryStream input = new(buffer, false);
         using LimitedMemoryStream output = new(GhostLimits.GetMaxDecompressedBytes(buffer.Length));
-        LZMACompressor.Shared.Decompress(input, output);
+        new LZMACompressor().Decompress(input, output);
         return output.ToArray();
     }
 }

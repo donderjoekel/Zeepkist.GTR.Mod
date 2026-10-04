@@ -6,20 +6,20 @@ using ZeepkistNetworking;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts;
 
-public partial class V6Ghost : GhostBase
+public partial class V6Ghost : GhostBase<V6Ghost.Frame>
 {
     private readonly string _taggedUsername;
     private readonly Color _color;
     private readonly ulong _steamId;
     private readonly CosmeticIDs _cosmeticIds;
-    private readonly List<Frame> _frames;
+    private readonly Frame[] _frames;
 
     public V6Ghost(
         string taggedUsername,
         Color color,
         ulong steamId,
         CosmeticIDs cosmeticIds,
-        List<Frame> frames)
+        Frame[] frames)
     {
         _taggedUsername = taggedUsername;
         _color = color;
@@ -28,7 +28,9 @@ public partial class V6Ghost : GhostBase
         _frames = frames;
     }
 
-    protected override int FrameCount => _frames.Count;
+    internal override GhostBase CreatePlayback() => new V6Ghost(_taggedUsername, _color, _steamId, _cosmeticIds, _frames);
+
+    protected override int FrameCount => _frames.Length;
     public override Color Color => _color;
 
     public override void ApplyCosmetics(string steamName)
@@ -42,15 +44,17 @@ public partial class V6Ghost : GhostBase
         AlignCharacterRootToSeated();
     }
 
-    protected override IFrame GetFrame(int index)
+    protected override float GetFrameTime(int index) => _frames[index].Time;
+
+    protected override Frame GetFrame(int index)
     {
         return _frames[index];
     }
 
-    protected override void OnSample(IFrame currentFrame, IFrame nextFrame, float interpolation)
+    protected override void OnSample(Frame currentFrame, Frame nextFrame, float interpolation)
     {
-        if (currentFrame is not Frame current || nextFrame is not Frame next)
-            return;
+        Frame current = currentFrame;
+        Frame next = nextFrame;
 
         if (!current.RagdollState)
         {
@@ -76,8 +80,8 @@ public partial class V6Ghost : GhostBase
         FrameSampleKind sampleKind)
     {
         Frame frame = _frames[currentFrameIndex];
-        Frame previousFrame = previousFrameIndex >= 0 ? _frames[previousFrameIndex] : null;
-        bool forceState = sampleKind != FrameSampleKind.Advance || previousFrame == null;
+        Frame previousFrame = previousFrameIndex >= 0 ? _frames[previousFrameIndex] : default;
+        bool forceState = sampleKind != FrameSampleKind.Advance || previousFrameIndex < 0;
         GhostCharacterPlaybackPose pose = GetCharacterPose(frame);
         if (forceState || GetCharacterPose(previousFrame) != pose)
         {

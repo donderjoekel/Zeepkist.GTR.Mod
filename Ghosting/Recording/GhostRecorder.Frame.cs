@@ -2,7 +2,7 @@ namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
 public partial class GhostRecorder
 {
-    private class Frame
+    internal struct Frame
     {
         public float Time { get; set; }
         public float Speed { get; set; }

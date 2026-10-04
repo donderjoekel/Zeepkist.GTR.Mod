@@ -29,7 +29,11 @@ public abstract class GhostBase : IGhost
 
     public abstract Color Color { get; }
 
-    public float Duration => FrameCount > 0 ? GetFrame(FrameCount - 1).Time : 0f;
+    public float Duration => FrameCount > 0 ? GetFrameTime(FrameCount - 1) : 0f;
+
+    internal abstract GhostBase CreatePlayback();
+
+    internal void Detach() => Ghost = null;
 
     protected GhostBase()
     {
@@ -134,8 +138,8 @@ public abstract class GhostBase : IGhost
 
         if (_currentFrame == FrameCount - 1 &&
             _currentFrame >= 0 &&
-            _lastSampleTime >= GetFrame(_currentFrame).Time &&
-            time >= GetFrame(_currentFrame).Time)
+            _lastSampleTime >= GetFrameTime(_currentFrame) &&
+            time >= GetFrameTime(_currentFrame))
         {
             return;
         }
@@ -143,9 +147,7 @@ public abstract class GhostBase : IGhost
         ApplySample(time, FrameSampleKind.Advance, false);
     }
 
-    protected virtual void OnSample(IFrame currentFrame, IFrame nextFrame, float interpolation)
-    {
-    }
+    protected abstract void OnSample(int currentIndex, int nextIndex, float interpolation);
 
     protected virtual void OnFrameChanged(
         int previousFrameIndex,
@@ -253,7 +255,9 @@ public abstract class GhostBase : IGhost
             visuals.GhostModel.DisableParaglider();
     }
 
-    protected abstract IFrame GetFrame(int index);
+    protected abstract float GetFrameTime(int index);
+
+    protected abstract void ApplyFrameTransform(int currentIndex, int nextIndex, float interpolation);
 
     private bool IsPlaybackActive => _started && !_paused;
 
@@ -291,11 +295,7 @@ public abstract class GhostBase : IGhost
             forceFrameChanged = true;
         }
 
-        IFrame currentFrame = GetFrame(sample.CurrentIndex);
-        IFrame nextFrame = GetFrame(sample.NextIndex);
-        Vector3 position = Vector3.Lerp(currentFrame.Position, nextFrame.Position, sample.Interpolation);
-        Quaternion rotation = Quaternion.Slerp(currentFrame.Rotation, nextFrame.Rotation, sample.Interpolation);
-        Ghost.GameObject.transform.SetPositionAndRotation(position, rotation);
+        ApplyFrameTransform(sample.CurrentIndex, sample.NextIndex, sample.Interpolation);
         AlignBulkCharacterToGhost();
         if (_started)
             Ghost.SetPlaybackVisible(true);
@@ -314,7 +314,7 @@ public abstract class GhostBase : IGhost
 
         _currentFrame = sample.CurrentIndex;
         _lastSampleTime = time;
-        OnSample(currentFrame, nextFrame, sample.Interpolation);
+        OnSample(sample.CurrentIndex, sample.NextIndex, sample.Interpolation);
     }
 
     private void AlignBulkCharacterTransform(Transform transform)
@@ -325,11 +325,6 @@ public abstract class GhostBase : IGhost
         transform.SetPositionAndRotation(
             Ghost.GameObject.transform.position,
             Ghost.GameObject.transform.rotation);
-    }
-
-    private float GetFrameTime(int index)
-    {
-        return GetFrame(index).Time;
     }
 
     private bool TryGetFullVisuals(out GhostVisuals visuals)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StrawberryShake;
 using TNRD.Zeepkist.GTR.GraphQL;
+using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Leaderboard;
 
@@ -22,22 +23,30 @@ public class LeaderboardGraphqlService
         Action<LeaderboardPageSnapshot> onNext,
         Action<Exception> onError)
     {
-        return _gtrClient.WatchLeaderboardPage
-            .Watch(level.XxHash, level.Hash, pageSize, page * pageSize)
-            .Subscribe(new OperationObserver<IOperationResult<IWatchLeaderboardPageResult>>(
-                result =>
-                {
-                    try
-                    {
-                        result.EnsureNoErrors();
-                        onNext(Map(result.Data?.Query));
-                    }
-                    catch (Exception e)
-                    {
-                        onError(e);
-                    }
-                },
-                onError));
+        RecoveringSubscription<IOperationResult<IWatchLeaderboardPageResult>> subscription = null;
+        subscription = new RecoveringSubscription<IOperationResult<IWatchLeaderboardPageResult>>(
+            observer => _gtrClient.WatchLeaderboardPage.Watch(level.XxHash, level.Hash, pageSize, page * pageSize).Subscribe(observer),
+            (result, attempt) => Deliver(result, attempt).Forget(), onError);
+        subscription.Start();
+        return subscription;
+
+        async UniTaskVoid Deliver(IOperationResult<IWatchLeaderboardPageResult> result, int attempt)
+        {
+            try
+            {
+                result.EnsureNoErrors();
+                if (result.Data?.Query == null) return;
+                var snapshot = Map(result.Data?.Query);
+                await UniTask.SwitchToMainThread();
+                if (!subscription.IsCurrentAttempt(attempt)) return;
+                subscription.MarkHealthy(attempt);
+                onNext(snapshot);
+            }
+            catch (Exception error)
+            {
+                if (subscription.IsCurrentAttempt(attempt)) onError(error);
+            }
+        }
     }
 
     private static LeaderboardPageSnapshot Map(IWatchLeaderboardPage_Query data)

@@ -42,6 +42,8 @@ namespace TNRD.Zeepkist.GTR;
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
+    private readonly CancellationTokenSource _startupCancellation = new();
+    private (string Name, string Value)[] _defaultHeaders;
 
     private void Awake()
     {
@@ -52,7 +54,8 @@ public class Plugin : BaseUnityPlugin
     {
         try
         {
-            await UniTask.WaitUntil(() => Steamworks.SteamClient.IsValid && Steamworks.SteamClient.IsLoggedOn);
+            await UniTask.WaitUntil(() => TransportHeaderSnapshot.TryCapture(MyPluginInfo.PLUGIN_VERSION, out _defaultHeaders),
+                cancellationToken: _startupCancellation.Token);
 
             IHostBuilder builder = Host.CreateDefaultBuilder();
             builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
@@ -69,6 +72,9 @@ public class Plugin : BaseUnityPlugin
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
         }
+        catch (OperationCanceledException) when (_startupCancellation.IsCancellationRequested)
+        {
+        }
         catch (Exception e)
         {
             Logger.LogError("Failed to start plugin");
@@ -76,8 +82,16 @@ public class Plugin : BaseUnityPlugin
         }
     }
 
+    private void OnDestroy()
+    {
+        _startupCancellation.Cancel();
+        _host?.Dispose();
+        _host = null;
+    }
+
     private void ConfigureServices(IServiceCollection services)
     {
+        // Startup already captured headers on Unity thread. Worker factories only read the snapshot.
         services.AddHostedService<Patcher>();
         services.AddSingleton<BaseUnityPlugin>(this);
         services.AddSingleton(this);
@@ -149,6 +163,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<PlaylistBrowserHost.PlaylistBrowserHostService>();
         services.AddSingleton<ServiceHelper>();
         services.AddSingleton<UserService>();
+        services.AddEagerService<GhostLoadDispatcher>();
         services.AddTransient<GhostRecorder>();
         services.AddTransient<V1Reader>();
         services.AddTransient<V2Reader>();
@@ -236,17 +251,14 @@ public class Plugin : BaseUnityPlugin
             });
     }
 
-    private static void AddDefaultHeaders(HttpClient client)
+    private void AddDefaultHeaders(HttpClient client)
     {
         AddDefaultHeaders((name, value) => client.DefaultRequestHeaders.Add(name, value));
     }
 
-    private static void AddDefaultHeaders(Action<string, string> addHeader)
+    private void AddDefaultHeaders(Action<string, string> addHeader)
     {
-        addHeader("X-Zeepkist-Version",
-            $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}");
-        addHeader("X-Zeepkist-Major-Version", PlayerManager.Instance.version.version.ToString());
-        addHeader("X-GTR-Version", MyPluginInfo.PLUGIN_VERSION);
-        addHeader("X-Steam-ID", Steamworks.SteamClient.SteamId.ToString());
+        foreach (var header in _defaultHeaders)
+            addHeader(header.Name, header.Value);
     }
 }
