@@ -70,6 +70,7 @@
     <Compile Include="..\Api\LevelRequestResource.cs" Link="Source\LevelRequestResource.cs" />
     <Compile Include="..\Api\RecordPostResource.cs" Link="Source\RecordPostResource.cs" />
     <Compile Include="..\Api\RecordWorkshopId.cs" Link="Source\RecordWorkshopId.cs" />
+    <Compile Include="..\Api\ApiResponseErrors.cs" Link="Source\ApiResponseErrors.cs" />
     <Compile Include="..\Logging\LogMessageFormatter.cs" Link="Source\LogMessageFormatter.cs" />
     <Compile Include="..\Configuration\ServiceUriValidator.cs" Link="Source\ServiceUriValidator.cs" />
     <Compile Include="..\Configuration\ServiceUrlSelector.cs" Link="Source\ServiceUrlSelector.cs" />
