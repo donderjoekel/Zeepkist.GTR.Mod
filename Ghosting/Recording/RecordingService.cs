@@ -204,7 +204,7 @@ public class RecordingService : IEagerService, IDisposable
     private async Task UploadRecording(PreparedRecording recording, CancellationToken token)
     {
         using HttpResponseMessage response = await _apiHttpClient.PostJsonAsync("record/submit", recording.Json, token);
-        response.EnsureSuccessStatusCode();
+        await ApiResponseErrors.EnsureSuccessWithBodyAsync(response);
         await UniTask.SwitchToMainThread(cancellationToken: token);
         if (_configService.ShowRecordSubmitMessage.Value)
             _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
