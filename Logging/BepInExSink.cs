@@ -18,8 +18,10 @@ public class BepInExSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        string message = logEvent.RenderMessage(_formatProvider);
-        message = DateTimeOffset.Now.ToString("HH:mm:ss") + " " + message;
+        string message = LogMessageFormatter.Format(
+            DateTimeOffset.Now.ToString("HH:mm:ss"),
+            logEvent.RenderMessage(_formatProvider),
+            logEvent.Exception);
         switch (logEvent.Level)
         {
             case LogEventLevel.Verbose:
