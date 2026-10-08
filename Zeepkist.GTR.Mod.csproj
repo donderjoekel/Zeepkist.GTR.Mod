@@ -9,6 +9,7 @@
         <RunPostBuildEvent>Always</RunPostBuildEvent>
         <RootNamespace>TNRD.Zeepkist.GTR</RootNamespace>
         <Product>Zeepkist GTR</Product>
+        <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
         <DebugType>full</DebugType>
     </PropertyGroup>
 
@@ -52,7 +53,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="netstandard, Version=2.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
+        <Reference Include="netstandard" />
     </ItemGroup>
 
     <ItemGroup>

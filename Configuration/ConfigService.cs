@@ -111,7 +111,7 @@ public class ConfigService : IEagerService
                 "2. Ghosts - General",
                 "2.1 Ghosts - Visibility",
                 "2.2 Ghosts - Keys",
-                "2.3 - Ghosts - Offline Ghosts");
+                "2.3 Ghosts - Offline Ghosts");
             builder.Tab("Record Holder",
                 "3. Record Holder - General",
                 "3.1 Record Holder - Visibility",
