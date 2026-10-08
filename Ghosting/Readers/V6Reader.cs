@@ -84,7 +84,7 @@ public class V6Reader : GhostReaderBase<V6Ghost>
             }
 
             V6Ghost.Frame previousFrame = new(
-                0,
+                ExpectedVersion == 8 ? (float)Newtonsoft.Json.JsonConvert.DeserializeObject<Recording.RunEvidence>(deserializedGhost.EvidenceJson).InitialTime : 0,
                 deserializedGhost.InitialFrame.Position,
                 Quaternion.Euler(deserializedGhost.InitialFrame.Rotation),
                 deserializedGhost.InitialFrame.Speed,

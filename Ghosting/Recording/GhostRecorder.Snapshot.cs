@@ -21,10 +21,14 @@ public partial class GhostRecorder
         private readonly Ghost _header;
         private IReadOnlyCollection<Frame> _frames;
         private bool _written;
+        private RunEvidence _evidence;
+        internal string RunUuid => _evidence?.RunUuid;
+        internal ValidationCaptureMeasurements Measurements { get; set; }
 
-        internal Snapshot(Ghost header, IReadOnlyCollection<Frame> frames)
+        internal Snapshot(Ghost header, IReadOnlyCollection<Frame> frames, RunEvidence evidence = null)
         {
             _header = header;
+            _evidence = evidence;
             _frames = frames;
         }
 
@@ -35,6 +39,7 @@ public partial class GhostRecorder
             if (_written)
                 throw new InvalidOperationException("Recording was already encoded.");
             _written = true;
+            if (_evidence != null) _header.EvidenceJson = Newtonsoft.Json.JsonConvert.SerializeObject(_evidence);
             Ghost ghost = CreateGhost(_header, _frames);
             using MemoryStream payload = new();
             Serializer.Serialize(payload, ghost);
@@ -45,6 +50,7 @@ public partial class GhostRecorder
         public void Dispose()
         {
             _frames = null;
+            _evidence = null;
             _header.DeltaFrames = null;
         }
     }

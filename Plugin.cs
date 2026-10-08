@@ -172,6 +172,7 @@ public class Plugin : BaseUnityPlugin
         services.AddTransient<V5Reader>();
         services.AddTransient<V6Reader>();
         services.AddTransient<V7Reader>();
+        services.AddTransient<V8Reader>();
         services.AddSingleton<ApiHttpClient>();
         services.AddHttpClient();
         services.AddHttpClient(SpainRoutingService.TraceClientKey, (provider, client) =>

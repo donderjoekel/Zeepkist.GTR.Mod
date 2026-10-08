@@ -83,11 +83,13 @@ public class GhostReaderEquivalenceTests
     [InlineData(5)]
     [InlineData(6)]
     [InlineData(7)]
+    [InlineData(8)]
     public void ProtobufReaders_PreservePositionsInputsAndRagdoll(int version)
     {
         var payload = new Data.Ghost
         {
             Version = version,
+            EvidenceJson = "{\"initialTime\":0.01}",
             SteamId = 42,
             Cosmetics = new(),
             TaggedUsername = "player",
@@ -111,7 +113,8 @@ public class GhostReaderEquivalenceTests
         {
             5 => new V5Reader(null, NullLogger<V5Reader>.Instance).Read(stream.ToArray()),
             6 => new V6Reader(null, NullLogger<V6Reader>.Instance).Read(stream.ToArray()),
-            _ => new V7Reader(null, NullLogger<V7Reader>.Instance).Read(stream.ToArray())
+            7 => new V7Reader(null, NullLogger<V7Reader>.Instance).Read(stream.ToArray()),
+            _ => new V8Reader(null, NullLogger<V8Reader>.Instance).Read(stream.ToArray())
         };
         Array frames = ((ICapturedFrames)ghost).Frames;
         Assert.Equal(3, frames.Length);

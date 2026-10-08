@@ -18,6 +18,7 @@ public class ConfigService : IEagerService
     public const string LocalDevelopmentGraphQLUrl = "http://127.0.0.1:5000/";
 
     public ConfigEntry<bool> SubmitRecords { get; private set; }
+    public ConfigEntry<bool> CaptureValidationFixtures { get; private set; }
     public ConfigEntry<bool> ShowRecordSubmitMessage { get; private set; }
     public ConfigEntry<float> ShowRecordSubmitMessageDuration { get; private set; }
     public ConfigEntry<bool> ShowVoteReminderAfterVoting { get; private set; }
@@ -100,6 +101,7 @@ public class ConfigService : IEagerService
         ConfigUrls(config);
         ConfigPlayback(config);
         ConfigChatMessages(config);
+        ConfigDeveloper(config);
 
         SettingsApi.ConfigureModSettingsTabs(plugin, builder =>
         {
@@ -118,7 +120,8 @@ public class ConfigService : IEagerService
                 "7. Chat Messages");
             builder.Tab("Other",
                 "4. Discord",
-                "5. URLs");
+                "5. URLs",
+                "8. Developer");
             builder.Tab("Playback",
                 "6. Playback");
         });
@@ -141,6 +144,13 @@ public class ConfigService : IEagerService
             "4. Show Record Submit Message Duration",
             2.5f,
             "The duration in seconds that the record submit message should be shown for");
+    }
+
+    private void ConfigDeveloper(ConfigFile config)
+    {
+        CaptureValidationFixtures = config.Bind(
+            "8. Developer", "1. Capture Validation Fixtures", false,
+            "Capture completed online or offline runs for local geometry calibration. Capture mode saves ghost, level and timing measurements in BepInEx/cache/GTR-Validation and disables record uploads.");
     }
 
     private void ConfigGhosts(ConfigFile config)

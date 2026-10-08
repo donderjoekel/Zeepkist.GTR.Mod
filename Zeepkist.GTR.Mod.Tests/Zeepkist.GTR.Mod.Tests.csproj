@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Compile Include="..\Connectivity\TransportHeaderSnapshot.cs" Link="Source\TransportHeaderSnapshot.cs" />
+    <Compile Include="..\Ghosting\Recording\RecordingSubmissionRetry.cs" Link="Source\RecordingSubmissionRetry.cs" />
     <Compile Include="..\Ghosting\Recording\GhostRecorder.Frame.cs" Link="Source\Ghosting\Recording\GhostRecorder.Frame.cs" />
     <Compile Include="..\Ghosting\Recording\GhostRecorder.Snapshot.cs" Link="Source\Ghosting\Recording\GhostRecorder.Snapshot.cs" />
     <Compile Include="..\Ghosting\Recording\GroundedWheelState.cs" Link="Source\Ghosting\Recording\GroundedWheelState.cs" />
@@ -52,6 +53,9 @@
     <Compile Include="..\Ghosting\Readers\V4Reader.cs" Link="Source\V4Reader.cs" />
     <Compile Include="..\Ghosting\Readers\V5Reader.cs" Link="Source\V5Reader.cs" />
     <Compile Include="..\Ghosting\Readers\V6Reader.cs" Link="Source\V6Reader.cs" />
+    <Compile Include="..\Ghosting\Readers\V8Reader.cs" Link="Source\V8Reader.cs" />
+    <Compile Include="..\Ghosting\Recording\ValidationFixtureWriter.cs" Link="Source\ValidationFixtureWriter.cs" />
+    <Compile Include="..\Ghosting\Recording\RunEvidence.cs" Link="Source\RunEvidence.cs" />
     <Compile Include="..\Ghosting\Readers\V7Reader.cs" Link="Source\V7Reader.cs" />
     <Compile Include="..\Ghosting\Readers\GhostSteeringCodec.cs" Link="Source\GhostSteeringCodec.cs" />
     <Compile Include="..\Ghosting\Playback\GhostRepository.cs" Link="Source\GhostRepository.cs" />
@@ -142,4 +146,5 @@
       </ReferencePathWithRefAssemblies>
     </ItemGroup>
   </Target>
+<ItemGroup><None Update="Fixtures\ghost-v8.json" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>

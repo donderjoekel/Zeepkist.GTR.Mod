@@ -39,6 +39,8 @@ public class RecordingService : IEagerService, IDisposable
         public GhostRecorder.Snapshot Snapshot;
         public RecordPostResource Resource;
         public RecordFeedbackBaseline Baseline;
+        public string CaptureDirectory;
+        public string LevelSource;
         public void Dispose() { Snapshot.Dispose(); Resource.GhostData = null; }
     }
 
@@ -47,10 +49,11 @@ public class RecordingService : IEagerService, IDisposable
         public string Json;
         public float Time;
         public RecordFeedbackBaseline Baseline;
+        public bool Captured;
     }
 
     private bool IsPlayingOnline => ZeepkistNetwork.IsConnectedToGame;
-    private bool CanRecord => IsPlayingOnline && _configService.SubmitRecords.Value;
+    private bool CanRecord => _configService.CaptureValidationFixtures.Value || (IsPlayingOnline && _configService.SubmitRecords.Value);
 
     public RecordingService(
         MessengerService messengerService,
@@ -88,6 +91,7 @@ public class RecordingService : IEagerService, IDisposable
 
         _logger.LogInformation("Creating new recorder");
         _activeGhostRecorder = _ghostRecorderFactory.Create();
+        if (_configService.CaptureValidationFixtures.Value) _activeGhostRecorder.EnableValidationMetrics();
     }
 
     private void OnRoundStarted()
@@ -110,7 +114,23 @@ public class RecordingService : IEagerService, IDisposable
         _logger.LogInformation("Stopping recorder");
         GhostRecorder recorder = _activeGhostRecorder;
         _activeGhostRecorder = null;
-        try { StartSubmit(recorder); }
+        PendingRecording pending;
+        try { pending = PrepareSubmission(); }
+        catch (Exception error) { recorder.Stop(); ReportPublishingFailure(error).Forget(); return; }
+        SubmitAfterTrigger(recorder, pending).Forget();
+    }
+
+    private async UniTaskVoid SubmitAfterTrigger(GhostRecorder recorder, PendingRecording pending)
+    {
+        // Finish event fires inside HeyYouHitATrigger. Its postfix records accepted geometry first.
+        await UniTask.Yield(ZeepSDK.External.Cysharp.Threading.Tasks.PlayerLoopTiming.LastFixedUpdate);
+        try {
+            if (pending == null) return;
+            recorder.CaptureFinishFrame(pending.Resource.Time);
+            pending.Snapshot = recorder.Freeze();
+            try { _publishing.Enqueue(pending); }
+            catch { pending.Dispose(); throw; }
+        }
         catch (Exception error) { ReportPublishingFailure(error).Forget(); }
         finally { recorder.Stop(); }
     }
@@ -122,7 +142,7 @@ public class RecordingService : IEagerService, IDisposable
         _activeGhostRecorder = null;
     }
 
-    private void StartSubmit(GhostRecorder ghostRecorder)
+    private PendingRecording PrepareSubmission()
     {
         _logger.LogInformation("Collecting extra information");
         LevelHashV2 currentHash = LevelApi.CurrentHashV2;
@@ -138,8 +158,6 @@ public class RecordingService : IEagerService, IDisposable
         List<float> splits = result.split_times.Select(x => x.time).ToList();
         List<float> speeds = result.split_times.Select(x => x.velocity).ToList();
         float time = result.time;
-        ghostRecorder.CaptureFinishFrame(time);
-        ghostRecorder.Stop();
 
         _logger.LogInformation(
             "Resolved workshop ID {WorkshopId} from lobby {LobbyWorkshopId} and level {LevelWorkshopId}",
@@ -151,24 +169,23 @@ public class RecordingService : IEagerService, IDisposable
         {
             _messengerService.LogError("Unable to figure out level, discarding record :(");
             _logger.LogError("Unable to get the level hash");
-            return;
+            return null;
         }
 
         if (splits.Count != PlayerManager.Instance.currentMaster.racePoints)
         {
             _logger.LogInformation("Discarding any % record");
-            return;
+            return null;
         }
 
         if (!RecordSubmissionEligibility.ShouldSubmit(currentLevel?.UID))
         {
             _logger.LogInformation("Discarding record for non-replayable TRTM level");
-            return;
+            return null;
         }
 
         var pending = new PendingRecording
         {
-            Snapshot = ghostRecorder.Freeze(),
             Resource = new RecordPostResource
             {
                 Level = hash,
@@ -180,22 +197,32 @@ public class RecordingService : IEagerService, IDisposable
                 ModVersion = MyPluginInfo.PLUGIN_VERSION,
                 GameVersion = $"{PlayerManager.Instance.version.version}.{PlayerManager.Instance.version.patch}"
             },
-            Baseline = _recordFeedbackService.CaptureBaseline()
+            CaptureDirectory = _configService.CaptureValidationFixtures.Value ? Path.Combine(BepInEx.Paths.CachePath, "GTR-Validation") : null,
+            LevelSource = _configService.CaptureValidationFixtures.Value
+                ? (currentLevel.useLevelV15Data ? currentLevel.GetV15LevelData() : string.Join("\n", currentLevel.GetOldLevelData())) : null,
+            Baseline = _configService.CaptureValidationFixtures.Value ? null : _recordFeedbackService.CaptureBaseline()
         };
-        try { _publishing.Enqueue(pending); }
-        catch { pending.Dispose(); throw; }
+        return pending;
     }
 
     private static Task<PreparedRecording> EncodeRecording(PendingRecording pending, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         using LimitedMemoryStream stream = new(GhostLimits.MaxCompressedBytes);
+        var encoding = System.Diagnostics.Stopwatch.StartNew();
         pending.Snapshot.Write(stream);
+        encoding.Stop();
         token.ThrowIfCancellationRequested();
         pending.Resource.GhostData = Convert.ToBase64String(stream.GetBuffer(), 0, checked((int)stream.Length));
+        string json = JsonConvert.SerializeObject(pending.Resource);
+        bool captured = pending.CaptureDirectory != null;
+        if (captured)
+            ValidationFixtureWriter.Write(pending.CaptureDirectory, pending.Snapshot.RunUuid, json,
+                pending.LevelSource, pending.Snapshot.Measurements, encoding.Elapsed.TotalMilliseconds, stream.Length);
         return Task.FromResult(new PreparedRecording
         {
-            Json = JsonConvert.SerializeObject(pending.Resource),
+            Json = json,
+            Captured = captured,
             Time = pending.Resource.Time,
             Baseline = pending.Baseline
         });
@@ -203,8 +230,40 @@ public class RecordingService : IEagerService, IDisposable
 
     private async Task UploadRecording(PreparedRecording recording, CancellationToken token)
     {
-        using HttpResponseMessage response = await _apiHttpClient.PostJsonAsync("record/submit", recording.Json, token);
-        await ApiResponseErrors.EnsureSuccessWithBodyAsync(response);
+        if (recording.Captured)
+        {
+            await UniTask.SwitchToMainThread(cancellationToken: token);
+            _messengerService.LogSuccess("Calibration fixture saved in BepInEx/cache/GTR-Validation");
+            return;
+        }
+
+        // Prepared JSON retains same V8 run UUID and ghost bytes across every retry.
+        for (int attempt = 0; ; attempt++)
+        {
+            HttpResponseMessage response;
+            try
+            {
+                response = await _apiHttpClient.PostJsonAsync("record/submit", recording.Json, token);
+            }
+            catch (HttpRequestException) when (attempt < 3)
+            {
+                await Task.Delay(RecordingSubmissionRetry.DelayMilliseconds(attempt), token);
+                continue;
+            }
+
+            using (response)
+            {
+                if (attempt < 3 && RecordingSubmissionRetry.ShouldRetry((int)response.StatusCode))
+                {
+                    await Task.Delay(RecordingSubmissionRetry.DelayMilliseconds(attempt), token);
+                    continue;
+                }
+
+                // Keep HTTP rejection diagnostics outside the transport-error retry catch.
+                await ApiResponseErrors.EnsureSuccessWithBodyAsync(response);
+                break;
+            }
+        }
         await UniTask.SwitchToMainThread(cancellationToken: token);
         if (_configService.ShowRecordSubmitMessage.Value)
             _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
