@@ -75,10 +75,13 @@ public partial class GhostRecorder
         {
             _logger.LogError("No ReadyToReset found");
         }
+        if (_readyToReset != null && _setupCar != null)
+            StartEvidence();
     }
 
     public void Stop()
     {
+        TNRD.Zeepkist.GTR.Patching.Patches.ReadyToReset_ValidationEvidence.AcceptedTrigger -= CaptureTriggerEvidence;
         if (_updateToken != null)
             _playerLoopService.UnsubscribeUpdate(_updateToken);
         if (_fixedUpdateToken != null)
@@ -101,6 +104,7 @@ public partial class GhostRecorder
 
     private void FixedUpdate()
     {
+        if (_finishCaptured) return;
         if (_setupCar == null || _readyToReset == null)
             return;
 
@@ -109,19 +113,25 @@ public partial class GhostRecorder
 
     public void CaptureFinishFrame(float finishTime)
     {
+        if (_finishCaptured) return;
         if (_setupCar == null || _readyToReset == null)
             return;
 
         if (_frames.Count > 0 && _frames[^1].Time >= finishTime)
             return;
 
-        CaptureFrame(finishTime);
+        CaptureFrame(_readyToReset.ticker.what_ticker);
     }
 
     private void CaptureFrame(float time)
     {
         if (_sealed)
             return;
+        if (_evidence != null && _evidence.Samples.Count < GhostLimits.MaxFrames)
+        {
+            SphereSample sample = CaptureSphere(time);
+            if (sample != null) _evidence.Samples.Add(sample);
+        }
         if (_frames.Count >= GhostLimits.MaxFrames)
         {
             _logger.LogWarning("Ghost frame limit reached; stopping recording");
@@ -511,7 +521,7 @@ public partial class GhostRecorder
 
         Ghost ghost = new()
         {
-            Version = 7,
+            Version = 8,
             SteamId = SteamClient.SteamId.Value,
             TaggedUsername = PlayerManager.Instance.GetNameTag() + SteamClient.Name,
             Color = ColorUtilities.ToHexString(
@@ -542,7 +552,10 @@ public partial class GhostRecorder
 
         Stop();
         _sealed = true;
-        var snapshot = new Snapshot(ghost, _frames);
+        if (_validationMeasurements != null) _validationMeasurements.ManagedBytesFinish = GC.GetTotalMemory(false);
+        var snapshot = new Snapshot(ghost, _frames, _evidence) { Measurements = _validationMeasurements };
+        _validationMeasurements = null;
+        _evidence = null;
         _frames = new StructFrameBuffer<Frame>(FrameBlockSize);
         _setupCar = null;
         _readyToReset = null;

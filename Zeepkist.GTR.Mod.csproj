@@ -3,12 +3,13 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <AssemblyName>net.tnrd.zeepkist.gtr</AssemblyName>
-        <Version>1.8.1</Version>
+        <Version>1.9.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RunPostBuildEvent>Always</RunPostBuildEvent>
         <RootNamespace>TNRD.Zeepkist.GTR</RootNamespace>
         <Product>Zeepkist GTR</Product>
+        <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
         <DebugType>full</DebugType>
     </PropertyGroup>
 
@@ -31,28 +32,28 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0" />
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0" />
         <PackageReference Include="JsonApiSerializer" Version="2.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
-        <PackageReference Include="protobuf-net" Version="3.2.56" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+        <PackageReference Include="protobuf-net" Version="3.4.30" />
         <PackageReference Include="RestEase" Version="1.6.4" />
         <PackageReference Include="RestEase.SourceGenerator" Version="1.6.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Serilog" Version="4.3.0" />
+        <PackageReference Include="Serilog" Version="4.4.0" />
         <PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.0" />
-        <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.0" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+        <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.2" />
+        <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.2" />
         <PackageReference Include="System.Buffers" Version="4.6.1" Aliases="BuffersAlias" />
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all" />
-        <PackageReference Include="ZeepSDK" Version="2.6.1" PrivateAssets="all" />
+        <PackageReference Include="Zeepkist.GameLibs" Version="18.10.2087" PrivateAssets="all" />
+        <PackageReference Include="ZeepSDK" Version="2.7.5" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="netstandard, Version=2.1.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51" />
+        <Reference Include="netstandard" />
     </ItemGroup>
 
     <ItemGroup>

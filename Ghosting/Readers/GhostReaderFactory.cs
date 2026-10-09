@@ -53,6 +53,7 @@ public class GhostReaderFactory
             5 => _provider.GetRequiredService<V5Reader>(),
             6 => _provider.GetRequiredService<V6Reader>(),
             7 => _provider.GetRequiredService<V7Reader>(),
+            8 => _provider.GetRequiredService<V8Reader>(),
             _ => throw new NotSupportedException($"Version {version} is not supported.")
         };
     }

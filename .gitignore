@@ -351,3 +351,5 @@ MigrationBackup/
 appsettings.json
 .idea
 .DS_Store
+
+.vscode
