@@ -62,7 +62,6 @@ public class LeaderboardGraphqlService
                     SteamName = record.User?.SteamName,
                     Time = record.Time,
                     DateCreated = record.DateCreated,
-                    LevelPosition = contribution?.LevelPosition,
                     LevelDecayedPoints = contribution?.LevelDecayedPoints
                 };
             })
