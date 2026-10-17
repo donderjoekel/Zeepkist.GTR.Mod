@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using BepInEx;
 using Microsoft.Extensions.Logging;
 using UnityEngine;
@@ -13,7 +12,6 @@ public class AssetService
     private readonly PluginInfo _info;
     private readonly ILogger<AssetService> _logger;
 
-    private AssetBundle _assetBundle;
     private AssetBundle _shaderAssetBundle;
     private readonly Dictionary<string, Shader> _shaders = new();
 
@@ -22,26 +20,7 @@ public class AssetService
         _info = info;
         _logger = logger;
 
-        if (LoadUIAssembly())
-            LoadAssetBundle("gtr-ui", assetBundle => _assetBundle = assetBundle, true);
-
         LoadAssetBundle("gtr-shaders", assetBundle => _shaderAssetBundle = assetBundle, false);
-    }
-
-    private bool LoadUIAssembly()
-    {
-        string dir = Path.GetDirectoryName(_info.Location);
-        string assemblyPath = dir + "/TNRD.Zeepkist.GTR.UI.dll";
-        try
-        {
-            Assembly asm = Assembly.LoadFile(assemblyPath);
-            return asm != null;
-        }
-        catch (Exception e)
-        {
-            _logger.LogCritical(e, "Unable to load UI assembly");
-            return false;
-        }
     }
 
     private bool LoadAssetBundle(
@@ -119,6 +98,4 @@ public class AssetService
         else
             _logger.LogWarning("Unable to load optional asset bundle {AssetBundle}", assetBundleName);
     }
-
-    // TODO: Add methods for loading UI from asset bundle
 }
