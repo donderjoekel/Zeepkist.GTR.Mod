@@ -48,6 +48,7 @@
         <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.2" />
         <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.2" />
         <PackageReference Include="System.Buffers" Version="4.6.1" Aliases="BuffersAlias" />
+        <PackageReference Include="System.ValueTuple" Version="4.6.2" GeneratePathProperty="true" />
         <PackageReference Include="Zeepkist.GameLibs" Version="18.10.2087" PrivateAssets="all" />
         <PackageReference Include="ZeepSDK" Version="2.7.5" PrivateAssets="all" />
     </ItemGroup>
@@ -64,6 +65,11 @@
 
     <ItemGroup>
         <None Include="RuntimeAssets\Native\discord_game_sdk.dll" Link="discord_game_sdk.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <!-- System.ValueTuple 4.6+ is treated as a framework facade on net471+ and never copied to the output,
+             but Unity's Mono doesn't ship it. The Microsoft.Extensions.* 10.x packages reference version 4.0.5.0. -->
+        <None Include="$(PkgSystem_ValueTuple)\lib\net47\System.ValueTuple.dll" Link="System.ValueTuple.dll" Visible="false">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
         <None Include="RuntimeAssets\Shaders\gtr-shaders" Link="gtr-shaders" Condition="Exists('RuntimeAssets\Shaders\gtr-shaders')">
