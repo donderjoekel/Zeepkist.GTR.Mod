@@ -185,7 +185,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
     private void OnDrawItem(GUI_OnlineLeaderboardPosition gui, LeaderboardRecord item, int index)
     {
         gui.position.gameObject.SetActive(true);
-        int position = index + 1;
+        int position = item.LevelPosition ?? index + 1;
         gui.position.text = position.ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(position);
         gui.favoriteButton.gameObject.SetActive(true);

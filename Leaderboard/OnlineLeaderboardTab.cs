@@ -110,7 +110,7 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab, IDisposable
         ZeepkistNetwork.TryGetPlayer(Convert.ToUInt64(item.SteamId), out gui.thePlayer);
 
         gui.position.gameObject.SetActive(true);
-        int position = index + 1;
+        int position = item.LevelPosition ?? index + 1;
         gui.position.text = position.ToString();
         gui.position.color = PlayerManager.Instance.GetColorFromPosition(position);
         gui.favoriteButton.gameObject.SetActive(false);
