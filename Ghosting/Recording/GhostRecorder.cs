@@ -339,7 +339,7 @@ public partial class GhostRecorder
             if (MaterialPhysicsStateResolver.ShouldIncludeWheel(enabled, grounded))
             {
                 MaterialHolder surface = soapOverride ? null : wheel.GetCurrentSurface();
-                MaterialPhysicsState state = MaterialPhysicsStateResolver.GetEffectiveState(soapOverride, surface?.physics?.name);
+                MaterialPhysicsState state = MaterialPhysicsStateResolver.GetEffectiveState(soapOverride, surface?.physics?.logicOutput);
                 materialPhysics |= state;
                 LogEncounteredMaterialPhysics(surface, state, soapOverride);
             }
