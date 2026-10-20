@@ -6,32 +6,32 @@ namespace Zeepkist.GTR.Mod.Tests
     public class MaterialPhysicsStateResolverTests
     {
         [Theory]
-        [InlineData("Tarmac", MaterialPhysicsState.Tarmac)]
-        [InlineData("Grass", MaterialPhysicsState.Grass)]
-        [InlineData("Sand", MaterialPhysicsState.Sand)]
-        [InlineData("Soap", MaterialPhysicsState.Soap)]
-        [InlineData("Wood", MaterialPhysicsState.Wood)]
-        [InlineData("Mud", MaterialPhysicsState.Mud)]
-        [InlineData("Ice 0.05", MaterialPhysicsState.Ice1)]
-        [InlineData("Ice 0.10", MaterialPhysicsState.Ice2)]
-        [InlineData("Ice 0.15", MaterialPhysicsState.Ice3)]
-        public void FromPhysicsName_MapsKnownMaterialPhysics(
-            string physicsName,
+        [InlineData(0, MaterialPhysicsState.Tarmac)]
+        [InlineData(1, MaterialPhysicsState.Grass)]
+        [InlineData(2, MaterialPhysicsState.Sand)]
+        [InlineData(4, MaterialPhysicsState.Soap)]
+        [InlineData(5, MaterialPhysicsState.Wood)]
+        [InlineData(3, MaterialPhysicsState.Mud)]
+        [InlineData(6, MaterialPhysicsState.Ice1)]
+        [InlineData(7, MaterialPhysicsState.Ice2)]
+        [InlineData(8, MaterialPhysicsState.Ice3)]
+        public void FromLogicOutput_MapsGamePhysics(
+            int logicOutput,
             MaterialPhysicsState expected)
         {
-            Assert.Equal(expected, MaterialPhysicsStateResolver.FromPhysicsName(physicsName));
+            Assert.Equal(expected, MaterialPhysicsStateResolver.FromLogicOutput(logicOutput));
         }
 
         [Theory]
         [InlineData(null)]
-        [InlineData("")]
-        [InlineData("Ice")]
-        [InlineData("Metal")]
-        public void FromPhysicsName_ReturnsNoneForUnknownMaterialPhysics(string physicsName)
+        [InlineData(-1)]
+        [InlineData(9)]
+        [InlineData(100)]
+        public void FromLogicOutput_ReturnsNoneForMissingOrUnknownPhysics(int? logicOutput)
         {
             Assert.Equal(
                 MaterialPhysicsState.None,
-                MaterialPhysicsStateResolver.FromPhysicsName(physicsName));
+                MaterialPhysicsStateResolver.FromLogicOutput(logicOutput));
         }
 
         [Theory]
@@ -52,21 +52,38 @@ namespace Zeepkist.GTR.Mod.Tests
         {
             Assert.Equal(
                 MaterialPhysicsState.Soap,
-                MaterialPhysicsStateResolver.GetEffectiveState(true, "Wood"));
+                MaterialPhysicsStateResolver.GetEffectiveState(true, 5));
             Assert.Equal(
                 MaterialPhysicsState.Wood,
-                MaterialPhysicsStateResolver.GetEffectiveState(false, "Wood"));
+                MaterialPhysicsStateResolver.GetEffectiveState(false, 5));
+        }
+
+        [Fact]
+        public void GetEffectiveState_PreservesMissingPhysicsAndSoapOverride()
+        {
+            Assert.Equal(MaterialPhysicsState.None, MaterialPhysicsStateResolver.GetEffectiveState(false, null));
+            Assert.Equal(MaterialPhysicsState.Soap, MaterialPhysicsStateResolver.GetEffectiveState(true, null));
+        }
+
+        [Theory]
+        [InlineData("0 - Tarmac", 0, MaterialPhysicsState.Tarmac)]
+        [InlineData("6 - Ice 0.05", 6, MaterialPhysicsState.Ice1)]
+        [InlineData("renamed asset", 5, MaterialPhysicsState.Wood)]
+        public void AssetName_DoesNotAffectPhysicsIdentity(string assetName, int logicOutput, MaterialPhysicsState expected)
+        {
+            var physics = new { name = assetName, logicOutput };
+            Assert.Equal(expected, MaterialPhysicsStateResolver.GetEffectiveState(false, physics.logicOutput));
         }
 
         [Fact]
         public void Combine_PreservesMixedWheelSurfaces()
         {
             MaterialPhysicsState state = MaterialPhysicsStateResolver.Combine(
-                MaterialPhysicsStateResolver.FromPhysicsName("Wood"),
-                MaterialPhysicsStateResolver.FromPhysicsName("Mud"));
+                MaterialPhysicsStateResolver.FromLogicOutput(5),
+                MaterialPhysicsStateResolver.FromLogicOutput(3));
             state = MaterialPhysicsStateResolver.Combine(
                 state,
-                MaterialPhysicsStateResolver.FromPhysicsName("Ice 0.15"));
+                MaterialPhysicsStateResolver.FromLogicOutput(8));
 
             Assert.Equal(
                 MaterialPhysicsState.Wood |

@@ -9,26 +9,26 @@ internal static class MaterialPhysicsStateResolver
 
     public static MaterialPhysicsState GetEffectiveState(
         bool soapOverride,
-        string materialPhysicsName)
+        int? logicOutput)
     {
         return soapOverride
             ? MaterialPhysicsState.Soap
-            : FromPhysicsName(materialPhysicsName);
+            : FromLogicOutput(logicOutput);
     }
 
-    public static MaterialPhysicsState FromPhysicsName(string materialPhysicsName)
+    public static MaterialPhysicsState FromLogicOutput(int? logicOutput)
     {
-        return materialPhysicsName switch
+        return logicOutput switch
         {
-            "Tarmac" => MaterialPhysicsState.Tarmac,
-            "Grass" => MaterialPhysicsState.Grass,
-            "Sand" => MaterialPhysicsState.Sand,
-            "Soap" => MaterialPhysicsState.Soap,
-            "Wood" => MaterialPhysicsState.Wood,
-            "Mud" => MaterialPhysicsState.Mud,
-            "Ice 0.05" => MaterialPhysicsState.Ice1,
-            "Ice 0.10" => MaterialPhysicsState.Ice2,
-            "Ice 0.15" => MaterialPhysicsState.Ice3,
+            0 => MaterialPhysicsState.Tarmac,
+            1 => MaterialPhysicsState.Grass,
+            2 => MaterialPhysicsState.Sand,
+            3 => MaterialPhysicsState.Mud,
+            4 => MaterialPhysicsState.Soap,
+            5 => MaterialPhysicsState.Wood,
+            6 => MaterialPhysicsState.Ice1,
+            7 => MaterialPhysicsState.Ice2,
+            8 => MaterialPhysicsState.Ice3,
             _ => MaterialPhysicsState.None
         };
     }
