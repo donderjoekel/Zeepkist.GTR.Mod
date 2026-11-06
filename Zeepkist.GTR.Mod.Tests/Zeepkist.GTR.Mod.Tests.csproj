@@ -22,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Ghosting\Recording\GhostRecorder.Evidence.cs" Link="Source\GhostRecorder.Evidence.cs" />
+    <Compile Include="..\Patching\Patches\ReadyToReset_ValidationEvidence.cs" Link="Source\ReadyToReset_ValidationEvidence.cs" />
+    <Compile Include="..\Patching\Patches\BlockTrigger_ValidationEvidence.cs" Link="Source\BlockTrigger_ValidationEvidence.cs" />
     <Compile Include="..\Connectivity\TransportHeaderSnapshot.cs" Link="Source\TransportHeaderSnapshot.cs" />
     <Compile Include="..\Ghosting\Recording\RecordingSubmissionRetry.cs" Link="Source\RecordingSubmissionRetry.cs" />
     <Compile Include="..\Ghosting\Recording\GhostRecorder.Frame.cs" Link="Source\Ghosting\Recording\GhostRecorder.Frame.cs" />

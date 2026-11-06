@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using TNRD.Zeepkist.GTR.Patching.Patches;
 using UnityEngine;
 using ZeepSDK.Level;
+using ZeepSDK.External.Cysharp.Threading.Tasks;
 
 namespace TNRD.Zeepkist.GTR.Ghosting.Recording;
 
@@ -14,6 +15,37 @@ public partial class GhostRecorder
     private SphereCollider[] _carTriggerSpheres;
     private SphereCollider[] _ragdollTriggerSpheres;
     private ValidationCaptureMeasurements _validationMeasurements;
+    private EvidenceSampler _evidenceSampler;
+
+    private void StopEvidence()
+    {
+        ReadyToReset_ValidationEvidence.AcceptedTrigger -= CaptureTriggerEvidence;
+        ReadyToReset_ValidationEvidence.CaptureSample -= CaptureTriggerSphere;
+        _evidenceSampler?.Stop();
+        _evidenceSampler = null;
+    }
+
+    private sealed class EvidenceSampler : IPlayerLoopItem
+    {
+        private GhostRecorder _owner;
+        internal EvidenceSampler(GhostRecorder owner) { _owner = owner; }
+        internal void Stop() { _owner = null; }
+        public bool MoveNext()
+        {
+            GhostRecorder owner = _owner;
+            if (owner == null || owner._sealed || owner._finishCaptured) return false;
+            owner.CaptureEvidenceSample(owner._readyToReset.ticker.GetTicker());
+            return true;
+        }
+    }
+
+    private void CaptureEvidenceSample(float time)
+    {
+        // Reserve one slot for the exact accepted finish callback.
+        if (_evidence == null || _evidence.Samples.Count >= GhostLimits.MaxFrames - 1) return;
+        SphereSample sample = CaptureSphere(time);
+        if (sample != null) _evidence.Samples.Add(sample);
+    }
     public void EnableValidationMetrics()
     {
         _validationMeasurements = new ValidationCaptureMeasurements { ManagedBytesStart = GC.GetTotalMemory(false) };
@@ -23,7 +55,7 @@ public partial class GhostRecorder
     {
         _evidence = new RunEvidence
         {
-            SphereSamplingVersion = 3,
+            SphereSamplingVersion = 4,
             RunUuid = Guid.NewGuid().ToString("D"),
             LevelUid = LevelApi.CurrentLevel?.UID ?? "",
             SubmissionLevel = LevelApi.CurrentHashV2?.ZeepHash ?? "",
@@ -37,7 +69,11 @@ public partial class GhostRecorder
         _ragdollTriggerSpheres = _readyToReset.character.ragdollTransform
             .GetComponentsInChildren<SphereCollider>(true);
         ReadyToReset_ValidationEvidence.AcceptedTrigger += CaptureTriggerEvidence;
+        ReadyToReset_ValidationEvidence.CaptureSample += CaptureTriggerSphere;
+        CaptureEvidenceSample(_readyToReset.ticker.GetTicker());
         CaptureFrame(_readyToReset.ticker.what_ticker);
+        _evidenceSampler = new EvidenceSampler(this);
+        PlayerLoopHelper.AddAction(PlayerLoopTiming.LastFixedUpdate, _evidenceSampler);
     }
 
     private SphereSample CaptureSphere(float time, SphereCollider enteringSphere = null)
@@ -71,6 +107,12 @@ public partial class GhostRecorder
         if (collider == null)
             return null;
         UnityEngine.Vector3 center = collider.transform.TransformPoint(collider.center);
+        Rigidbody body = collider.attachedRigidbody;
+        if (body == null) return null;
+        // Transform can contain the rendered interpolation pose. Keep the scaled
+        // collider offset, but rotate and translate it with the physics body pose.
+        center = body.position + body.rotation * Quaternion.Inverse(body.transform.rotation)
+            * (center - body.transform.position);
         UnityEngine.Vector3 scale = collider.transform.lossyScale;
         return new SphereSample
         {
@@ -80,12 +122,17 @@ public partial class GhostRecorder
         };
     }
 
+    private SphereSample CaptureTriggerSphere(ReadyToReset player, float time)
+    {
+        if (_sealed || player != _readyToReset || _evidence == null) return null;
+        return CaptureSphere(time, BlockTrigger_ValidationEvidence.EnteringSphere);
+    }
+
     private void CaptureTriggerEvidence(ReadyToReset player, GameObject trigger, bool finish,
-        float rawTime, float adjustedTime, float velocityKmh)
+        float rawTime, float adjustedTime, float velocityKmh, SphereSample sample)
     {
         if (_sealed || player != _readyToReset || _evidence == null || _evidence.Events.Count >= 20001)
             return;
-        SphereSample sample = CaptureSphere(rawTime, BlockTrigger_ValidationEvidence.EnteringSphere);
         BlockTriggerFinishOrCheckpoint script = trigger.GetComponent<BlockTriggerFinishOrCheckpoint>();
         if (sample == null || script?.properties == null)
             return;
@@ -106,6 +153,7 @@ public partial class GhostRecorder
         });
         if (finish)
         {
+            if (_evidence.Samples.Count < GhostLimits.MaxFrames) _evidence.Samples.Add(sample);
             CaptureFrame(rawTime);
             _finishCaptured = true;
         }

@@ -1,23 +1,27 @@
 using System;
 using HarmonyLib;
 using UnityEngine;
+using TNRD.Zeepkist.GTR.Ghosting.Recording;
 
 namespace TNRD.Zeepkist.GTR.Patching.Patches;
 
 [HarmonyPatch(typeof(ReadyToReset), nameof(ReadyToReset.HeyYouHitATrigger))]
 public static class ReadyToReset_ValidationEvidence
 {
-    public static event Action<ReadyToReset, GameObject, bool, float, float, float> AcceptedTrigger;
+    internal static event Action<ReadyToReset, GameObject, bool, float, float, float, SphereSample> AcceptedTrigger;
+    internal static event Func<ReadyToReset, float, SphereSample> CaptureSample;
     private readonly struct TriggerState
     {
-        public TriggerState(int count, float time) { Count = count; Time = time; }
+        public TriggerState(int count, float time, SphereSample sample) { Count = count; Time = time; Sample = sample; }
         public int Count { get; }
         public float Time { get; }
+        public SphereSample Sample { get; }
     }
 
     private static void Prefix(ReadyToReset __instance, out TriggerState __state)
     {
-        __state = new TriggerState(__instance.allTriggers.Count, __instance.ticker.GetTicker());
+        float time = __instance.ticker.GetTicker();
+        __state = new TriggerState(__instance.allTriggers.Count, time, CaptureSample?.Invoke(__instance, time));
     }
 
     private static void Postfix(ReadyToReset __instance, GameObject theTrigger, bool isFinish,
@@ -29,6 +33,6 @@ public static class ReadyToReset_ValidationEvidence
         if (isFinish && !__instance.actuallyFinished)
             return;
         AcceptedTrigger?.Invoke(__instance, theTrigger, isFinish, captured.Time,
-            Mathf.Max(0, captured.Time + timeOffset), velocityKMH);
+            Mathf.Max(0, captured.Time + timeOffset), velocityKMH, captured.Sample);
     }
 }

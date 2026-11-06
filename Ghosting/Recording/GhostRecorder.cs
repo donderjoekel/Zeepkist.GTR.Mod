@@ -81,7 +81,7 @@ public partial class GhostRecorder
 
     public void Stop()
     {
-        TNRD.Zeepkist.GTR.Patching.Patches.ReadyToReset_ValidationEvidence.AcceptedTrigger -= CaptureTriggerEvidence;
+        StopEvidence();
         if (_updateToken != null)
             _playerLoopService.UnsubscribeUpdate(_updateToken);
         if (_fixedUpdateToken != null)
@@ -127,11 +127,6 @@ public partial class GhostRecorder
     {
         if (_sealed)
             return;
-        if (_evidence != null && _evidence.Samples.Count < GhostLimits.MaxFrames)
-        {
-            SphereSample sample = CaptureSphere(time);
-            if (sample != null) _evidence.Samples.Add(sample);
-        }
         if (_frames.Count >= GhostLimits.MaxFrames)
         {
             _logger.LogWarning("Ghost frame limit reached; stopping recording");
