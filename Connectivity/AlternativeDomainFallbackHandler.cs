@@ -22,14 +22,17 @@ internal sealed class AlternativeDomainFallbackHandler : DelegatingHandler
     private readonly ISpainRoutingState _routingState;
     private readonly ServiceEndpoint _endpoint;
     private readonly Func<HttpClient> _transportClientFactory;
+    private readonly TimeSpan? _primaryTimeout;
 
     public AlternativeDomainFallbackHandler(
         ISpainRoutingState routingState,
         ServiceEndpoint endpoint,
-        Func<HttpClient> transportClientFactory)
+        Func<HttpClient> transportClientFactory,
+        TimeSpan? primaryTimeout = null)
     {
         _routingState = routingState ?? throw new ArgumentNullException(nameof(routingState));
         _endpoint = endpoint;
+        _primaryTimeout = primaryTimeout;
         _transportClientFactory = transportClientFactory ??
                                   throw new ArgumentNullException(nameof(transportClientFactory));
     }
@@ -45,7 +48,8 @@ internal sealed class AlternativeDomainFallbackHandler : DelegatingHandler
 
         try
         {
-            return await SendBufferedAsync(bufferedRequest, request.RequestUri, request, cancellationToken);
+            return await SendBufferedAsync(bufferedRequest, request.RequestUri, request, cancellationToken,
+                _routingState.IsProductionRequest(_endpoint, request.RequestUri) ? _primaryTimeout : null);
         }
         catch (OperationCanceledException) when (
             !cancellationToken.IsCancellationRequested &&
@@ -89,11 +93,12 @@ internal sealed class AlternativeDomainFallbackHandler : DelegatingHandler
         BufferedRequest bufferedRequest,
         Uri requestUri,
         HttpRequestMessage originalRequest,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TimeSpan? timeout = null)
     {
         using HttpRequestMessage request = bufferedRequest.Create(requestUri);
         using HttpClient transportClient = _transportClientFactory();
-        transportClient.Timeout = GetRequestTimeout(requestUri);
+        transportClient.Timeout = timeout ?? GetRequestTimeout(requestUri);
         HttpResponseMessage response = await transportClient.SendAsync(request, cancellationToken);
         response.RequestMessage = originalRequest;
         return response;

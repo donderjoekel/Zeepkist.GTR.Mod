@@ -8,8 +8,10 @@ public class MainMenuUi_Awake
 {
     public static event Action Postfixed;
 
+    internal static void NotifyMenuReady() => Postfixed?.Invoke();
+
     private static void Postfix()
     {
-        Postfixed?.Invoke();
+        NotifyMenuReady();
     }
 }

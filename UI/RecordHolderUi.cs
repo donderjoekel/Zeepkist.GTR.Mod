@@ -22,6 +22,8 @@ public class RecordHolderUi : MonoBehaviour
     private static PersonalBestHolderUi _combinedPersonalBestHolderUi;
     private static PersonalBestHolderUi _singlePersonalBestHolderUi;
 
+    internal static bool HasTemplate => GetTemplate() != null;
+
     public static void EnsureExists()
     {
         GetCombinedInstance();
@@ -29,6 +31,8 @@ public class RecordHolderUi : MonoBehaviour
 
     public static void Create(WorldRecordHolder worldRecordHolder, PersonalBestHolder personalBestHolder)
     {
+        if (GetTemplate() == null)
+            return;
         ConfigService configService = ServiceHelper.Instance.GetRequiredService<ConfigService>();
         GetCombinedInstance().Initialize(configService.ShowRecordHolder, _combinedWorldRecordHolderUi,
             _combinedPersonalBestHolderUi);
@@ -36,7 +40,7 @@ public class RecordHolderUi : MonoBehaviour
         GetCombinedInstance().ToggleDisplay();
         GetWorldRecordInstance().Initialize(configService.ShowWorldRecordHolder, _singleWorldRecordHolderUi, null);
         GetWorldRecordInstance().SetRecordHolders(worldRecordHolder, null);
-        GetCombinedInstance().ToggleDisplay();
+        GetWorldRecordInstance().ToggleDisplay();
         GetPersonalBestInstance()
             .Initialize(configService.ShowPersonalBestHolder, null, _singlePersonalBestHolderUi);
         GetPersonalBestInstance().SetRecordHolders(null, personalBestHolder);
@@ -58,6 +62,19 @@ public class RecordHolderUi : MonoBehaviour
     public static void Disable()
     {
         GetCombinedInstance().gameObject.SetActive(false);
+    }
+
+    internal static void DestroyInstances()
+    {
+        if (_combinedInstance != null)
+            Destroy(_combinedInstance.gameObject);
+        if (_worldRecordInstance != null)
+            Destroy(_worldRecordInstance.gameObject);
+        if (_personalBestInstance != null)
+            Destroy(_personalBestInstance.gameObject);
+        _combinedInstance = null;
+        _worldRecordInstance = null;
+        _personalBestInstance = null;
     }
 
     private static Wrapper CreateWrapper(string name)
@@ -181,14 +198,14 @@ public class RecordHolderUi : MonoBehaviour
 
     private void Awake()
     {
-        ConfigService.ShowRecordHolder.SettingChanged += OnShowRecordHolderChanged;
         ConfigService.ShowWorldRecordOnHolder.SettingChanged += OnShowWorldRecordChanged;
         ConfigService.ShowPersonalBestOnHolder.SettingChanged += OnShowPersonalBestChanged;
     }
 
     private void OnDestroy()
     {
-        ConfigService.ShowRecordHolder.SettingChanged -= OnShowRecordHolderChanged;
+        if (_showConfig != null)
+            _showConfig.SettingChanged -= OnShowRecordHolderChanged;
         ConfigService.ShowWorldRecordOnHolder.SettingChanged -= OnShowWorldRecordChanged;
         ConfigService.ShowPersonalBestOnHolder.SettingChanged -= OnShowPersonalBestChanged;
     }
@@ -214,7 +231,10 @@ public class RecordHolderUi : MonoBehaviour
     private void Initialize(ConfigEntry<bool> showConfig, WorldRecordHolderUi worldRecordHolderUi,
         PersonalBestHolderUi personalBestHolderUi)
     {
+        if (_showConfig != null)
+            _showConfig.SettingChanged -= OnShowRecordHolderChanged;
         _showConfig = showConfig;
+        _showConfig.SettingChanged += OnShowRecordHolderChanged;
         _worldRecordHolderUi = worldRecordHolderUi;
         _personalBestHolderUi = personalBestHolderUi;
     }

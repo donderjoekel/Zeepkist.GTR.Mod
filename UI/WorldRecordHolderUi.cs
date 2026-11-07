@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using TNRD.Zeepkist.GTR.Core;
+using TNRD.Zeepkist.GTR.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,6 +45,19 @@ public class WorldRecordHolderUi : MonoBehaviour
 
     public void SetWorldRecordHolder(WorldRecordHolder worldRecordHolder)
     {
+        var version = ServiceHelper.Instance.GetRequiredService<GtrVersionStatus>();
+        if (version.IsUnsupported)
+        {
+            _worldRecordImage.enabled = false;
+            _playerNameText.text = version.UpdateMessage;
+            _timeText.text = string.Empty;
+            _playerNameText.enableAutoSizing = true;
+            _playerNameText.fontSizeMax = _playerNameText.fontSize;
+            _playerNameText.fontSizeMin = 8;
+            _playerNameText.enableWordWrapping = false;
+            return;
+        }
+
         if (worldRecordHolder == null)
         {
             _playerNameText.text = "Be the first!";

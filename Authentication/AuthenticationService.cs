@@ -38,6 +38,8 @@ public class AuthenticationService : IEagerService
         _configService.UseAlternativeDomainsInSpain.SettingChanged += OnBackendSelectionChanged;
     }
 
+    internal void InitializeSession() => OnMainMenuAwake();
+
     private void OnMainMenuAwake()
     {
         if (!_pushedProperties)

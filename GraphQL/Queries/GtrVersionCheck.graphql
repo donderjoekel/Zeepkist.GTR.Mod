@@ -1,0 +1,8 @@
+query GTR_Version_Check {
+    versions(last: 1) {
+        nodes {
+            minimum
+            latest
+        }
+    }
+}
