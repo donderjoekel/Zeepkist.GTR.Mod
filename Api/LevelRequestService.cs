@@ -29,6 +29,8 @@ public class LevelRequestService : IEagerService
         MultiplayerApi.DisconnectedFromGame += OnDisconnectedFromGame;
     }
 
+    internal void InitializeCurrentLevel() => OnLevelLoaded();
+
     private void OnLevelLoaded()
     {
         if (!MultiplayerApi.IsPlayingOnline)

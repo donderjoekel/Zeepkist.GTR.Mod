@@ -98,8 +98,9 @@ public class GhostTimingService : IEagerService
 
     internal void Advance()
     {
-        if (_manualPlaybackActive && !_manualPaused)
+        if (_manualPlaybackActive)
         {
+            if (_manualPaused) return;
             _time += Time.unscaledDeltaTime * _speed;
             if (_duration > 0f && _time > _duration)
                 _time = _duration;

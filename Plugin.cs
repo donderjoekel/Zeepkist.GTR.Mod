@@ -1,14 +1,15 @@
-using System;
+using BepInEx.Bootstrap;
+using BepInEx;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog.Events;
+using Serilog;
+using StrawberryShake;
 using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Threading;
-using BepInEx;
-using BepInEx.Bootstrap;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Serilog;
-using Serilog.Events;
+using System;
 using TNRD.Zeepkist.GTR.Api;
 using TNRD.Zeepkist.GTR.Assets;
 using TNRD.Zeepkist.GTR.Authentication;
@@ -22,13 +23,15 @@ using TNRD.Zeepkist.GTR.Favourites;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.Ghosting.Readers;
 using TNRD.Zeepkist.GTR.Ghosting.Recording;
+using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Leaderboard;
 using TNRD.Zeepkist.GTR.Logging;
 using TNRD.Zeepkist.GTR.Messaging;
+using TNRD.Zeepkist.GTR.Patching.Patches;
 using TNRD.Zeepkist.GTR.Patching;
 using TNRD.Zeepkist.GTR.PlayerLoop;
-using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.UI.Timeline;
+using TNRD.Zeepkist.GTR.UI;
 using TNRD.Zeepkist.GTR.Users;
 using TNRD.Zeepkist.GTR.Utilities;
 using TNRD.Zeepkist.GTR.Voting;
@@ -42,6 +45,8 @@ namespace TNRD.Zeepkist.GTR;
 public class Plugin : BaseUnityPlugin
 {
     private IHost _host;
+    private IHost _bootstrapHost;
+    internal GtrVersionStatus VersionStatus { get; private set; } = GtrVersionStatus.Unknown(MyPluginInfo.PLUGIN_VERSION);
     private readonly CancellationTokenSource _startupCancellation = new();
     private (string Name, string Value)[] _defaultHeaders;
 
@@ -57,17 +62,35 @@ public class Plugin : BaseUnityPlugin
             await UniTask.WaitUntil(() => TransportHeaderSnapshot.TryCapture(MyPluginInfo.PLUGIN_VERSION, out _defaultHeaders),
                 cancellationToken: _startupCancellation.Token);
 
-            IHostBuilder builder = Host.CreateDefaultBuilder();
-            builder.UseContentRoot(Path.GetDirectoryName(Info.Location)!);
-            builder.UseSerilog((context, provider, configuration) =>
+            _bootstrapHost = CreateHostBuilder().ConfigureServices(ConfigureBootstrapServices).Build();
+            VersionStatus = await GtrStartupGate.CheckAsync(MyPluginInfo.PLUGIN_VERSION,
+                () => _bootstrapHost.Services.GetRequiredService<SpainRoutingService>().GetTraceResultAsync(),
+                cancellationToken => GtrVersionCheck.ExecuteAsync(
+                    _bootstrapHost.Services, MyPluginInfo.PLUGIN_VERSION, cancellationToken),
+                exception => Logger.LogWarning($"GTR version check failed; starting normally: {exception.Message}"),
+                _startupCancellation.Token);
+
+            await UniTask.SwitchToMainThread();
+            _startupCancellation.Token.ThrowIfCancellationRequested();
+            _host = CreateHostBuilder().ConfigureServices(ConfigureServices).Build();
+            await _host.StartAsync(_startupCancellation.Token);
+            await UniTask.SwitchToMainThread();
+            bool isMainMenu = UnityEngine.Object.FindObjectOfType<MainMenuUI>() != null;
+            bool hasActiveLevel = !VersionStatus.IsUnsupported && !isMainMenu &&
+                                  PlayerManager.Instance?.currentMaster != null &&
+                                  CurrentLevelGraphqlIdentity.Create().IsAvailable;
+            if (isMainMenu)
+                MainMenuUi_Awake.NotifyMenuReady();
+            else if (hasActiveLevel)
+                _host.Services.GetRequiredService<AuthenticationService>().InitializeSession();
+            if (hasActiveLevel)
             {
-                configuration.Enrich.FromLogContext();
-                configuration.Enrich.FromGlobalLogContext();
-                configuration.WriteTo.BepInEx(Logger, restrictedToMinimumLevel: LogEventLevel.Information);
-            });
-            builder.ConfigureServices(ConfigureServices);
-            _host = builder.Build();
-            await _host.StartAsync();
+                _host.Services.GetRequiredService<LevelRequestService>().InitializeCurrentLevel();
+                _host.Services.GetRequiredService<RecordHolderService>().InitializeCurrentLevel();
+                _host.Services.GetRequiredService<CurrentLevelRecordService>().InitializeCurrentLevel();
+                _host.Services.GetRequiredService<OnlineGhostsService>().ReloadCurrentLevel();
+                _host.Services.GetRequiredService<OfflineGhostsService>().ReloadCurrentLevel();
+            }
 
             // Plugin startup logic
             Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -87,6 +110,52 @@ public class Plugin : BaseUnityPlugin
         _startupCancellation.Cancel();
         _host?.Dispose();
         _host = null;
+        _bootstrapHost?.Dispose();
+        _bootstrapHost = null;
+    }
+
+    private IHostBuilder CreateHostBuilder()
+    {
+        return Host.CreateDefaultBuilder()
+            .UseContentRoot(Path.GetDirectoryName(Info.Location)!)
+            .UseSerilog((context, provider, configuration) =>
+            {
+                configuration.Enrich.FromLogContext();
+                configuration.Enrich.FromGlobalLogContext();
+                configuration.WriteTo.BepInEx(Logger, restrictedToMinimumLevel: LogEventLevel.Information);
+            });
+    }
+
+    private void ConfigureBootstrapServices(IServiceCollection services)
+    {
+        services.AddSingleton(this);
+        services.AddSingleton(Config);
+        services.AddSingleton<ConfigService>();
+        services.AddSingleton(new NetworkUserAgent(MyPluginInfo.PLUGIN_VERSION,
+            Chainloader.PluginInfos["ZeepSDK"].Metadata.Version.ToString()));
+        services.AddSingleton<SpainRoutingService>();
+        services.AddHttpClient(SpainRoutingService.TraceClientKey, (provider, client) =>
+        {
+            provider.GetRequiredService<NetworkUserAgent>().Apply(client);
+            client.BaseAddress = CloudflareTraceRequest.BaseAddress;
+            client.Timeout = CloudflareTraceRequest.Timeout;
+        });
+        services.AddHttpClient(AlternativeDomainFallbackHandler.TransportClientKey,
+            (provider, client) => provider.GetRequiredService<NetworkUserAgent>().Apply(client));
+        services.AddGtrClient(ExecutionStrategy.NetworkOnly)
+            .ConfigureHttpClient((provider, client) =>
+            {
+                client.BaseAddress = ServiceUriValidator.ParseBaseAddress(
+                    provider.GetRequiredService<SpainRoutingService>().SelectedGraphQLUrl, "GraphQL URL");
+                client.Timeout = Timeout.InfiniteTimeSpan;
+                provider.GetRequiredService<NetworkUserAgent>().Apply(client);
+                AddDefaultHeaders(client);
+            }, clientBuilder => clientBuilder.AddHttpMessageHandler(provider =>
+                new AlternativeDomainFallbackHandler(
+                    provider.GetRequiredService<SpainRoutingService>(), ServiceEndpoint.GraphQL,
+                    () => provider.GetRequiredService<IHttpClientFactory>()
+                        .CreateClient(AlternativeDomainFallbackHandler.TransportClientKey),
+                    TimeSpan.FromSeconds(3))));
     }
 
     private void ConfigureServices(IServiceCollection services)
@@ -103,15 +172,24 @@ public class Plugin : BaseUnityPlugin
             Chainloader.PluginInfos["ZeepSDK"].Metadata.Version.ToString()));
         services.AddSingleton<IHostLifetime, NoopHostLifetime>();
         services.AddMemoryCache();
-        services.AddEagerService<SpainRoutingService>();
+        services.AddSingleton(_bootstrapHost.Services.GetRequiredService<ConfigService>());
+        services.AddSingleton(_bootstrapHost.Services.GetRequiredService<SpainRoutingService>());
+        services.AddSingleton(VersionStatus);
+        if (VersionStatus.IsUnsupported)
+        {
+            services.AddSingleton<ServiceHelper>();
+            services.AddEagerService<PlayerLoopService>();
+            services.AddEagerService<UnsupportedVersionService>();
+            return;
+        }
         services.AddEagerService<AuthenticationService>();
         services.AddEagerService<CommandsService>();
-        services.AddEagerService<ConfigService>();
         services.AddEagerService<LevelRequestService>();
         services.AddEagerService<OfflineGhostsService>();
         services.AddEagerService<OnlineGhostsService>();
         services.AddEagerService<RecordFeedbackService>();
         services.AddEagerService<RecordingService>();
+        services.AddEagerService<GhostEnablementService>();
         services.AddEagerService<PlayerLoopService>();
         services.AddSingleton<BulkGhostModeState>();
         services.AddEagerService<BulkGhostRenderService>();

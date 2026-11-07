@@ -8,8 +8,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Ghosting\Playback\GhostEnablementService.cs" Link="Source\GhostEnablementService.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlayer.Collection.cs" Link="Source\GhostPlayer.Collection.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlayer.EventArgs.cs" Link="Source\GhostPlayer.EventArgs.cs" />
+    <Compile Include="..\Ghosting\Playback\LoadedGhostEntry.cs" Link="Source\LoadedGhostEntry.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostTimingService.cs" Link="Source\GhostTimingService.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlaybackService.cs" Link="Source\GhostPlaybackService.cs" />
+    <Compile Include="..\Ghosting\Playback\PhotoModeTimelineService.cs" Link="Source\PhotoModeTimelineService.cs" />
+    <Compile Include="..\Ghosting\Playback\GtrSpectateTargetService.cs" Link="Source\GtrSpectateTargetService.cs" />
+    <Compile Include="..\GraphQL\GtrClient.Client.cs" Link="Source\GtrClient.Client.cs" />
+    <Compile Include="..\GraphQL\GtrVersionCheck.cs" Link="Source\GtrVersionCheck.cs" />
+    <Compile Include="..\Core\GtrVersionStatus.cs" Link="Source\GtrVersionStatus.cs" />
+    <Compile Include="..\Core\GtrStartupGate.cs" Link="Source\GtrStartupGate.cs" />
+    <Compile Include="..\Core\IEagerService.cs" Link="Source\IEagerService.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="StrawberryShake.Transport.Http" Version="14.3.2" />
     <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="EasyCompressor.LZMA" Version="2.1.0" />

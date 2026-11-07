@@ -40,6 +40,8 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
 
     public event Action<CurrentLevelRecordSnapshot> SnapshotChanged;
 
+    internal void InitializeCurrentLevel() => Restart();
+
     private void Restart()
     {
         LevelGraphqlIdentity level = CurrentLevelGraphqlIdentity.Create();

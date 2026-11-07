@@ -39,6 +39,8 @@ public class RecordHolderService : IEagerService, IDisposable
         _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
     }
 
+    internal void InitializeCurrentLevel() => OnLevelLoaded();
+
     private void OnLevelLoaded()
     {
         RecordHolderUi.EnsureExists();

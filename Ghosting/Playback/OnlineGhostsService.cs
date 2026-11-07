@@ -114,6 +114,8 @@ public class OnlineGhostsService : IEagerService, IDisposable
 
     private void LoadPersonalBests()
     {
+        if (!_configService.EnableGhosts.Value || !MultiplayerApi.IsPlayingOnline)
+            return;
         CancelLoad();
         _cts = new CancellationTokenSource();
         LoadPersonalBestAsync(_cts.Token).Forget();
@@ -189,8 +191,11 @@ public class OnlineGhostsService : IEagerService, IDisposable
                     _logger.LogWarning("Unable to load ghost {RecordId}: {Result}", personalBest.Record.Id, ghost);
                     return () => { };
                 }
-                return () => _ghostPlayer.AddGhost(
-                    GhostType.Global, personalBest.Record.Id, personalBest.Record.User.SteamName, ghost.Value);
+                return () =>
+                {
+                    if (_configService.EnableGhosts.Value)
+                        _ghostPlayer.AddGhost(GhostType.Global, personalBest.Record.Id, personalBest.Record.User.SteamName, ghost.Value);
+                };
             }, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
@@ -207,6 +212,9 @@ public class OnlineGhostsService : IEagerService, IDisposable
         _dispatcher.DiscardCancelled();
         cts.Dispose();
     }
+
+    internal void CancelPendingLoads() => CancelLoad();
+    internal void ReloadCurrentLevel() => OnPlayerSpawned();
     private bool _disposed;
 
     public void Dispose()

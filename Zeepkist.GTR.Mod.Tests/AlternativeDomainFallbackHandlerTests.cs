@@ -158,6 +158,70 @@ public class AlternativeDomainFallbackHandlerTests
         Assert.Equal(TimeSpan.FromSeconds(10), AlternativeDomainFallbackHandler.RequestTimeout);
     }
 
+    [Fact]
+    public async Task BootstrapCancelsPrimaryAfterThreeSecondsAndUsesTenSecondFallback()
+    {
+        FakeRoutingState routingState = new(SpainTraceResult.NoResponse());
+        var clients = new List<HttpClient>();
+        bool primaryCancelled = false;
+        RecordingHandler transport = new(
+            async (_, token) =>
+            {
+                try { await Task.Delay(Timeout.Infinite, token); }
+                finally { primaryCancelled = token.IsCancellationRequested; }
+                throw new InvalidOperationException("Primary must time out");
+            },
+            (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var handler = new AlternativeDomainFallbackHandler(routingState, ServiceEndpoint.GraphQL,
+            () => { var client = new HttpClient(transport, false); clients.Add(client); return client; },
+            TimeSpan.FromSeconds(3)) { InnerHandler = new NotUsedHandler() };
+        using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
+
+        using var response = await client.PostAsync("https://graphql.zeepki.st/", new StringContent("version-query"));
+
+        Assert.True(primaryCancelled);
+        Assert.True(routingState.Promoted);
+        Assert.Equal(2, clients.Count);
+        Assert.Equal(TimeSpan.FromSeconds(3), clients[0].Timeout);
+        Assert.Equal(TimeSpan.FromSeconds(10), clients[1].Timeout);
+        Assert.Equal(2, transport.Requests.Count);
+        Assert.All(transport.Requests, request => Assert.Equal("version-query", request.Body));
+    }
+
+    [Fact]
+    public async Task BootstrapSuccessfulPrimarySendsOneRequest()
+    {
+        FakeRoutingState routingState = new(SpainTraceResult.FromResponse(HttpStatusCode.OK, "ES"));
+        RecordingHandler transport = new(
+            (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var handler = new AlternativeDomainFallbackHandler(routingState, ServiceEndpoint.GraphQL,
+            () => new HttpClient(transport, false), TimeSpan.FromSeconds(3))
+            { InnerHandler = new NotUsedHandler() };
+        using var client = new HttpClient(handler);
+        using var response = await client.PostAsync("https://graphql.zeepki.st/", new StringContent("{}"));
+        Assert.Single(transport.Requests);
+        Assert.False(routingState.Promoted);
+    }
+
+    [Theory]
+    [InlineData("https://es-graphql.example/")]
+    [InlineData("http://127.0.0.1:5000/")]
+    public async Task ExplicitAlternativeAndDevelopmentKeepNormalTimeout(string url)
+    {
+        FakeRoutingState routingState = new(SpainTraceResult.NoResponse());
+        HttpClient transportClient = null;
+        RecordingHandler transport = new(
+            (_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var handler = new AlternativeDomainFallbackHandler(routingState, ServiceEndpoint.GraphQL,
+            () => transportClient = new HttpClient(transport, false), TimeSpan.FromSeconds(3))
+            { InnerHandler = new NotUsedHandler() };
+        using var client = new HttpClient(handler);
+        using var response = await client.PostAsync(url, new StringContent("{}"));
+        Assert.Single(transport.Requests);
+        Assert.Equal(TimeSpan.FromSeconds(10), transportClient.Timeout);
+        Assert.False(routingState.Promoted);
+    }
+
     private static HttpClient CreateClient(
         FakeRoutingState routingState,
         ServiceEndpoint endpoint,

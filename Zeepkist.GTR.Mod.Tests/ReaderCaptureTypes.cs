@@ -1,7 +1,11 @@
 // Capture the real readers' constructor arguments without creating Unity visuals.
 namespace TNRD.Zeepkist.GTR.Ghosting.Ghosts
 {
-    public interface IGhost;
+    public interface IGhost
+    {
+        float Duration => 0;
+        void Stop(float time) { }
+    }
     public interface ICapturedFrames : IGhost { Array Frames { get; set; } }
     public partial class V1Ghost : ICapturedFrames { public Array Frames { get; set; } }
     public partial class V2Ghost : ICapturedFrames { public Array Frames { get; set; } }

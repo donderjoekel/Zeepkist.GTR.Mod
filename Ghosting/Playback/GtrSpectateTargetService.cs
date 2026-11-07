@@ -190,8 +190,16 @@ public class GtrSpectateTargetService : IEagerService, IDisposable
 
     private void RefreshFlyingCameraTargets()
     {
-        if (!ShouldInjectGhosts || PhotoModeFlyingCamera.Current == null)
+        if (PhotoModeFlyingCamera.Current == null)
             return;
+
+        if (!ShouldInjectGhosts)
+        {
+            // The last removal must restore native targets instead of retaining a pooled ghost.
+            if (_transformToRecordId.Count == 0) return;
+            _transformToRecordId.Clear();
+            _currentRecordId = null;
+        }
 
         PhotoModeFlyingCamera.Current.SetCurrentZeepkist();
     }
