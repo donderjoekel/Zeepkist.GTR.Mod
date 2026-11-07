@@ -40,7 +40,13 @@ namespace UnityEngine
         public ReadyToResetPointer pointer;
         public T GetComponent<T>() where T : class => pointer as T;
     }
-    public static class Time { public static float fixedDeltaTime = .011f; }
+    public static class Time
+    {
+        public static float fixedDeltaTime = .011f;
+        public static float deltaTime;
+        public static float unscaledDeltaTime;
+        public static int frameCount;
+    }
 }
 public class ReadyToResetPointer { public ReadyToReset theScript; }
 public class TimeTicker { public float what_ticker; public float GetTicker() => what_ticker; }

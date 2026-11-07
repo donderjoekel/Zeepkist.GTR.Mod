@@ -50,6 +50,9 @@ public static class Mathf
     public static float Max(params float[] values) => values.Max();
     public static float Lerp(float min, float max, float value) => min + (max - min) * Math.Clamp(value, 0, 1);
     public static float Clamp(float value, float min, float max) => Math.Clamp(value, min, max);
+    public static float Clamp01(float value) => Math.Clamp(value, 0, 1);
+    public static float Round(float value) => MathF.Round(value);
+    public static bool Approximately(float left, float right) => Math.Abs(left - right) < 0.000001f;
     public static float InverseLerp(float min, float max, float value) =>
         min == max ? 0 : Math.Clamp((value - min) / (max - min), 0, 1);
     public static int RoundToInt(float value) => (int)Math.Round(value, MidpointRounding.ToEven);

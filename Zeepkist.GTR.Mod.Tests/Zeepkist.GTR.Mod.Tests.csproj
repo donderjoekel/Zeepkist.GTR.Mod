@@ -9,6 +9,14 @@
 
   <ItemGroup>
     <Compile Include="..\Ghosting\Playback\GhostEnablementService.cs" Link="Source\GhostEnablementService.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlayer.Collection.cs" Link="Source\GhostPlayer.Collection.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlayer.EventArgs.cs" Link="Source\GhostPlayer.EventArgs.cs" />
+    <Compile Include="..\Ghosting\Playback\LoadedGhostEntry.cs" Link="Source\LoadedGhostEntry.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostTimingService.cs" Link="Source\GhostTimingService.cs" />
+    <Compile Include="..\Ghosting\Playback\GhostPlaybackService.cs" Link="Source\GhostPlaybackService.cs" />
+    <Compile Include="..\Ghosting\Playback\PhotoModeTimelineService.cs" Link="Source\PhotoModeTimelineService.cs" />
+    <Compile Include="..\Ghosting\Playback\GtrSpectateTargetService.cs" Link="Source\GtrSpectateTargetService.cs" />
+    <Compile Include="..\Core\IEagerService.cs" Link="Source\IEagerService.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.2" />
