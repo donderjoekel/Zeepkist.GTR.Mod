@@ -131,6 +131,8 @@ public class OfflineGhostsService : IEagerService, IDisposable
 
     private void LoadGhosts()
     {
+        if (!_configService.EnableGhosts.Value || MultiplayerApi.IsPlayingOnline)
+            return;
         (CancellationToken token, int generation) = BeginLoad();
         LoadGhostsAsync(token, generation).Forget();
     }
@@ -223,6 +225,8 @@ public class OfflineGhostsService : IEagerService, IDisposable
 
     private void LoadCurrentMode()
     {
+        if (!_configService.EnableGhosts.Value || MultiplayerApi.IsPlayingOnline)
+            return;
         if (IsShowingAllGhosts || IsShowingTopRecords)
             LoadBulkGhosts();
         else
@@ -231,6 +235,8 @@ public class OfflineGhostsService : IEagerService, IDisposable
 
     private void LoadBulkGhosts()
     {
+        if (!_configService.EnableGhosts.Value || MultiplayerApi.IsPlayingOnline)
+            return;
         (CancellationToken token, int generation) = BeginLoad();
         LoadBulkGhostsAsync(token, generation).Forget();
     }
@@ -448,6 +454,7 @@ public class OfflineGhostsService : IEagerService, IDisposable
                 }
                 return () =>
                 {
+                    if (!_configService.EnableGhosts.Value) return;
                     try
                     {
                         _ghostPlayer.AddGhost(GhostType.Global, record.Id, record.User.SteamName, ghost.Value, visualProfile);
@@ -503,6 +510,9 @@ public class OfflineGhostsService : IEagerService, IDisposable
         _dispatcher.DiscardCancelled();
         cts.Dispose();
     }
+
+    internal void CancelPendingLoads() => CancelLoad();
+    internal void ReloadCurrentLevel() => OnPlayerSpawned();
 
     private LevelGraphqlIdentity PrepareLevel()
     {

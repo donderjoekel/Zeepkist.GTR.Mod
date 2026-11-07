@@ -112,6 +112,7 @@ public class Plugin : BaseUnityPlugin
         services.AddEagerService<OnlineGhostsService>();
         services.AddEagerService<RecordFeedbackService>();
         services.AddEagerService<RecordingService>();
+        services.AddEagerService<GhostEnablementService>();
         services.AddEagerService<PlayerLoopService>();
         services.AddSingleton<BulkGhostModeState>();
         services.AddEagerService<BulkGhostRenderService>();

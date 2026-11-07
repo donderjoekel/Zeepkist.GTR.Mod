@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Ghosting\Playback\GhostEnablementService.cs" Link="Source\GhostEnablementService.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="StrawberryShake.Transport.WebSockets" Version="14.3.2" />
