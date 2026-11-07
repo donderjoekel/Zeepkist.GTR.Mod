@@ -12,6 +12,10 @@ internal sealed class AlternativeDomainFallbackHandler : DelegatingHandler
 {
     public const string TransportClientKey = "ZeepCentraal HTTP Transport";
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+    internal static TimeSpan GetRequestTimeout(Uri uri) =>
+        uri.AbsolutePath.EndsWith("/record/submit", StringComparison.OrdinalIgnoreCase)
+            ? TimeSpan.FromSeconds(120)
+            : RequestTimeout;
 
     private const string FallbackAttemptedProperty = "TNRD.Zeepkist.GTR.AlternativeFallbackAttempted";
 
@@ -89,6 +93,7 @@ internal sealed class AlternativeDomainFallbackHandler : DelegatingHandler
     {
         using HttpRequestMessage request = bufferedRequest.Create(requestUri);
         using HttpClient transportClient = _transportClientFactory();
+        transportClient.Timeout = GetRequestTimeout(requestUri);
         HttpResponseMessage response = await transportClient.SendAsync(request, cancellationToken);
         response.RequestMessage = originalRequest;
         return response;

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -238,32 +237,8 @@ public class RecordingService : IEagerService, IDisposable
         }
 
         // Prepared JSON retains same V8 run UUID and ghost bytes across every retry.
-        for (int attempt = 0; ; attempt++)
-        {
-            HttpResponseMessage response;
-            try
-            {
-                response = await _apiHttpClient.PostJsonAsync("record/submit", recording.Json, token);
-            }
-            catch (HttpRequestException) when (attempt < 3)
-            {
-                await Task.Delay(RecordingSubmissionRetry.DelayMilliseconds(attempt), token);
-                continue;
-            }
-
-            using (response)
-            {
-                if (attempt < 3 && RecordingSubmissionRetry.ShouldRetry((int)response.StatusCode))
-                {
-                    await Task.Delay(RecordingSubmissionRetry.DelayMilliseconds(attempt), token);
-                    continue;
-                }
-
-                // Keep HTTP rejection diagnostics outside the transport-error retry catch.
-                await ApiResponseErrors.EnsureSuccessWithBodyAsync(response);
-                break;
-            }
-        }
+        await RecordingSubmissionRetry.UploadAsync(recording.Json,
+            (json, cancellation) => _apiHttpClient.PostJsonAsync("record/submit", json, cancellation).AsTask(), token);
         await UniTask.SwitchToMainThread(cancellationToken: token);
         if (_configService.ShowRecordSubmitMessage.Value)
             _messengerService.LogSuccess("Run submitted", _configService.ShowRecordSubmitMessageDuration.Value);
