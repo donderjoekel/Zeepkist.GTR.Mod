@@ -24,6 +24,8 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
     private LevelGraphqlIdentity _level;
     private string _steamId;
     private bool _resolving;
+    private readonly Medals.MedalUpgradeTracker _medalTracker = new();
+    private int _medalAttempt;
 
     public CurrentLevelRecordService(IGtrClient gtrClient, ILogger<CurrentLevelRecordService> logger)
     {
@@ -162,6 +164,12 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
             if (generation != _generation || _subscription?.IsCurrentAttempt(attempt) != true)
                 return;
 
+            if (snapshot.PersonalBest != null)
+                snapshot.PersonalBest.MedalUpgrade = _medalTracker.Update(
+                    levelKey, snapshot.PersonalBest.Time, snapshot.PersonalBest.Medal, _medalAttempt != attempt);
+            else
+                _medalTracker.Update(levelKey, null, null, _medalAttempt != attempt);
+            _medalAttempt = attempt;
             _subscription.MarkHealthy(attempt);
             Snapshot = snapshot;
             SnapshotChanged?.Invoke(snapshot);
@@ -187,6 +195,7 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
                 : new PersonalBestHolder
                 {
                     Time = personalBest.Time.Value,
+                    Medal = personalBest.Medal,
                     Rank = personalBest.LevelPosition,
                     LevelDecayedPoints = personalBest.LevelDecayedPoints,
                     PlayerDecayedPoints = personalBest.PlayerDecayedPoints
@@ -196,6 +205,7 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
                 : new WorldRecordHolder
                 {
                     Time = worldRecord.Time.Value,
+                    Medal = worldRecord.Medal,
                     Rank = worldRecord.LevelPosition,
                     SteamId = worldRecord.UserSteamId,
                     SteamName = worldRecord.UserName,
@@ -215,6 +225,8 @@ public sealed class CurrentLevelRecordService : IEagerService, IDisposable
 
     private void StopCore()
     {
+        _medalAttempt = 0;
+        _medalTracker.Reset();
         _generation++;
         _subscription?.Dispose();
         _subscription = null;

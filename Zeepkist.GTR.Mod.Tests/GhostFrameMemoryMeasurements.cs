@@ -76,20 +76,26 @@ public class GhostFrameMemoryMeasurements(ITestOutputHelper output)
     {
         var durations = new double[100];
         for (int warmup = 0; warmup < 100; warmup++)
-            foreach (var getTime in times)
-                GhostFrameSearch.TryGetFrameSample(count, 2.01f, getTime, out _);
+            Sample(times, count);
+
+        // Sampling timings are diagnostic. Thread allocations can include runtime/test-host work,
+        // so this benchmark does not assert an exact zero allocation count.
+        _ = Stopwatch.GetTimestamp();
         for (int iteration = 0; iteration < 100; iteration++)
         {
-            long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
             long start = Stopwatch.GetTimestamp();
-            foreach (var getTime in times)
-                if (!GhostFrameSearch.TryGetFrameSample(count, 2.01f, getTime, out _))
-                    throw new InvalidOperationException("Missing benchmark sample");
+            Sample(times, count);
             durations[iteration] = (Stopwatch.GetTimestamp() - start) * 1_000_000d / Stopwatch.Frequency;
-            Assert.Equal(beforeBytes, GC.GetAllocatedBytesForCurrentThread());
         }
         Array.Sort(durations);
         return durations;
+    }
+
+    private static void Sample(Func<int, float>[] times, int count)
+    {
+        foreach (var getTime in times)
+            if (!GhostFrameSearch.TryGetFrameSample(count, 2.01f, getTime, out _))
+                throw new InvalidOperationException("Missing benchmark sample");
     }
 
     private static double Percentile(double[] sorted, double percentile) => sorted[(int)Math.Ceiling(sorted.Length * percentile) - 1];

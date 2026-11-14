@@ -43,6 +43,9 @@ subscription WatchTrackTournamentPage($id: Int!, $first: Int!, $offset: Int!) {
             nodes {
                 rank
                 time
+                record {
+                    medal
+                }
                 points
                 user {
                     steamId

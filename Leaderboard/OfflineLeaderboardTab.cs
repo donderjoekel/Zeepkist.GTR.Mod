@@ -1,4 +1,5 @@
 using System;
+using TNRD.Zeepkist.GTR.UI.Medals;
 using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.Ghosting.Playback;
 using TNRD.Zeepkist.GTR.GraphQL;
@@ -15,7 +16,7 @@ namespace TNRD.Zeepkist.GTR.Leaderboard;
 
 public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 {
-    private const int PageSize = 14;
+    internal const int PageSize = 14;
 
     private readonly LeaderboardGraphqlService _graphqlService;
     private readonly OfflineGhostsService _offlineGhostsService;
@@ -79,7 +80,10 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
         {
             int itemIndex = rowIndex - 2;
             if (itemIndex >= _items.Count)
+            {
+                RecordMedalUi.Clear(Instance.leaderboard_tab_positions[rowIndex].time);
                 continue;
+            }
 
             GUI_OnlineLeaderboardPosition gui = Instance.leaderboard_tab_positions[rowIndex];
             gui.gameObject.SetActive(true);
@@ -160,6 +164,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
             ? "Clear Personal Bests"
             : "Show All Personal Bests";
         gui.time.text = string.Empty;
+        RecordMedalUi.Clear(gui.time);
         gui.pointsCurrent.gameObject.SetActive(false);
         gui.pointsWon.gameObject.SetActive(false);
     }
@@ -178,6 +183,7 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
             ? "Clear Top Records"
             : $"Show Top {_offlineGhostsService.TopRecordLimit} Records";
         gui.time.text = string.Empty;
+        RecordMedalUi.Clear(gui.time);
         gui.pointsCurrent.gameObject.SetActive(false);
         gui.pointsWon.gameObject.SetActive(false);
     }
@@ -208,6 +214,9 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 
         gui.player_name.text = playerMarkup;
         gui.time.text = item.Time.GetFormattedTime();
+        RecordMedalUi.ConfigureLeaderboard(gui.time, gui.player_name);
+        RecordMedalUi.Set(gui.time, item.Medal,
+            Steamworks.SteamClient.SteamId.ToString() == item.SteamId ? item.MedalUpgrade : null, item.SteamId);
         gui.pointsCurrent.gameObject.SetActive(false);
         gui.pointsWon.gameObject.SetActive(true);
         gui.pointsWon.text = LeaderboardTextFormatter.PrefixRecordDate(
@@ -239,6 +248,9 @@ public class OfflineLeaderboardTab : BaseSingleplayerLeaderboardTab, IDisposable
 
     private void StopPage()
     {
+        if (Instance != null)
+            foreach (var row in Instance.leaderboard_tab_positions)
+                RecordMedalUi.Clear(row.time);
         _generation++;
         _subscription?.Dispose();
         _subscription = null;

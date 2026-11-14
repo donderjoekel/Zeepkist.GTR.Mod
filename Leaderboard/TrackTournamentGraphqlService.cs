@@ -92,6 +92,7 @@ public sealed class TrackTournamentGraphqlService
                 SteamId = node.User?.SteamId,
                 SteamName = node.User?.SteamName,
                 Time = node.Time,
+                Medal = node.Record?.Medal,
                 Points = node.Points
             })
             .ToList() ?? new List<TrackTournamentStanding>();

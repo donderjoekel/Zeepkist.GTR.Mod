@@ -1,0 +1,30 @@
+query GetCurrentLevelMedalTargets($xxHash: String!, $hash: String!) {
+    levels(
+        first: 1
+        filter: {
+            or: [
+                { xxHash: { equalTo: $xxHash } }
+                { and: [{ hash: { equalTo: $hash } }, { adventure: { equalTo: true } }] }
+            ]
+        }
+        orderBy: [ID_DESC]
+    ) {
+        nodes {
+            # Public visibility is enforced by the GraphQL role's level_item RLS policy.
+            levelItems(
+                first: 1
+                condition: { deleted: false }
+                orderBy: [UPDATED_AT_DESC, ID_DESC]
+            ) {
+                nodes {
+                    validationTimeBronze
+                    validationTimeSilver
+                    validationTimeGold
+                    validationTimeAuthor
+                    validationTimeExpert
+                    validationTimeApex
+                }
+            }
+        }
+    }
+}

@@ -6,6 +6,33 @@ namespace TNRD.Zeepkist.GTR.Tests;
 public class GraphqlOperationContractTests
 {
     [Fact]
+    public void RoundTargetsUseSingleQueryAndLatestVisibleNonDeletedItem()
+    {
+        string operation = ReadOperation("GetCurrentLevelMedalTargets.graphql");
+        Assert.StartsWith("query GetCurrentLevelMedalTargets", operation);
+        Assert.DoesNotContain("subscription", operation);
+        Assert.Contains("{ xxHash: { equalTo: $xxHash } }", operation);
+        Assert.Contains("{ hash: { equalTo: $hash } }", operation);
+        Assert.Contains("{ adventure: { equalTo: true } }", operation);
+        Assert.Contains("condition: { deleted: false }", operation);
+        Assert.Contains("RLS policy", operation);
+        Assert.Contains("orderBy: [UPDATED_AT_DESC, ID_DESC]", operation);
+        Assert.Equal(2, Regex.Matches(operation, "first: 1").Count);
+        foreach (string tier in new[] { "Bronze", "Silver", "Gold", "Author", "Expert", "Apex" })
+            Assert.Contains("validationTime" + tier, operation);
+    }
+
+    [Fact]
+    public void AllRecordSurfacesRequestServerMedals()
+    {
+        string holders = ReadOperation("CurrentLevelRecords.graphql");
+        Assert.Matches(@"fragment PersonalBestHolderFields[\s\S]*?\bmedal\b", holders);
+        Assert.Matches(@"fragment WorldRecordHolderFields[\s\S]*?\bmedal\b", holders);
+        Assert.Contains("medal", ReadOperation("LeaderboardPage.graphql"));
+        Assert.Matches(@"record\s*\{\s*medal\s*\}", ReadOperation("TrackTournamentLeaderboards.graphql"));
+    }
+
+    [Fact]
     public void TournamentOperationsUseLevelFallbackAndRankedPagination()
     {
         string operation = ReadOperation("TrackTournamentLeaderboards.graphql");

@@ -1,4 +1,5 @@
 using System;
+using TNRD.Zeepkist.GTR.UI.Medals;
 using System.Collections.Generic;
 using TNRD.Zeepkist.GTR.GraphQL;
 using TNRD.Zeepkist.GTR.Utilities;
@@ -51,7 +52,10 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab, IDisposable
         {
             GUI_OnlineLeaderboardPosition gui = Instance.leaderboard_tab_positions[i];
             if (i >= _items.Count)
+            {
+                RecordMedalUi.Clear(Instance.leaderboard_tab_positions[i].time);
                 continue;
+            }
 
             gui.gameObject.SetActive(true);
             int index = CurrentPage * Instance.leaderboard_tab_positions.Count + i;
@@ -133,6 +137,9 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab, IDisposable
 
         gui.player_name.text = playerMarkup;
         gui.time.text = item.Time.GetFormattedTime();
+        RecordMedalUi.ConfigureLeaderboard(gui.time, gui.player_name);
+        RecordMedalUi.Set(gui.time, item.Medal,
+            Steamworks.SteamClient.SteamId.ToString() == item.SteamId ? item.MedalUpgrade : null, item.SteamId);
         gui.pointsWon.gameObject.SetActive(true);
 
         string pointsMarkup = LeaderboardTextFormatter.PrefixRecordDate(
@@ -146,6 +153,9 @@ public class OnlineLeaderboardTab : BaseMultiplayerLeaderboardTab, IDisposable
 
     private void StopPage()
     {
+        if (Instance != null)
+            foreach (var row in Instance.leaderboard_tab_positions)
+                RecordMedalUi.Clear(row.time);
         _generation++;
         _subscription?.Dispose();
         _subscription = null;

@@ -32,6 +32,7 @@ fragment LeaderboardPageFields on Query {
                 }
             }
             time
+            medal
             dateCreated
             userPointContributions(first: 1) {
                 nodes {

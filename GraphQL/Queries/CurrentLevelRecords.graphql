@@ -1,6 +1,7 @@
 fragment PersonalBestHolderFields on RecordHistoryEntry {
     levelPosition
     time
+    medal
     levelDecayedPoints
     playerDecayedPoints
 }
@@ -8,6 +9,7 @@ fragment PersonalBestHolderFields on RecordHistoryEntry {
 fragment WorldRecordHolderFields on RecordHistoryEntry {
     levelPosition
     time
+    medal
     levelDecayedPoints
     userSteamId
     userName

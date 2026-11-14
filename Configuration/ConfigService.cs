@@ -25,6 +25,7 @@ public class ConfigService : IEagerService
     public ConfigEntry<bool> ShowPersonalBestImprovementMessages { get; private set; }
     public ConfigEntry<bool> ShowPersonalBestBecameWorldRecordMessages { get; private set; }
     public ConfigEntry<bool> ShowWorldRecordImprovementMessages { get; private set; }
+    public ConfigEntry<bool> AnimateMedalUpgrades { get; private set; }
 
     public ConfigEntry<bool> EnableGhosts { get; private set; }
 
@@ -251,6 +252,10 @@ public class ConfigService : IEagerService
 
     private void ConfigRecordHolder(ConfigFile config)
     {
+        AnimateMedalUpgrades = config.Bind(
+            "3. Record Holder - General", "Animate Medal Upgrades", true,
+            "Animate each newly earned medal after the server confirms a Personal Best improvement");
+
         RecordHolderSwitchTime = config.Bind(
             "3. Record Holder - General",
             "1. Record Holder Switch Time",

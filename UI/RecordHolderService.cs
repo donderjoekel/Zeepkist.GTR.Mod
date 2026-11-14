@@ -18,7 +18,7 @@ public class RecordHolderService : IEagerService, IDisposable
     private readonly PlayerLoopService _playerLoopService;
     private readonly PlayerLoopSubscription _updateSubscription;
 
-    private float _timer;
+    private readonly RecordHolderPresentationState _presentation = new();
 
     public RecordHolderService(
         CurrentLevelRecordService currentLevelRecordService,
@@ -36,6 +36,7 @@ public class RecordHolderService : IEagerService, IDisposable
         RacingApi.PlayerSpawned += OnPlayerSpawned;
         RacingApi.LevelLoaded += OnLevelLoaded;
         _currentLevelRecordService.SnapshotChanged += OnSnapshotChanged;
+        RecordHolderUi.CombinedViewChanged += ResetTimer;
         _updateSubscription = _playerLoopService.SubscribeUpdate(OnUpdate);
     }
 
@@ -43,6 +44,8 @@ public class RecordHolderService : IEagerService, IDisposable
 
     private void OnLevelLoaded()
     {
+        _presentation.Reset();
+        ResetTimer();
         RecordHolderUi.EnsureExists();
         RecordHolderUi.Create(null, null);
     }
@@ -58,9 +61,13 @@ public class RecordHolderService : IEagerService, IDisposable
         if (snapshot == null)
             return;
 
-        _timer = _configService.RecordHolderSwitchTime.Value;
-        RecordHolderUi.Create(snapshot.WorldRecord, snapshot.PersonalBest);
+        RecordHolderUpdate update = _presentation.Observe(snapshot.LevelKey, snapshot.PersonalBest);
+        RecordHolderUi.Create(snapshot.WorldRecord, snapshot.PersonalBest,
+            update.PersonalBestChanged, update.MedalUpgrade);
+        if (update.PersonalBestChanged) ResetTimer();
     }
+
+    private void ResetTimer() => _presentation.ResetTimer(_configService.RecordHolderSwitchTime.Value);
 
     private void CheckKeyDown(
         ConfigEntry<KeyCode> keyConfig,
@@ -88,23 +95,20 @@ public class RecordHolderService : IEagerService, IDisposable
         CheckKeyDown(_configService.ToggleShowPersonalBestOnHolder, _configService.ShowPersonalBestOnHolder,
             "Showing Personal Best On Combined", "Hiding Personal Best On Combined");
 
-        _timer -= Time.deltaTime;
-        if (_timer > 0)
+        if (!_presentation.Tick(Time.deltaTime))
             return;
 
         RecordHolderUi.SwitchToNext();
-        _timer = _configService.RecordHolderSwitchTime.Value;
+        ResetTimer();
     }
 
-    private static void OnQuit()
+    private void OnQuit()
     {
+        _presentation.Reset();
         RecordHolderUi.Disable();
     }
 
-    private static void OnDisconnectedFromGame()
-    {
-        RecordHolderUi.Disable();
-    }
+    private void OnDisconnectedFromGame() => OnQuit();
 
     public void Dispose()
     {
@@ -113,6 +117,7 @@ public class RecordHolderService : IEagerService, IDisposable
         RacingApi.PlayerSpawned -= OnPlayerSpawned;
         RacingApi.LevelLoaded -= OnLevelLoaded;
         _currentLevelRecordService.SnapshotChanged -= OnSnapshotChanged;
+        RecordHolderUi.CombinedViewChanged -= ResetTimer;
         _playerLoopService.UnsubscribeUpdate(_updateSubscription);
     }
 }

@@ -7,13 +7,15 @@ using UnityEngine;
 
 namespace TNRD.Zeepkist.GTR.Assets;
 
-public class AssetService
+public class AssetService : IDisposable
 {
     private readonly PluginInfo _info;
     private readonly ILogger<AssetService> _logger;
 
     private AssetBundle _shaderAssetBundle;
     private readonly Dictionary<string, Shader> _shaders = new();
+    private readonly Dictionary<int, Sprite> _medals = new();
+    private static readonly string[] MedalNames = { "Bronze", "Silver", "Gold", "Author", "Expert", "Apex" };
 
     public AssetService(PluginInfo info, ILogger<AssetService> logger)
     {
@@ -21,6 +23,57 @@ public class AssetService
         _logger = logger;
 
         LoadAssetBundle("gtr-shaders", assetBundle => _shaderAssetBundle = assetBundle, false);
+    }
+
+    public Sprite GetMedalSprite(int tier)
+    {
+        if (tier < 0 || tier >= MedalNames.Length) return null;
+        if (_medals.TryGetValue(tier, out Sprite cached)) return cached;
+        Texture2D texture = null;
+        try
+        {
+            string name = $"TNRD.Zeepkist.GTR.RuntimeAssets.Medals.MED_{MedalNames[tier]}.png";
+            using Stream stream = typeof(AssetService).Assembly.GetManifestResourceStream(name);
+            if (stream == null) throw new FileNotFoundException("Embedded medal missing", name);
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            texture.name = $"GTR Medal {MedalNames[tier]}";
+            if (!ImageConversion.LoadImage(texture, buffer.ToArray()))
+                throw new InvalidDataException("Embedded medal PNG could not be decoded");
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            // PNG compression saves disk space only. Compress alpha-bearing GPU data separately.
+            if (SystemInfo.SupportsTextureFormat(TextureFormat.DXT5))
+            {
+                texture.Compress(true);
+                if (texture.format != TextureFormat.DXT5)
+                    _logger.LogWarning("Medal GPU compression unavailable; retaining {Format}", texture.format);
+            }
+            texture.Apply(false, true);
+            Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect);
+            _medals[tier] = sprite;
+            return sprite;
+        }
+        catch (Exception e)
+        {
+            if (texture != null) UnityEngine.Object.Destroy(texture);
+            _logger.LogWarning(e, "Unable to load medal {Medal}", MedalNames[tier]);
+            _medals[tier] = null;
+            return null;
+        }
+    }
+
+    public void Dispose()
+    {
+        foreach (Sprite sprite in _medals.Values)
+        {
+            if (sprite == null) continue;
+            UnityEngine.Object.Destroy(sprite.texture);
+            UnityEngine.Object.Destroy(sprite);
+        }
+        _medals.Clear();
     }
 
     private bool LoadAssetBundle(

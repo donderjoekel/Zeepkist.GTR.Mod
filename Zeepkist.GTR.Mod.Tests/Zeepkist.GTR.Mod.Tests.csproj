@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\UI\Medals\MedalUpgradeTracker.cs" Link="Source\MedalUpgradeTracker.cs" />
+    <Compile Include="..\UI\PersonalBestHolder.cs" Link="Source\PersonalBestHolder.cs" />
+    <Compile Include="..\UI\RecordHolderPresentationState.cs" Link="Source\RecordHolderPresentationState.cs" />
+    <Compile Include="..\UI\Medals\LevelMedalTargets.cs" Link="Source\LevelMedalTargets.cs" />
+    <Compile Include="..\Leaderboard\RoundMedalState.cs" Link="Source\RoundMedalState.cs" />
+    <Compile Include="..\Leaderboard\SharedLeaderboardPageStore.cs" Link="Source\SharedLeaderboardPageStore.cs" />
     <Compile Include="..\Ghosting\Playback\GhostEnablementService.cs" Link="Source\GhostEnablementService.cs" />
     <Compile Include="..\Ghosting\Playback\GhostPlayer.Collection.cs" Link="Source\GhostPlayer.Collection.cs" />
     <Compile Include="..\Ghosting\Playback\GhostPlayer.EventArgs.cs" Link="Source\GhostPlayer.EventArgs.cs" />

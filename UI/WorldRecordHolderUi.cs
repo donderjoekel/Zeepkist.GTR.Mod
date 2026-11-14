@@ -40,6 +40,7 @@ public class WorldRecordHolderUi : MonoBehaviour
         _headerText = texts.First(x => string.Equals(x.name, "Your Time Title", StringComparison.OrdinalIgnoreCase));
         _playerNameText = texts.First(x => string.Equals(x.name, "Player", StringComparison.OrdinalIgnoreCase));
         _timeText = texts.First(x => string.Equals(x.name, "Time", StringComparison.OrdinalIgnoreCase));
+        Medals.RecordMedalUi.ConfigureHolder(_timeText, _playerNameText);
         _headerText.text = "World Record";
     }
 
@@ -51,12 +52,15 @@ public class WorldRecordHolderUi : MonoBehaviour
             _worldRecordImage.enabled = false;
             _playerNameText.text = version.UpdateMessage;
             _timeText.text = string.Empty;
+            Medals.RecordMedalUi.Clear(_timeText);
             _playerNameText.enableAutoSizing = true;
             _playerNameText.fontSizeMax = _playerNameText.fontSize;
             _playerNameText.fontSizeMin = 8;
             _playerNameText.enableWordWrapping = false;
             return;
         }
+
+        Medals.RecordMedalUi.Set(_timeText, worldRecordHolder?.Medal);
 
         if (worldRecordHolder == null)
         {

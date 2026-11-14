@@ -1,4 +1,5 @@
 using System;
+using TNRD.Zeepkist.GTR.UI.Medals;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
@@ -56,7 +57,10 @@ public abstract class TrackTournamentLeaderboardTabBase : BaseCoreLeaderboardTab
         for (int i = 0; i < Instance.leaderboard_tab_positions.Count; i++)
         {
             if (i >= _items.Count)
+            {
+                RecordMedalUi.Clear(Instance.leaderboard_tab_positions[i].time);
                 continue;
+            }
 
             GUI_OnlineLeaderboardPosition gui = Instance.leaderboard_tab_positions[i];
             gui.gameObject.SetActive(true);
@@ -108,6 +112,8 @@ public abstract class TrackTournamentLeaderboardTabBase : BaseCoreLeaderboardTab
 
         gui.player_name.text = FormatPlayer(gui, item);
         gui.time.text = item.Time.GetFormattedTime();
+        RecordMedalUi.ConfigureLeaderboard(gui.time, gui.player_name);
+        RecordMedalUi.Set(gui.time, item.Medal, identity: item.SteamId);
         gui.pointsWon.text = item.Points.ToString(CultureInfo.InvariantCulture);
     }
 
@@ -185,6 +191,9 @@ public abstract class TrackTournamentLeaderboardTabBase : BaseCoreLeaderboardTab
 
     private void StopPage()
     {
+        if (Instance != null)
+            foreach (var row in Instance.leaderboard_tab_positions)
+                RecordMedalUi.Clear(row.time);
         _generation++;
         _subscription?.Dispose();
         _subscription = null;
